@@ -23,7 +23,7 @@ Das Wiki enthält ausführliche Dokumentation zu folgenden Themen:
 
 ```bash
 # Repository klonen
-git clone [https://github.com/de-bankly/x-app.git](https://github.com/de-bankly/x-app.git)
+git clone https://github.com/de-bankly/x-app.git
 
 # In das Verzeichnis wechseln
 cd x-app
