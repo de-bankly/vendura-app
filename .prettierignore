@@ -1,0 +1,27 @@
+# Dependency directories
+node_modules/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Cache directories
+.npm/
+.eslintcache
+.cache/
+
+# Environment files
+.env
+.env.*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# System Files
+.DS_Store
+Thumbs.db 
