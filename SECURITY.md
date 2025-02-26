@@ -10,8 +10,8 @@ Da sich BankLy X noch in der frühen Entwicklungsphase befindet, werden derzeit 
 
 | Version | Unterstützt          |
 | ------- | -------------------- |
+| main    | :x:                  |
 | dev     | :white_check_mark:   |
-| < dev   | :x:                  |
 
 ## Meldung von Sicherheitslücken
 
