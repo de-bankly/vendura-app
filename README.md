@@ -1,6 +1,6 @@
-# BankLy X
+# Vendura
 
-BankLy X ist eine moderne Web-Anwendung, die mit React und Material UI entwickelt wird. Dieses Projekt befindet sich derzeit in der **frühen Entwicklungsphase**.
+Vendura ist eine moderne Web-Anwendung, die mit React und Material UI entwickelt wird. Dieses Projekt befindet sich derzeit in der **frühen Entwicklungsphase**.
 
 ## Entwicklungsstatus
 
@@ -49,7 +49,7 @@ Detaillierte Informationen zu unserem Tech-Stack finden Sie in der [Technischer 
 
 ## Beitragen
 
-Wir freuen uns über Beiträge zum BankLy X Projekt! Bitte lesen Sie vor dem Beitragen die [Workflow & Prozesse](https://github.com/de-bankly/x-app/wiki/Workflow-Prozesse) und [Entwicklungsrichtlinien](https://github.com/de-bankly/x-app/wiki/Entwicklungsrichtlinien) Wiki-Seiten.
+Wir freuen uns über Beiträge zum Vendura Projekt! Bitte lesen Sie vor dem Beitragen die [Workflow & Prozesse](https://github.com/de-bankly/x-app/wiki/Workflow-Prozesse) und [Entwicklungsrichtlinien](https://github.com/de-bankly/x-app/wiki/Entwicklungsrichtlinien) Wiki-Seiten.
 
 ## Kontakt
 
