@@ -8,6 +8,7 @@ import Home from '../pages/Home';
 import About from '../pages/About';
 import ShowcasePage from '../pages/ShowcasePage';
 import NotFound from '../pages/NotFound';
+import ErrorPage from '../pages/ErrorPage';
 
 // Error handling
 import { RouterErrorBoundary } from '../components/error/ErrorBoundary';
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
       {
         path: 'error-test',
         element: <ErrorTest />,
+      },
+      {
+        path: 'error-page',
+        element: <ErrorPage />,
       },
       {
         path: '*',

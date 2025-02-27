@@ -2,11 +2,18 @@ import { Component } from 'react';
 import { Box, Typography, Container, Button, Paper } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNavigate, useRouteError } from 'react-router-dom';
+import {
+  logError,
+  formatErrorForDisplay,
+  getUserFriendlyErrorMessage,
+} from '../../utils/errorUtils';
 
 /**
  * Error details component that displays the error message and stack trace
  */
 const ErrorDetails = ({ error }) => {
+  const formattedError = formatErrorForDisplay(error, true);
+
   return (
     <Paper
       elevation={0}
@@ -21,9 +28,9 @@ const ErrorDetails = ({ error }) => {
       }}
     >
       <Typography variant="subtitle2" fontFamily="monospace">
-        {error?.message || 'An unknown error occurred'}
+        {formattedError.message}
       </Typography>
-      {error?.stack && (
+      {formattedError.stack && (
         <Typography
           variant="body2"
           component="pre"
@@ -34,7 +41,7 @@ const ErrorDetails = ({ error }) => {
             wordBreak: 'break-word',
           }}
         >
-          {error.stack}
+          {formattedError.stack}
         </Typography>
       )}
     </Paper>
@@ -64,6 +71,8 @@ const HomeButton = () => {
  * Error UI component that displays a user-friendly error message
  */
 const ErrorUI = ({ error, resetErrorBoundary, showDetails = false }) => {
+  const friendlyMessage = getUserFriendlyErrorMessage(error);
+
   return (
     <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
       <ErrorOutlineIcon color="error" sx={{ fontSize: 80, mb: 2 }} />
@@ -73,7 +82,7 @@ const ErrorUI = ({ error, resetErrorBoundary, showDetails = false }) => {
       </Typography>
 
       <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-        We apologize for the inconvenience. An error has occurred in the application.
+        {friendlyMessage}
       </Typography>
 
       {resetErrorBoundary && (
@@ -95,6 +104,9 @@ const ErrorUI = ({ error, resetErrorBoundary, showDetails = false }) => {
 export const RouterErrorBoundary = () => {
   const error = useRouteError();
 
+  // Log the routing error
+  logError(error, {}, 'RouterErrorBoundary');
+
   return <ErrorUI error={error} showDetails={process.env.NODE_ENV !== 'production'} />;
 };
 
@@ -112,8 +124,8 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error to an error reporting service
-    console.error('Error caught by ErrorBoundary:', error, errorInfo);
+    // Log the error using our utility
+    logError(error, errorInfo, 'ErrorBoundary');
   }
 
   resetErrorBoundary = () => {
