@@ -10,11 +10,16 @@ import './style/global/index.css';
 // Import router configuration
 import router from './routes/router';
 
+// Import error boundary
+import ErrorBoundary from './components/error/ErrorBoundary';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <RouterProvider router={router} />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </ErrorBoundary>
   </StrictMode>
 );

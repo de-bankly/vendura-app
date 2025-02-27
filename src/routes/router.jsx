@@ -9,6 +9,10 @@ import About from '../pages/About';
 import ShowcasePage from '../pages/ShowcasePage';
 import NotFound from '../pages/NotFound';
 
+// Error handling
+import { RouterErrorBoundary } from '../components/error/ErrorBoundary';
+import ErrorTest from '../components/error/ErrorTest';
+
 /**
  * Application router configuration
  * Defines all available routes and their corresponding components
@@ -17,7 +21,7 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
-    errorElement: <NotFound />,
+    errorElement: <RouterErrorBoundary />,
     children: [
       {
         index: true,
@@ -30,6 +34,14 @@ const router = createBrowserRouter([
       {
         path: 'showcase',
         element: <ShowcasePage />,
+      },
+      {
+        path: 'error-test',
+        element: <ErrorTest />,
+      },
+      {
+        path: '*',
+        element: <NotFound />,
       },
     ],
   },

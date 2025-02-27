@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import InfoIcon from '@mui/icons-material/Info';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import BugReportIcon from '@mui/icons-material/BugReport';
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const MainLayout = () => {
     { text: 'Home', path: '/', icon: <HomeIcon /> },
     { text: 'About', path: '/about', icon: <InfoIcon /> },
     { text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> },
+    { text: 'Error Test', path: '/error-test', icon: <BugReportIcon /> },
   ];
 
   const handleDrawerToggle = () => {
