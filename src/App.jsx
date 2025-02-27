@@ -1,8 +1,12 @@
-import { Box, Typography, Container, Button, Paper } from '@mui/material';
-import ComponentShowcase from './components/ComponentShowcase';
+import { RouterProvider } from 'react-router-dom';
+import router from './routes/router';
 
+/**
+ * Main application component
+ * Serves as the entry point for the application
+ */
 function App() {
-  return <ComponentShowcase />;
+  return <RouterProvider router={router} />;
 }
 
 export default App;
