@@ -16,7 +16,10 @@
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.1.1",
     "@million/lint": "^1.0.14",
+    "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.5",
+    "@mui/x-date-pickers": "^7.27.1",
+    "date-fns": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
