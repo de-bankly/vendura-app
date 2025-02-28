@@ -6,12 +6,14 @@ import {
   FormControlLabel,
   Radio,
   FormHelperText,
+  alpha,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 
 /**
- * Enhanced RadioGroup component that extends MUI RadioGroup with consistent styling
- * and additional functionality based on the Vendura theme.
+ * Enhanced RadioGroup component with a modern, minimalist design optimized for POS and inventory
+ * management systems. Features clean lines, subtle transitions, and consistent styling
+ * across the application.
  */
 const RadioGroup = ({
   label,
@@ -33,9 +35,52 @@ const RadioGroup = ({
   // Generate a unique ID if not provided
   const radioGroupId = id || name || `radio-group-${Math.random().toString(36).substring(2, 9)}`;
 
+  // Size-specific styles
+  const sizeStyles = {
+    small: {
+      '& .MuiSvgIcon-root': {
+        fontSize: '1rem',
+      },
+      '& .MuiFormControlLabel-label': {
+        fontSize: '0.875rem',
+      },
+    },
+    medium: {
+      '& .MuiSvgIcon-root': {
+        fontSize: '1.25rem',
+      },
+    },
+  };
+
   return (
-    <FormControl error={error} required={required} disabled={disabled} sx={sx}>
-      {label && <FormLabel id={`${radioGroupId}-label`}>{label}</FormLabel>}
+    <FormControl
+      error={error}
+      required={required}
+      disabled={disabled}
+      sx={{
+        width: '100%',
+        ...sx,
+      }}
+    >
+      {label && (
+        <FormLabel
+          id={`${radioGroupId}-label`}
+          sx={{
+            fontWeight: 500,
+            fontSize: size === 'small' ? '0.875rem' : '1rem',
+            color: 'text.primary',
+            '&.Mui-focused': {
+              color: theme => (error ? theme.palette.error.main : theme.palette.primary.main),
+            },
+            '&.Mui-disabled': {
+              opacity: 0.6,
+            },
+            marginBottom: '8px',
+          }}
+        >
+          {label}
+        </FormLabel>
+      )}
 
       <MuiRadioGroup
         aria-labelledby={`${radioGroupId}-label`}
@@ -43,20 +88,65 @@ const RadioGroup = ({
         value={value}
         onChange={onChange}
         row={row}
+        sx={{
+          ...(sizeStyles[size] || {}),
+        }}
         {...props}
       >
         {options.map(option => (
           <FormControlLabel
             key={option.value}
             value={option.value}
-            control={<Radio color={color} size={size} disabled={option.disabled || disabled} />}
-            label={option.label}
+            control={
+              <Radio
+                color={color}
+                size={size}
+                disabled={option.disabled || disabled}
+                sx={{
+                  padding: size === 'small' ? '4px' : '8px',
+                  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    backgroundColor: theme =>
+                      !(option.disabled || disabled) && alpha(theme.palette.action.hover, 0.08),
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  },
+                }}
+              />
+            }
+            label={
+              <span
+                style={{
+                  fontWeight: 400,
+                  opacity: option.disabled || disabled ? 0.6 : 1,
+                  transition: 'opacity 0.2s ease-in-out',
+                }}
+              >
+                {option.label}
+              </span>
+            }
             disabled={option.disabled || disabled}
+            sx={{
+              marginLeft: 0,
+              marginRight: row ? '16px' : 0,
+              marginBottom: row ? 0 : '8px',
+            }}
           />
         ))}
       </MuiRadioGroup>
 
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText && (
+        <FormHelperText
+          sx={{
+            marginLeft: '2px',
+            fontSize: '0.75rem',
+            marginTop: '4px',
+          }}
+        >
+          {helperText}
+        </FormHelperText>
+      )}
     </FormControl>
   );
 };
