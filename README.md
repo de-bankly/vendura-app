@@ -10,23 +10,23 @@ Die Anwendung ist noch nicht für den produktiven Einsatz bereit.
 
 ## Dokumentation
 
-Detaillierte Informationen zum Projekt, zum Entwicklungsprozess und zu den Beitragsrichtlinien finden Sie in unserem **[GitHub Wiki](https://github.com/de-bankly/x-app/wiki)**.
+Detaillierte Informationen zum Projekt, zum Entwicklungsprozess und zu den Beitragsrichtlinien finden Sie in unserem **[GitHub Wiki](https://github.com/de-bankly/vendura-app/wiki)**.
 
 Das Wiki enthält ausführliche Dokumentation zu folgenden Themen:
-- [Projektübersicht und Vision](https://github.com/de-bankly/x-app/wiki/Projektübersicht)
-- [Entwicklungsrichtlinien](https://github.com/de-bankly/x-app/wiki/Entwicklungsrichtlinien)
-- [Workflow & Prozesse](https://github.com/de-bankly/x-app/wiki/Workflow-Prozesse)
-- [Code-Review Checkliste](https://github.com/de-bankly/x-app/wiki/Code-Reviews)
-- [Tooling](https://github.com/de-bankly/x-app/wiki/Tooling)
+- [Projektübersicht und Vision](https://github.com/de-bankly/vendura-app/wiki/Projektübersicht)
+- [Entwicklungsrichtlinien](https://github.com/de-bankly/vendura-app/wiki/Entwicklungsrichtlinien)
+- [Workflow & Prozesse](https://github.com/de-bankly/vendura-app/wiki/Workflow-Prozesse)
+- [Code-Review Checkliste](https://github.com/de-bankly/vendura-app/wiki/Code-Reviews)
+- [Tooling](https://github.com/de-bankly/vendura-app/wiki/Tooling)
 
 ## Schnellstart
 
 ```bash
 # Repository klonen
-git clone https://github.com/de-bankly/x-app.git
+git clone https://github.com/de-bankly/vendura-app.git
 
 # In das Verzeichnis wechseln
-cd x-app
+cd vendura-app
 
 # Abhängigkeiten installieren
 npm install
@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-Weitere Informationen zur Installation und Konfiguration finden Sie in der [Installation & Setup](https://github.com/de-bankly/x-app/wiki/Installation-Setup) Wiki-Seite.
+Weitere Informationen zur Installation und Konfiguration finden Sie in der [Installation & Setup](https://github.com/de-bankly/vendura-app/wiki/Installation-Setup) Wiki-Seite.
 
 ## Technologie-Stack
 
@@ -45,11 +45,11 @@ Weitere Informationen zur Installation und Konfiguration finden Sie in der [Inst
 - ESLint 9
 - Million.js
 
-Detaillierte Informationen zu unserem Tech-Stack finden Sie in der [Technischer Stack](https://github.com/de-bankly/x-app/wiki/Technischer-Stack) Wiki-Seite.
+Detaillierte Informationen zu unserem Tech-Stack finden Sie in der [Technischer Stack](https://github.com/de-bankly/vendura-app/wiki/Technischer-Stack) Wiki-Seite.
 
 ## Beitragen
 
-Wir freuen uns über Beiträge zum Vendura Projekt! Bitte lesen Sie vor dem Beitragen die [Workflow & Prozesse](https://github.com/de-bankly/x-app/wiki/Workflow-Prozesse) und [Entwicklungsrichtlinien](https://github.com/de-bankly/x-app/wiki/Entwicklungsrichtlinien) Wiki-Seiten.
+Wir freuen uns über Beiträge zum Vendura Projekt! Bitte lesen Sie vor dem Beitragen die [Workflow & Prozesse](https://github.com/de-bankly/vendura-app/wiki/Workflow-Prozesse) und [Entwicklungsrichtlinien](https://github.com/de-bankly/vendura-app/wiki/Entwicklungsrichtlinien) Wiki-Seiten.
 
 ## Kontakt
 
