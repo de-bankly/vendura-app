@@ -28,11 +28,17 @@ const createReactRouterInstrumentation = matchRoutes => {
   };
 };
 
+// Export a reference to the router for use in the instrumentation
+let router;
+export const setRouter = r => {
+  router = r;
+};
+
 // Function to wrap router with Faro instrumentation
 export const withFaroRouterInstrumentation = router => {
-  // Since we don't have the actual ReactIntegration, we'll implement a simpler version
-  // that just returns the original router
-  return router;
+  // Use our custom instrumentation to wrap the router
+  const reactRouterInstrumentation = createReactRouterInstrumentation(matchRoutes);
+  return reactRouterInstrumentation.instrumentRouting(router);
 };
 
 // Initialize Faro
@@ -43,28 +49,59 @@ export const initializeFaro = () => {
   }
 
   // Dynamically import Faro to ensure it's only loaded in the browser
-  import('@grafana/faro-web-sdk').then(({ initializeFaro }) => {
-    initializeFaro({
-      url: 'https://faro-collector-prod-eu-west-2.grafana.net/collect/28c6b243dbe8e09e237d384271aee864',
-      app: {
-        name: 'vendura',
-        version: '1.0.0',
-        environment: 'production',
-      },
+  import('@grafana/faro-web-sdk')
+    .then(({ initializeFaro }) => {
+      try {
+        // Create the React Router instrumentation
+        const reactRouterInstrumentation = createReactRouterInstrumentation(matchRoutes);
 
-      instrumentations: [
-        // Mandatory, omits default instrumentations otherwise.
-        ...getWebInstrumentations(),
+        // Create a custom transport that handles blocked requests
+        const { FetchTransport } = window['@grafana/faro-web-sdk'] || {};
 
-        // Tracing package to get end-to-end visibility for HTTP requests.
-        new TracingInstrumentation(),
-      ],
+        const faroInstance = initializeFaro({
+          url: 'https://faro-collector-prod-eu-west-2.grafana.net/collect/28c6b243dbe8e09e237d384271aee864',
+          app: {
+            name: 'vendura',
+            version: '1.0.0',
+            environment: 'production',
+          },
+          instrumentations: [
+            // Mandatory, omits default instrumentations otherwise.
+            ...getWebInstrumentations(),
+
+            // Tracing package to get end-to-end visibility for HTTP requests.
+            new TracingInstrumentation(),
+
+            // Add our custom React Router instrumentation
+            reactRouterInstrumentation,
+          ],
+          // Add error handling for transport
+          transportOptions: {
+            maxRetries: 0, // Don't retry if blocked
+            captureException: false, // Don't report transport errors
+          },
+        });
+
+        // Silence console errors from Faro
+        const originalConsoleError = console.error;
+        console.error = (...args) => {
+          if (args[0] && typeof args[0] === 'string' && args[0].includes('Faro')) {
+            // Suppress Faro errors
+            return;
+          }
+          originalConsoleError.apply(console, args);
+        };
+
+        return faroInstance;
+      } catch (error) {
+        // Silently fail if Faro initialization fails
+        console.debug('Telemetry initialization failed:', error);
+        return null;
+      }
+    })
+    .catch(error => {
+      // Silently fail if Faro import fails
+      console.debug('Telemetry import failed:', error);
+      return null;
     });
-  });
-};
-
-// Export a reference to the router for use in the instrumentation
-let router;
-export const setRouter = r => {
-  router = r;
 };
