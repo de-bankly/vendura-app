@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
 
 // Layouts
 import MainLayout from '../components/layout/MainLayout';
@@ -18,7 +19,7 @@ import ErrorTest from '../components/error/ErrorTest';
  * Application router configuration
  * Defines all available routes and their corresponding components
  */
-const router = createBrowserRouter([
+const reactBrowserRouter = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
@@ -51,5 +52,11 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+// Store router reference for Faro instrumentation
+setRouter(reactBrowserRouter);
+
+// Apply Faro instrumentation to the router
+const router = withFaroRouterInstrumentation(reactBrowserRouter);
 
 export default router;
