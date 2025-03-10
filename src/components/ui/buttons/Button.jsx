@@ -1,10 +1,11 @@
 import React from 'react';
-import { Button as MuiButton, CircularProgress } from '@mui/material';
+import { Button as MuiButton, CircularProgress, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 
 /**
  * Enhanced Button component that extends MUI Button with additional functionality
  * like loading state and consistent styling based on the Vendura theme.
+ * Designed for a modern, minimalistic look suitable for a POS and inventory system.
  */
 const Button = ({
   children,
@@ -18,17 +19,43 @@ const Button = ({
   endIcon = null,
   onClick,
   type = 'button',
+  rounded = false,
+  elevation = true,
+  sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   // Determine what to render inside the button based on loading state
   const buttonContent = loading ? (
     <>
-      <CircularProgress size={24} color="inherit" style={{ marginRight: children ? 8 : 0 }} />
+      <CircularProgress
+        size={size === 'small' ? 16 : size === 'large' ? 24 : 20}
+        color="inherit"
+        thickness={4}
+        style={{ marginRight: children ? 8 : 0 }}
+      />
       {children}
     </>
   ) : (
     children
   );
+
+  // Size-specific styles
+  const sizeStyles = {
+    small: {
+      padding: '6px 16px',
+      fontSize: '0.8125rem',
+    },
+    medium: {
+      padding: '8px 20px',
+      fontSize: '0.875rem',
+    },
+    large: {
+      padding: '10px 22px',
+      fontSize: '0.9375rem',
+    },
+  };
 
   return (
     <MuiButton
@@ -41,6 +68,19 @@ const Button = ({
       endIcon={!loading ? endIcon : null}
       onClick={onClick}
       type={type}
+      sx={{
+        borderRadius: rounded ? '50px' : '8px',
+        fontWeight: 600,
+        textTransform: 'none',
+        boxShadow: variant === 'contained' && elevation ? theme.shadows[2] : 'none',
+        '&:hover': {
+          boxShadow: variant === 'contained' && elevation ? theme.shadows[4] : 'none',
+          transform: elevation ? 'translateY(-2px)' : 'none',
+        },
+        transition: 'all 0.2s ease-in-out',
+        ...sizeStyles[size],
+        ...sx,
+      }}
       {...props}
     >
       {buttonContent}
@@ -71,6 +111,12 @@ Button.propTypes = {
   onClick: PropTypes.func,
   /** The type of button */
   type: PropTypes.oneOf(['button', 'submit', 'reset']),
+  /** If true, the button will have rounded corners (pill shape) */
+  rounded: PropTypes.bool,
+  /** If true, the button will have elevation (shadow) */
+  elevation: PropTypes.bool,
+  /** The system prop that allows defining system overrides as well as additional CSS styles */
+  sx: PropTypes.object,
 };
 
 export default Button;

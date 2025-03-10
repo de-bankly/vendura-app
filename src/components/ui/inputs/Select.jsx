@@ -5,12 +5,14 @@ import {
   Select as MuiSelect,
   MenuItem,
   FormHelperText,
+  alpha,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 
 /**
- * Enhanced Select component that extends MUI Select with consistent styling
- * and additional functionality based on the Vendura theme.
+ * Enhanced Select component with a modern, minimalist design optimized for POS and inventory
+ * management systems. Features clean lines, subtle transitions, and consistent styling
+ * across the application.
  */
 const Select = ({
   label,
@@ -37,6 +39,32 @@ const Select = ({
     name ||
     `select-${label?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(2, 9)}`;
 
+  // Size-specific styles
+  const sizeStyles = {
+    small: {
+      '& .MuiInputBase-input': {
+        padding: '8px 32px 8px 12px',
+        fontSize: '0.875rem',
+      },
+      '& .MuiInputLabel-root': {
+        fontSize: '0.875rem',
+      },
+      '& .MuiMenuItem-root': {
+        fontSize: '0.875rem',
+        minHeight: '32px',
+      },
+    },
+    medium: {
+      '& .MuiInputBase-input': {
+        padding: '12px 32px 12px 14px',
+        fontSize: '1rem',
+      },
+      '& .MuiMenuItem-root': {
+        minHeight: '40px',
+      },
+    },
+  };
+
   return (
     <FormControl
       variant={variant}
@@ -48,7 +76,31 @@ const Select = ({
       sx={{
         '& .MuiOutlinedInput-root': {
           borderRadius: '8px',
+          transition: 'all 0.2s ease-in-out',
+          backgroundColor: theme =>
+            disabled
+              ? alpha(theme.palette.action.disabled, 0.05)
+              : alpha(theme.palette.background.paper, 0.8),
+          '&:hover': {
+            backgroundColor: theme => !disabled && alpha(theme.palette.background.paper, 1),
+          },
+          '&.Mui-focused': {
+            backgroundColor: theme => theme.palette.background.paper,
+            boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+          },
         },
+        '& .MuiInputLabel-root': {
+          fontWeight: 500,
+          transition: 'all 0.2s ease-in-out',
+        },
+        '& .MuiSelect-select': {
+          fontWeight: 400,
+        },
+        '& .MuiFormHelperText-root': {
+          marginLeft: '2px',
+          fontSize: '0.75rem',
+        },
+        ...(sizeStyles[size] || {}),
         ...sx,
       }}
     >
@@ -63,6 +115,16 @@ const Select = ({
         name={name}
         multiple={multiple}
         displayEmpty={!!placeholder}
+        MenuProps={{
+          PaperProps: {
+            sx: {
+              borderRadius: '8px',
+              boxShadow: theme => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+              marginTop: '4px',
+              maxHeight: '300px',
+            },
+          },
+        }}
         {...props}
       >
         {placeholder && (
@@ -72,7 +134,13 @@ const Select = ({
         )}
 
         {options.map(option => (
-          <MenuItem key={option.value} value={option.value}>
+          <MenuItem
+            key={option.value}
+            value={option.value}
+            sx={{
+              transition: 'background-color 0.15s ease-in-out',
+            }}
+          >
             {option.label}
           </MenuItem>
         ))}

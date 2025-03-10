@@ -1,10 +1,11 @@
 import React from 'react';
-import { TextField as MuiTextField, InputAdornment } from '@mui/material';
+import { TextField as MuiTextField, InputAdornment, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
 
 /**
- * Enhanced TextField component that extends MUI TextField with consistent styling
- * and additional functionality based on the Vendura theme.
+ * Enhanced TextField component that extends MUI TextField with a modern, minimalist design
+ * optimized for POS and inventory management systems. Features clean lines, subtle transitions,
+ * and consistent styling across the application.
  */
 const TextField = ({
   label,
@@ -42,6 +43,25 @@ const TextField = ({
     inputProps.endAdornment = <InputAdornment position="end">{endAdornment}</InputAdornment>;
   }
 
+  // Size-specific styles
+  const sizeStyles = {
+    small: {
+      '& .MuiInputBase-input': {
+        padding: '8px 12px',
+        fontSize: '0.875rem',
+      },
+      '& .MuiInputLabel-root': {
+        fontSize: '0.875rem',
+      },
+    },
+    medium: {
+      '& .MuiInputBase-input': {
+        padding: '12px 14px',
+        fontSize: '1rem',
+      },
+    },
+  };
+
   return (
     <MuiTextField
       label={label}
@@ -67,7 +87,31 @@ const TextField = ({
       sx={{
         '& .MuiOutlinedInput-root': {
           borderRadius: '8px',
+          transition: 'all 0.2s ease-in-out',
+          backgroundColor: theme =>
+            disabled
+              ? alpha(theme.palette.action.disabled, 0.05)
+              : alpha(theme.palette.background.paper, 0.8),
+          '&:hover': {
+            backgroundColor: theme => !disabled && alpha(theme.palette.background.paper, 1),
+          },
+          '&.Mui-focused': {
+            backgroundColor: theme => theme.palette.background.paper,
+            boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+          },
         },
+        '& .MuiInputLabel-root': {
+          fontWeight: 500,
+          transition: 'all 0.2s ease-in-out',
+        },
+        '& .MuiInputBase-input': {
+          fontWeight: 400,
+        },
+        '& .MuiFormHelperText-root': {
+          marginLeft: '2px',
+          fontSize: '0.75rem',
+        },
+        ...(sizeStyles[size] || {}),
         ...sx,
       }}
       {...props}

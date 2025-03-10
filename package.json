@@ -1,5 +1,5 @@
 {
-  "name": "x-app",
+  "name": "vendura-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,6 +20,7 @@
     "@mui/material": "^6.4.5",
     "@mui/x-date-pickers": "^7.27.1",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.4.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0"
