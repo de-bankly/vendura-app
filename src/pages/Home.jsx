@@ -1,3 +1,4 @@
+import { useTheme, alpha } from '@mui/material';
 import {
   Box,
   Typography,
@@ -14,12 +15,10 @@ import {
   Avatar,
   LinearProgress,
   Chip,
-  useTheme,
   Stack,
   Paper,
-  alpha,
-  Tooltip,
-} from '@mui/material';
+} from '../components/ui';
+import { Tooltip } from '../components/ui/modals';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 

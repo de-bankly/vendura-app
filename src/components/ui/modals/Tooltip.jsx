@@ -4,12 +4,13 @@ import PropTypes from 'prop-types';
 
 /**
  * Enhanced Tooltip component that extends MUI Tooltip with consistent styling
- * and additional functionality based on the Vendura theme.
+ * based on the Vendura theme. Designed for a modern, minimalistic look
+ * suitable for a POS and inventory system.
  */
 const Tooltip = ({
-  title,
   children,
-  placement = 'top',
+  title,
+  placement = 'bottom',
   arrow = true,
   enterDelay = 100,
   leaveDelay = 0,
@@ -39,14 +40,14 @@ const Tooltip = ({
           backgroundColor: 'background.tooltip',
           color: 'text.tooltip',
           fontSize: '0.75rem',
-          padding: '6px 10px',
-          borderRadius: 1,
-          maxWidth: 300,
-          ...sx,
+          padding: '6px 12px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
         },
         '& .MuiTooltip-arrow': {
           color: 'background.tooltip',
         },
+        ...sx,
       }}
       {...props}
     >
