@@ -21,6 +21,8 @@ import {
   Drawer,
   useTheme,
   useMediaQuery,
+  alpha,
+  Paper,
 } from '@mui/material';
 
 // Icons
@@ -148,7 +150,8 @@ const TopNavLayout = () => {
             width: 40,
             height: 40,
             mr: 2,
-            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
+            background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
           }}
         >
           V
@@ -160,7 +163,7 @@ const TopNavLayout = () => {
 
       <Divider sx={{ mb: 2 }} />
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600, pl: 1 }}>
         Hauptmenü
       </Typography>
       <List>
@@ -174,14 +177,25 @@ const TopNavLayout = () => {
             }}
             selected={isActive(item.path)}
             sx={{
-              borderRadius: '8px',
+              borderRadius: '10px',
               mb: 0.5,
+              transition: 'all 0.2s ease',
               '&.Mui-selected': {
                 bgcolor: 'primary.main',
                 color: 'white',
+                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
+              },
+              '&:hover': {
+                bgcolor: isActive(item.path)
+                  ? 'primary.dark'
+                  : alpha(theme.palette.primary.main, 0.08),
+                transform: 'translateY(-2px)',
+                boxShadow: isActive(item.path)
+                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
+                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
               },
             }}
           >
@@ -193,7 +207,11 @@ const TopNavLayout = () => {
         ))}
       </List>
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+      <Typography
+        variant="subtitle2"
+        color="text.secondary"
+        sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
+      >
         Weitere
       </Typography>
       <List>
@@ -207,14 +225,25 @@ const TopNavLayout = () => {
             }}
             selected={isActive(item.path)}
             sx={{
-              borderRadius: '8px',
+              borderRadius: '10px',
               mb: 0.5,
+              transition: 'all 0.2s ease',
               '&.Mui-selected': {
                 bgcolor: 'primary.main',
                 color: 'white',
+                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
+              },
+              '&:hover': {
+                bgcolor: isActive(item.path)
+                  ? 'primary.dark'
+                  : alpha(theme.palette.primary.main, 0.08),
+                transform: 'translateY(-2px)',
+                boxShadow: isActive(item.path)
+                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
+                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
               },
             }}
           >
@@ -226,7 +255,11 @@ const TopNavLayout = () => {
         ))}
       </List>
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+      <Typography
+        variant="subtitle2"
+        color="text.secondary"
+        sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
+      >
         System
       </Typography>
       <List>
@@ -240,14 +273,25 @@ const TopNavLayout = () => {
             }}
             selected={isActive(item.path)}
             sx={{
-              borderRadius: '8px',
+              borderRadius: '10px',
               mb: 0.5,
+              transition: 'all 0.2s ease',
               '&.Mui-selected': {
                 bgcolor: 'primary.main',
                 color: 'white',
+                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
+              },
+              '&:hover': {
+                bgcolor: isActive(item.path)
+                  ? 'primary.dark'
+                  : alpha(theme.palette.primary.main, 0.08),
+                transform: 'translateY(-2px)',
+                boxShadow: isActive(item.path)
+                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
+                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
               },
             }}
           >
@@ -264,7 +308,17 @@ const TopNavLayout = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Top Navigation Bar */}
-      <AppBar position="sticky" elevation={1} color="default" sx={{ bgcolor: 'background.paper' }}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        color="default"
+        sx={{
+          bgcolor: 'background.paper',
+          borderBottom: `1px solid ${theme.palette.grey[200]}`,
+          backdropFilter: 'blur(8px)',
+          background: 'rgba(255, 255, 255, 0.9)',
+        }}
+      >
         <Toolbar>
           {/* Logo and Brand */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
@@ -274,7 +328,12 @@ const TopNavLayout = () => {
                 width: 36,
                 height: 36,
                 mr: 1.5,
-                boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
+                background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
+                transition: 'transform 0.3s ease',
+                '&:hover': {
+                  transform: 'rotate(10deg) scale(1.1)',
+                },
               }}
             >
               V
@@ -283,7 +342,12 @@ const TopNavLayout = () => {
               variant="h6"
               color="primary"
               fontWeight="bold"
-              sx={{ display: { xs: 'none', sm: 'block' } }}
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
               Vendura
             </Typography>
@@ -295,7 +359,14 @@ const TopNavLayout = () => {
             aria-label="open drawer"
             edge="start"
             onClick={handleMobileDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{
+              mr: 2,
+              display: { md: 'none' },
+              transition: 'transform 0.2s ease',
+              '&:hover': {
+                transform: 'scale(1.1)',
+              },
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -311,12 +382,19 @@ const TopNavLayout = () => {
                 variant={isActive(item.path) ? 'contained' : 'text'}
                 sx={{
                   mx: 0.5,
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   textTransform: 'none',
                   fontWeight: 500,
                   px: 2,
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: isActive(item.path) ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: isActive(item.path)
+                      ? 'primary.dark'
+                      : 'rgba(37, 99, 235, 0.08)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: isActive(item.path)
+                      ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
+                      : '0px 4px 12px rgba(37, 99, 235, 0.1)',
                   },
                 }}
               >
@@ -337,10 +415,11 @@ const TopNavLayout = () => {
                 aria-expanded={notificationsMenuOpen ? 'true' : undefined}
                 sx={{
                   mx: 1,
+                  transition: 'all 0.2s ease',
                   '&:hover': {
                     transform: 'translateY(-2px)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
                   },
-                  transition: 'transform 0.2s',
                 }}
               >
                 <Badge
@@ -352,12 +431,15 @@ const TopNavLayout = () => {
                       '@keyframes pulse': {
                         '0%': {
                           transform: 'scale(1)',
+                          boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)',
                         },
-                        '50%': {
+                        '70%': {
                           transform: 'scale(1.1)',
+                          boxShadow: '0 0 0 6px rgba(239, 68, 68, 0)',
                         },
                         '100%': {
                           transform: 'scale(1)',
+                          boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)',
                         },
                       },
                     },
@@ -378,10 +460,11 @@ const TopNavLayout = () => {
                 aria-expanded={userMenuOpen ? 'true' : undefined}
                 sx={{
                   ml: 1,
+                  transition: 'all 0.2s ease',
                   '&:hover': {
                     transform: 'translateY(-2px)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
                   },
-                  transition: 'transform 0.2s',
                 }}
               >
                 <Avatar
@@ -389,7 +472,8 @@ const TopNavLayout = () => {
                     width: 32,
                     height: 32,
                     bgcolor: 'primary.main',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)',
+                    background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
                   }}
                 >
                   <AccountCircleIcon fontSize="small" />
@@ -403,10 +487,11 @@ const TopNavLayout = () => {
         <Box
           sx={{
             display: { xs: 'none', md: 'flex' },
-            bgcolor: 'background.default',
+            bgcolor: alpha(theme.palette.background.default, 0.8),
             px: 2,
             py: 0.5,
             borderTop: `1px solid ${theme.palette.grey[200]}`,
+            justifyContent: 'center',
           }}
         >
           {[...navigationCategories.other, ...navigationCategories.system].map(item => (
@@ -417,13 +502,18 @@ const TopNavLayout = () => {
               color={isActive(item.path) ? 'primary' : 'inherit'}
               size="small"
               sx={{
-                mx: 0.5,
+                mx: 1,
                 textTransform: 'none',
                 fontWeight: isActive(item.path) ? 600 : 400,
                 fontSize: '0.875rem',
+                borderRadius: '8px',
+                py: 0.5,
+                px: 1.5,
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  backgroundColor: 'transparent',
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
                   color: 'primary.main',
+                  transform: 'translateY(-2px)',
                 },
                 color: isActive(item.path) ? 'primary.main' : 'text.secondary',
               }}
@@ -450,24 +540,38 @@ const TopNavLayout = () => {
             width: 320,
             maxHeight: 400,
             overflow: 'auto',
-            borderRadius: '12px',
+            borderRadius: '16px',
+            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.12)',
+            border: `1px solid ${theme.palette.grey[200]}`,
           },
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
         <Box sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1 }}>
+          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
             Benachrichtigungen
           </Typography>
           <Divider />
           <List sx={{ py: 0 }}>
             {[1, 2, 3, 4].map(item => (
-              <ListItem key={item} sx={{ py: 1.5 }}>
+              <ListItem
+                key={item}
+                sx={{
+                  py: 1.5,
+                  borderRadius: '10px',
+                  mb: 0.5,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                    transform: 'translateX(4px)',
+                  },
+                }}
+              >
                 <ListItemText
                   primary={`Benachrichtigung ${item}`}
                   secondary={`Dies ist eine Beispielbenachrichtigung ${item}`}
-                  primaryTypographyProps={{ fontWeight: 500 }}
+                  primaryTypographyProps={{ fontWeight: 600 }}
                 />
               </ListItem>
             ))}
@@ -488,8 +592,25 @@ const TopNavLayout = () => {
           elevation: 3,
           sx: {
             mt: 1.5,
-            minWidth: 200,
-            borderRadius: '12px',
+            minWidth: 220,
+            borderRadius: '16px',
+            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.12)',
+            border: `1px solid ${theme.palette.grey[200]}`,
+            overflow: 'visible',
+            '&:before': {
+              content: '""',
+              display: 'block',
+              position: 'absolute',
+              top: -6,
+              right: 14,
+              width: 12,
+              height: 12,
+              bgcolor: 'background.paper',
+              transform: 'rotate(45deg)',
+              zIndex: 0,
+              borderTop: `1px solid ${theme.palette.grey[200]}`,
+              borderLeft: `1px solid ${theme.palette.grey[200]}`,
+            },
           },
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
@@ -510,12 +631,14 @@ const TopNavLayout = () => {
             onClick={item.action}
             sx={{
               py: 1.5,
+              transition: 'all 0.2s ease',
               '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                transform: 'translateX(4px)',
               },
             }}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: 'primary.main' }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </MenuItem>
         ))}
@@ -534,7 +657,9 @@ const TopNavLayout = () => {
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: 280,
-            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.15)',
+            borderTopRightRadius: 16,
+            borderBottomRightRadius: 16,
           },
         }}
       >
@@ -549,6 +674,9 @@ const TopNavLayout = () => {
           p: 3,
           bgcolor: 'background.default',
           overflow: 'auto',
+          backgroundImage:
+            'radial-gradient(circle at 25px 25px, rgba(37, 99, 235, 0.03) 2%, transparent 0%), radial-gradient(circle at 75px 75px, rgba(16, 185, 129, 0.03) 2%, transparent 0%)',
+          backgroundSize: '100px 100px',
         }}
       >
         <Container maxWidth="xl">
@@ -568,6 +696,17 @@ const TopNavLayout = () => {
           mt: 'auto',
           backgroundColor: 'background.paper',
           borderTop: `1px solid ${theme.palette.grey[200]}`,
+          position: 'relative',
+          '&:before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, #2563EB, #10B981, #F59E0B, #EF4444)',
+            opacity: 0.7,
+          },
         }}
       >
         <Typography variant="body2" color="text.secondary" align="center">
