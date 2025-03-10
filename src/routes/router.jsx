@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 
 // Layouts
 import MainLayout from '../components/layout/MainLayout';
+import TopNavLayout from '../components/layout/TopNavLayout';
 
 // Pages
 import Home from '../pages/Home';
@@ -21,6 +22,38 @@ import ErrorTest from '../components/error/ErrorTest';
 const router = createBrowserRouter([
   {
     path: '/',
+    element: <TopNavLayout />,
+    errorElement: <RouterErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: 'about',
+        element: <About />,
+      },
+      {
+        path: 'showcase',
+        element: <ShowcasePage />,
+      },
+      {
+        path: 'error-test',
+        element: <ErrorTest />,
+      },
+      {
+        path: 'error-page',
+        element: <ErrorPage />,
+      },
+      {
+        path: '*',
+        element: <NotFound />,
+      },
+    ],
+  },
+  // Keep the original sidebar layout as an alternative route
+  {
+    path: '/sidebar/*',
     element: <MainLayout />,
     errorElement: <RouterErrorBoundary />,
     children: [

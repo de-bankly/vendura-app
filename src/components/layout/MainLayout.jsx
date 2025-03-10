@@ -41,6 +41,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 
+// Components
+import LayoutSwitcher from '../ui/LayoutSwitcher';
+
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -532,6 +535,9 @@ const MainLayout = () => {
             <Outlet />
           </Container>
         </Box>
+
+        {/* Layout Switcher */}
+        <LayoutSwitcher />
 
         <Box
           component="footer"
