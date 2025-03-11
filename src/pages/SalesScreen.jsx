@@ -28,6 +28,9 @@ import EuroIcon from '@mui/icons-material/Euro';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { RedeemVoucherDialog, VoucherManagementDialog } from '../components/vouchers';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -70,6 +73,13 @@ const SalesScreen = () => {
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [receiptReady, setReceiptReady] = useState(false);
 
+  // State for voucher dialogs
+  const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
+  const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
+
+  // State for applied vouchers
+  const [appliedVouchers, setAppliedVouchers] = useState([]);
+
   // Add item to cart
   const addToCart = useCallback(product => {
     setCartItems(prevItems => {
@@ -106,12 +116,23 @@ const SalesScreen = () => {
   // Clear cart
   const clearCart = useCallback(() => {
     setCartItems([]);
+    setAppliedVouchers([]);
   }, []);
 
-  // Calculate total
-  const total = useMemo(() => {
+  // Calculate subtotal (before vouchers)
+  const subtotal = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cartItems]);
+
+  // Calculate voucher discount
+  const voucherDiscount = useMemo(() => {
+    return appliedVouchers.reduce((sum, voucher) => sum + voucher.value, 0);
+  }, [appliedVouchers]);
+
+  // Calculate total (after vouchers)
+  const total = useMemo(() => {
+    return Math.max(0, subtotal - voucherDiscount);
+  }, [subtotal, voucherDiscount]);
 
   // Group products by category
   const productsByCategory = useMemo(() => {
@@ -177,6 +198,36 @@ const SalesScreen = () => {
     clearCart();
     setReceiptReady(false);
   }, [clearCart]);
+
+  // Handle redeem voucher dialog open
+  const handleRedeemVoucherDialogOpen = useCallback(() => {
+    setRedeemVoucherDialogOpen(true);
+  }, []);
+
+  // Handle redeem voucher dialog close
+  const handleRedeemVoucherDialogClose = useCallback(() => {
+    setRedeemVoucherDialogOpen(false);
+  }, []);
+
+  // Handle voucher management dialog open
+  const handleVoucherManagementDialogOpen = useCallback(() => {
+    setVoucherManagementDialogOpen(true);
+  }, []);
+
+  // Handle voucher management dialog close
+  const handleVoucherManagementDialogClose = useCallback(() => {
+    setVoucherManagementDialogOpen(false);
+  }, []);
+
+  // Handle voucher redeemed
+  const handleVoucherRedeemed = useCallback(voucher => {
+    setAppliedVouchers(prev => [...prev, voucher]);
+  }, []);
+
+  // Handle remove applied voucher
+  const handleRemoveVoucher = useCallback(voucherId => {
+    setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
+  }, []);
 
   return (
     <Box sx={{ p: 2, height: '100%' }}>
@@ -337,6 +388,47 @@ const SalesScreen = () => {
                       </Box>
                     </Paper>
                   ))}
+
+                  {/* Applied vouchers */}
+                  {appliedVouchers.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Angewendete Gutscheine:
+                      </Typography>
+                      <Stack spacing={1}>
+                        {appliedVouchers.map(voucher => (
+                          <Paper
+                            key={voucher.id}
+                            variant="outlined"
+                            sx={{ p: 1.5, bgcolor: 'background.default' }}
+                          >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CardGiftcardIcon
+                                  fontSize="small"
+                                  sx={{ mr: 1, color: 'primary.main' }}
+                                />
+                                <Typography variant="body2">{voucher.code}</Typography>
+                              </Box>
+                              <Typography variant="body2" color="error.main" fontWeight="medium">
+                                -{voucher.value.toFixed(2)} €
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemoveVoucher(voucher.id)}
+                                sx={{ minWidth: '32px', p: 0.5 }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </Button>
+                            </Box>
+                          </Paper>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
                 </Stack>
               )}
             </Box>
@@ -345,6 +437,50 @@ const SalesScreen = () => {
             <Box>
               <Divider sx={{ mb: 2 }} />
 
+              {/* Voucher buttons */}
+              {!receiptReady && cartItems.length > 0 && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<CardGiftcardIcon />}
+                    onClick={handleRedeemVoucherDialogOpen}
+                    size="small"
+                    fullWidth
+                  >
+                    Gutschein einlösen
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<SettingsIcon />}
+                    onClick={handleVoucherManagementDialogOpen}
+                    size="small"
+                  >
+                    Verwalten
+                  </Button>
+                </Box>
+              )}
+
+              {/* Subtotal and discount */}
+              {voucherDiscount > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body1">Zwischensumme:</Typography>
+                    <Typography variant="body1">{subtotal.toFixed(2)} €</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body1" color="error.main">
+                      Gutschein-Rabatt:
+                    </Typography>
+                    <Typography variant="body1" color="error.main">
+                      -{voucherDiscount.toFixed(2)} €
+                    </Typography>
+                  </Box>
+                </>
+              )}
+
+              {/* Total */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">Gesamtsumme:</Typography>
                 <Typography variant="h6">{total.toFixed(2)} €</Typography>
@@ -426,6 +562,12 @@ const SalesScreen = () => {
             <Typography variant="body2" color="text.secondary">
               {cartItems.length} {cartItems.length === 1 ? 'Artikel' : 'Artikel'} im Warenkorb
             </Typography>
+
+            {voucherDiscount > 0 && (
+              <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                Gutschein-Rabatt: {voucherDiscount.toFixed(2)} €
+              </Typography>
+            )}
           </Box>
 
           <FormControl component="fieldset" sx={{ mb: 3 }}>
@@ -598,6 +740,18 @@ const SalesScreen = () => {
           Zahlung erfolgreich abgeschlossen!
         </Alert>
       </Snackbar>
+
+      {/* Voucher Dialogs */}
+      <RedeemVoucherDialog
+        open={redeemVoucherDialogOpen}
+        onClose={handleRedeemVoucherDialogClose}
+        onVoucherRedeemed={handleVoucherRedeemed}
+      />
+
+      <VoucherManagementDialog
+        open={voucherManagementDialogOpen}
+        onClose={handleVoucherManagementDialogClose}
+      />
     </Box>
   );
 };
