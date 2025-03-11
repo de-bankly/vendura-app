@@ -64,6 +64,7 @@ const TopNavLayout = () => {
   const navigationCategories = {
     main: [
       { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+      { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
       { text: 'Kasse', path: '/pos', icon: <PointOfSaleIcon /> },
       { text: 'Lager', path: '/inventory', icon: <InventoryIcon /> },
     ],

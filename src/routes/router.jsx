@@ -10,6 +10,7 @@ import About from '../pages/About';
 import ShowcasePage from '../pages/ShowcasePage';
 import NotFound from '../pages/NotFound';
 import ErrorPage from '../pages/ErrorPage';
+import SalesScreen from '../pages/SalesScreen';
 
 // Error handling
 import { RouterErrorBoundary } from '../components/error/ErrorBoundary';
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
       {
         path: 'showcase',
         element: <ShowcasePage />,
+      },
+      {
+        path: 'sales',
+        element: <SalesScreen />,
       },
       {
         path: 'error-test',
@@ -68,6 +73,10 @@ const router = createBrowserRouter([
       {
         path: 'showcase',
         element: <ShowcasePage />,
+      },
+      {
+        path: 'sales',
+        element: <SalesScreen />,
       },
       {
         path: 'error-test',
