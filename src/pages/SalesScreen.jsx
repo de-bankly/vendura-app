@@ -30,7 +30,11 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { RedeemVoucherDialog, VoucherManagementDialog } from '../components/vouchers';
+import {
+  RedeemVoucherDialog,
+  VoucherManagementDialog,
+  PurchaseVoucherDialog,
+} from '../components/vouchers';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -76,6 +80,7 @@ const SalesScreen = () => {
   // State for voucher dialogs
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
+  const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
 
   // State for applied vouchers
   const [appliedVouchers, setAppliedVouchers] = useState([]);
@@ -217,6 +222,16 @@ const SalesScreen = () => {
   // Handle voucher management dialog close
   const handleVoucherManagementDialogClose = useCallback(() => {
     setVoucherManagementDialogOpen(false);
+  }, []);
+
+  // Handle purchase voucher dialog open
+  const handlePurchaseVoucherDialogOpen = useCallback(() => {
+    setPurchaseVoucherDialogOpen(true);
+  }, []);
+
+  // Handle purchase voucher dialog close
+  const handlePurchaseVoucherDialogClose = useCallback(() => {
+    setPurchaseVoucherDialogOpen(false);
   }, []);
 
   // Handle voucher redeemed
@@ -436,6 +451,16 @@ const SalesScreen = () => {
             {/* Cart summary */}
             <Box>
               <Divider sx={{ mb: 2 }} />
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<CardGiftcardIcon />}
+                onClick={handlePurchaseVoucherDialogOpen}
+                size="small"
+                fullWidth
+              >
+                Gutschein kaufen
+              </Button>
 
               {/* Voucher buttons */}
               {!receiptReady && cartItems.length > 0 && (
@@ -751,6 +776,12 @@ const SalesScreen = () => {
       <VoucherManagementDialog
         open={voucherManagementDialogOpen}
         onClose={handleVoucherManagementDialogClose}
+      />
+
+      <PurchaseVoucherDialog
+        open={purchaseVoucherDialogOpen}
+        onClose={handlePurchaseVoucherDialogClose}
+        onAddToCart={addToCart}
       />
     </Box>
   );
