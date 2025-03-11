@@ -1,3 +1,7 @@
+// Initialize Faro as early as possible
+import { initializeFaro } from './utils/faro';
+initializeFaro();
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
