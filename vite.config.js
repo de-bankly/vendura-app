@@ -64,6 +64,7 @@ export default defineConfig(({ command, mode }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MiB (increased from default 2 MiB)
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.vendura\.com\/.*/i,
@@ -131,6 +132,7 @@ export default defineConfig(({ command, mode }) => {
           lossless: true,
         },
         cache: true,
+        cacheLocation: resolve(__dirname, 'node_modules/.vite-image-optimizer-cache'),
       })
     );
     
