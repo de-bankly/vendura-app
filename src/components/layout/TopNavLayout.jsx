@@ -29,14 +29,11 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import InfoIcon from '@mui/icons-material/Info';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ErrorIcon from '@mui/icons-material/Error';
 
@@ -63,15 +60,10 @@ const TopNavLayout = () => {
   // Navigation categories
   const navigationCategories = {
     main: [
-      { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+      { text: 'Home', path: '/', icon: <ViewModuleIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
-      { text: 'Kasse', path: '/pos', icon: <PointOfSaleIcon /> },
-      { text: 'Lager', path: '/inventory', icon: <InventoryIcon /> },
     ],
-    other: [
-      { text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> },
-      { text: 'About', path: '/about', icon: <InfoIcon /> },
-    ],
+    other: [{ text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> }],
     system: [
       { text: 'Error Test', path: '/error-test', icon: <BugReportIcon /> },
       { text: 'Route Error', path: '/error-page', icon: <ErrorIcon /> },
