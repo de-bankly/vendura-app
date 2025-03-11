@@ -1,3 +1,4 @@
+import React from 'react';
 import { useTheme, alpha } from '@mui/material';
 import {
   Box,
@@ -36,6 +37,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DonutLargeIcon from '@mui/icons-material/DonutLarge';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 
 const Home = () => {
   const navigate = useNavigate();
