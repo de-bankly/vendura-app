@@ -220,15 +220,28 @@ const ShoppingCart = ({
                           -{voucher.value.toFixed(2)} €
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => onRemoveVoucher(voucher.id)}
-                          sx={{ p: 0.5 }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {voucher.remainingValue > 0 && (
+                          <Typography variant="caption" color="primary.main">
+                            Restguthaben: {voucher.remainingValue.toFixed(2)} €
+                          </Typography>
+                        )}
+                        <Box sx={{ ml: 'auto' }}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => onRemoveVoucher(voucher.id)}
+                            sx={{ p: 0.5 }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </Box>
                     </Paper>
                   ))}

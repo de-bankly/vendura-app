@@ -116,8 +116,29 @@ const SalesScreen = () => {
     setPaymentModalOpen(false);
     setSuccessSnackbarOpen(true);
     setReceiptReady(true);
+
     // In a real app, you would send the transaction to a backend
-  }, []);
+    // For now, we'll just log the transaction details
+    console.log('Transaction completed:', {
+      items: cartItems,
+      subtotal,
+      appliedVouchers,
+      voucherDiscount,
+      total,
+      paymentMethod,
+      cashReceived: parseFloat(cashReceived),
+      change: parseFloat(change),
+    });
+  }, [
+    cartItems,
+    subtotal,
+    appliedVouchers,
+    voucherDiscount,
+    total,
+    paymentMethod,
+    cashReceived,
+    change,
+  ]);
 
   // Handle print receipt
   const handlePrintReceipt = useCallback(() => {
@@ -276,6 +297,7 @@ const SalesScreen = () => {
         open={redeemVoucherDialogOpen}
         onClose={handleRedeemVoucherDialogClose}
         onVoucherRedeemed={handleVoucherRedeemed}
+        cartTotal={total}
       />
 
       <VoucherManagementDialog

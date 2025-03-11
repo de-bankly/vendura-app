@@ -9,6 +9,7 @@ const MOCK_VOUCHERS = [
     id: 'V001',
     code: 'WELCOME10',
     value: 10.0,
+    remainingValue: 10.0,
     isRedeemed: false,
     issuedAt: '2023-05-15',
     expiresAt: '2023-12-31',
@@ -17,6 +18,7 @@ const MOCK_VOUCHERS = [
     id: 'V002',
     code: 'SUMMER20',
     value: 20.0,
+    remainingValue: 0.0,
     isRedeemed: true,
     issuedAt: '2023-06-01',
     expiresAt: '2023-08-31',
@@ -26,6 +28,7 @@ const MOCK_VOUCHERS = [
     id: 'V003',
     code: 'GIFT50',
     value: 50.0,
+    remainingValue: 50.0,
     isRedeemed: false,
     issuedAt: '2023-07-10',
     expiresAt: '2024-07-10',
@@ -54,11 +57,11 @@ export const validateVoucher = async code => {
   // Simulate API call
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const voucher = MOCK_VOUCHERS.find(v => v.code === code && !v.isRedeemed);
+      const voucher = MOCK_VOUCHERS.find(v => v.code === code && v.remainingValue > 0);
       if (voucher) {
         resolve(voucher);
       } else {
-        reject(new Error('Ungültiger Gutscheincode oder Gutschein bereits eingelöst'));
+        reject(new Error('Ungültiger Gutscheincode oder Gutschein ohne Restguthaben'));
       }
     }, 500);
   });
@@ -67,21 +70,49 @@ export const validateVoucher = async code => {
 /**
  * Redeem a voucher
  * @param {string} code - The voucher code to redeem
+ * @param {number} amount - The amount to redeem (defaults to full remaining value)
  * @returns {Promise<Object>} The redeemed voucher
  */
-export const redeemVoucher = async code => {
+export const redeemVoucher = async (code, amount = null) => {
   // Simulate API call
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const voucherIndex = MOCK_VOUCHERS.findIndex(v => v.code === code && !v.isRedeemed);
+      const voucherIndex = MOCK_VOUCHERS.findIndex(v => v.code === code && v.remainingValue > 0);
       if (voucherIndex >= 0) {
-        const voucher = {
-          ...MOCK_VOUCHERS[voucherIndex],
-          isRedeemed: true,
-          redeemedAt: new Date().toISOString().split('T')[0],
-        };
+        const voucher = { ...MOCK_VOUCHERS[voucherIndex] };
+
+        // If amount is specified, only redeem that amount, otherwise redeem full remaining value
+        const redeemAmount =
+          amount !== null ? Math.min(amount, voucher.remainingValue) : voucher.remainingValue;
+
+        // Update remaining value
+        voucher.remainingValue = Math.max(0, voucher.remainingValue - redeemAmount);
+
+        // Set isRedeemed to true only if fully redeemed
+        if (voucher.remainingValue === 0) {
+          voucher.isRedeemed = true;
+          voucher.redeemedAt = new Date().toISOString().split('T')[0];
+        }
+
+        // Add redemption history if not present
+        if (!voucher.redemptionHistory) {
+          voucher.redemptionHistory = [];
+        }
+
+        // Add this redemption to history
+        voucher.redemptionHistory.push({
+          amount: redeemAmount,
+          date: new Date().toISOString().split('T')[0],
+        });
+
+        // Update voucher in mock storage
         MOCK_VOUCHERS[voucherIndex] = voucher;
-        resolve(voucher);
+
+        // Return a copy with the amount that was actually redeemed
+        resolve({
+          ...voucher,
+          redeemedAmount: redeemAmount,
+        });
       } else {
         reject(new Error('Gutschein konnte nicht eingelöst werden'));
       }
@@ -103,10 +134,12 @@ export const issueVoucher = async (value, expiresAt) => {
         id: `V${String(MOCK_VOUCHERS.length + 1).padStart(3, '0')}`,
         code: generateVoucherCode(),
         value: parseFloat(value),
+        remainingValue: parseFloat(value),
         isRedeemed: false,
         issuedAt: new Date().toISOString().split('T')[0],
         expiresAt:
           expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        redemptionHistory: [],
       };
       MOCK_VOUCHERS.push(newVoucher);
       resolve(newVoucher);

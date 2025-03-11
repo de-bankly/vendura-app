@@ -198,6 +198,11 @@ const PurchaseVoucherDialog = ({ open, onClose, onAddToCart }) => {
           Der Gutschein wird nach dem Bezahlvorgang ausgestellt und kann ausgedruckt oder digital
           übermittelt werden.
         </Typography>
+
+        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+          Hinweis: Gutscheine können auch teilweise eingelöst werden. Das Restguthaben bleibt
+          erhalten.
+        </Typography>
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>

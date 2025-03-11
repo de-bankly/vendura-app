@@ -61,7 +61,11 @@ class CartService {
    * @returns {number} Total discount
    */
   calculateVoucherDiscount(vouchers) {
-    return vouchers.reduce((sum, voucher) => sum + voucher.value, 0);
+    return vouchers.reduce((sum, voucher) => {
+      // Use the redeemed amount (value) for the discount
+      const discountAmount = voucher.value || 0;
+      return sum + discountAmount;
+    }, 0);
   }
 
   /**
