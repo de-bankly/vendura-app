@@ -206,8 +206,8 @@ const IssueVoucherDialog = ({ open, onClose }) => {
             />
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Der Gutschein wird automatisch mit einem eindeutigen Code generiert und kann an der
-              Kasse eingelöst werden.
+              Der Gutschein wird automatisch mit einem eindeutigen Code generiert und kann beim
+              Verkauf eingelöst werden.
             </Typography>
           </>
         )}
