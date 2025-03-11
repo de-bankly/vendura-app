@@ -37,9 +37,6 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ErrorIcon from '@mui/icons-material/Error';
 
-// Components
-import LayoutSwitcher from '../ui/LayoutSwitcher';
-
 const TopNavLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -676,9 +673,6 @@ const TopNavLayout = () => {
           <Outlet />
         </Container>
       </Box>
-
-      {/* Layout Switcher */}
-      <LayoutSwitcher />
 
       {/* Footer */}
       <Box
