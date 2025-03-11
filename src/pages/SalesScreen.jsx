@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Box, Grid, Typography, Alert } from '../components/ui';
-import { Slide, Snackbar } from '@mui/material';
+import { Slide, Snackbar, useTheme } from '@mui/material';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
@@ -8,6 +8,7 @@ import {
 } from '../components/vouchers';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import { ProductService, CartService } from '../services';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -19,6 +20,8 @@ const Transition = React.forwardRef(function Transition(props, ref) {
  * Displays products, cart, and payment options
  */
 const SalesScreen = () => {
+  const theme = useTheme();
+
   // Get products from service
   const products = useMemo(() => ProductService.getProducts(), []);
 
@@ -175,40 +178,65 @@ const SalesScreen = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Verkaufsbildschirm
-      </Typography>
+    <Box
+      sx={{
+        height: '100%',
+        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${theme.palette.primary.light}20 100%)`,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          p: 2,
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: 'white',
+          boxShadow: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <StorefrontIcon fontSize="large" />
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Verkaufsbildschirm
+        </Typography>
+      </Box>
 
-      <Grid container spacing={3} sx={{ height: 'calc(100% - 60px)' }}>
-        {/* Product selection area */}
-        <Grid item xs={12} md={8}>
-          <ProductGrid productsByCategory={productsByCategory} onProductSelect={addToCart} />
-        </Grid>
+      {/* Main Content */}
+      <Box sx={{ p: 3, flexGrow: 1, overflow: 'hidden' }}>
+        <Grid container spacing={3} sx={{ height: '100%' }}>
+          {/* Product selection area */}
+          <Grid item xs={12} md={8} sx={{ height: '100%' }}>
+            <ProductGrid productsByCategory={productsByCategory} onProductSelect={addToCart} />
+          </Grid>
 
-        {/* Cart area */}
-        <Grid item xs={12} md={4}>
-          <ShoppingCart
-            cartItems={cartItems}
-            appliedVouchers={appliedVouchers}
-            subtotal={subtotal}
-            voucherDiscount={voucherDiscount}
-            total={total}
-            receiptReady={receiptReady}
-            onAddItem={addToCart}
-            onRemoveItem={removeFromCart}
-            onDeleteItem={deleteFromCart}
-            onClearCart={clearCart}
-            onPayment={handlePaymentModalOpen}
-            onPrintReceipt={handlePrintReceipt}
-            onNewTransaction={handleNewTransaction}
-            onRemoveVoucher={handleRemoveVoucher}
-            onRedeemVoucher={handleRedeemVoucherDialogOpen}
-            onManageVouchers={handleVoucherManagementDialogOpen}
-            onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-          />
+          {/* Cart area */}
+          <Grid item xs={12} md={4} sx={{ height: '100%' }}>
+            <ShoppingCart
+              cartItems={cartItems}
+              appliedVouchers={appliedVouchers}
+              subtotal={subtotal}
+              voucherDiscount={voucherDiscount}
+              total={total}
+              receiptReady={receiptReady}
+              onAddItem={addToCart}
+              onRemoveItem={removeFromCart}
+              onDeleteItem={deleteFromCart}
+              onClearCart={clearCart}
+              onPayment={handlePaymentModalOpen}
+              onPrintReceipt={handlePrintReceipt}
+              onNewTransaction={handleNewTransaction}
+              onRemoveVoucher={handleRemoveVoucher}
+              onRedeemVoucher={handleRedeemVoucherDialogOpen}
+              onManageVouchers={handleVoucherManagementDialogOpen}
+              onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
+            />
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
 
       {/* Payment Dialog */}
       <PaymentDialog
@@ -237,7 +265,7 @@ const SalesScreen = () => {
           onClose={handleSnackbarClose}
           severity="success"
           variant="filled"
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', boxShadow: 3 }}
         >
           Zahlung erfolgreich abgeschlossen!
         </Alert>
