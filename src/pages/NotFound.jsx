@@ -14,6 +14,7 @@ import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import { motion } from 'framer-motion';
 
 /**
@@ -28,8 +29,8 @@ const NotFound = () => {
   // Common navigation links to suggest to users
   const navigationSuggestions = [
     { text: 'Home Page', path: '/', icon: <HomeIcon fontSize="small" /> },
-    { text: 'About', path: '/about', icon: <HelpOutlineIcon fontSize="small" /> },
     { text: 'Component Showcase', path: '/showcase', icon: <HelpOutlineIcon fontSize="small" /> },
+    { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon fontSize="small" /> },
   ];
 
   // Animation variants
