@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build.js",
+    "build:dev": "node scripts/build.js --env=development",
+    "build:staging": "node scripts/build.js --env=staging",
+    "build:prod": "node scripts/build.js --env=production",
+    "analyze": "node scripts/analyze.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
@@ -39,6 +43,8 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "prettier": "^3.2.5",
+    "rollup-plugin-visualizer": "^5.12.0",
+    "terser": "^5.29.2",
     "vite": "^6.2.0"
   }
 }
