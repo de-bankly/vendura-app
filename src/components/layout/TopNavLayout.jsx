@@ -678,26 +678,16 @@ const TopNavLayout = () => {
       <Box
         component="footer"
         sx={{
-          py: 2,
-          px: 3,
+          py: 3,
+          px: 2,
           mt: 'auto',
-          backgroundColor: 'background.paper',
-          borderTop: `1px solid ${theme.palette.grey[200]}`,
-          position: 'relative',
-          '&:before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: 'linear-gradient(90deg, #2563EB, #10B981, #F59E0B, #EF4444)',
-            opacity: 0.7,
-          },
+          backgroundColor: theme.palette.background.paper,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          textAlign: 'center',
         }}
       >
-        <Typography variant="body2" color="text.secondary" align="center">
-          © {new Date().getFullYear()} Vendura Kassen- und Lagersystem
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Vendura
         </Typography>
       </Box>
     </Box>
