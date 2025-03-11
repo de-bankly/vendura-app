@@ -32,7 +32,21 @@ if (!validEnvs.includes(env)) {
 
 try {
   // Read the environment variables from the appropriate .env file
-  const envFile = path.resolve(rootDir, `.env.${env}`);
+  const envFile = path.join(rootDir, `.env.${env}`);
+  
+  // Check if the env file exists
+  if (!fs.existsSync(envFile)) {
+    console.error(`Error: Environment file not found: ${envFile}`);
+    console.log(`Creating empty configuration for ${env} environment...`);
+    
+    // Create an empty config if the file doesn't exist
+    const configFile = path.join(distDir, 'runtime-config.json');
+    fs.writeFileSync(configFile, JSON.stringify({}, null, 2));
+    
+    console.log(`✅ Empty deployment configuration generated at ${configFile}`);
+    process.exit(0);
+  }
+  
   const envContent = fs.readFileSync(envFile, 'utf8');
   
   // Parse the environment variables
@@ -51,7 +65,7 @@ try {
   });
   
   // Create runtime-config.json in the dist directory
-  const configFile = path.resolve(distDir, 'runtime-config.json');
+  const configFile = path.join(distDir, 'runtime-config.json');
   fs.writeFileSync(configFile, JSON.stringify(envVars, null, 2));
   
   console.log(`✅ Deployment configuration generated successfully at ${configFile}`);

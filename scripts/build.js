@@ -33,7 +33,7 @@ if (!validEnvs.includes(env)) {
 
 try {
   // Clean the dist directory if it exists
-  const distDir = path.resolve(__dirname, '..', 'dist');
+  const distDir = path.join(__dirname, '..', 'dist');
   if (fs.existsSync(distDir)) {
     console.log('Cleaning dist directory...');
     fs.rmSync(distDir, { recursive: true, force: true });
@@ -45,11 +45,12 @@ try {
   
   // Generate runtime configuration
   console.log('Generating runtime configuration...');
-  execSync(`node ${path.join(__dirname, 'deploy-config.js')} --env=${env}`, { stdio: 'inherit' });
+  const deployConfigPath = path.join(__dirname, 'deploy-config.js');
+  execSync(`node "${deployConfigPath}" --env=${env}`, { stdio: 'inherit' });
   
   // Create a version.json file with build information
   console.log('Creating version.json...');
-  const packageJsonPath = path.resolve(__dirname, '..', 'package.json');
+  const packageJsonPath = path.join(__dirname, '..', 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const buildInfo = {
     version: packageJson.version,
@@ -66,7 +67,8 @@ try {
   // Run optimization for production builds
   if (shouldOptimize) {
     console.log('Running additional optimizations...');
-    execSync(`node ${path.join(__dirname, 'optimize.js')}`, { stdio: 'inherit' });
+    const optimizePath = path.join(__dirname, 'optimize.js');
+    execSync(`node "${optimizePath}"`, { stdio: 'inherit' });
   }
   
   console.log(`✅ Build completed successfully for ${env} environment!`);

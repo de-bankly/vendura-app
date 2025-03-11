@@ -14,8 +14,8 @@ import { fileURLToPath } from 'url';
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
-const distDir = path.resolve(rootDir, 'dist');
+const rootDir = path.join(__dirname, '..');
+const distDir = path.join(rootDir, 'dist');
 
 // Get the environment from command line arguments or default to production
 const args = process.argv.slice(2);
@@ -41,17 +41,19 @@ try {
   // Build the application for the specified environment if --build flag is provided
   if (args.includes('--build')) {
     console.log(`Building application for ${env} environment...`);
-    execSync(`node ${path.join(__dirname, 'build.js')} --env=${env}`, { stdio: 'inherit' });
+    const buildPath = path.join(__dirname, 'build.js');
+    execSync(`node "${buildPath}" --env=${env}`, { stdio: 'inherit' });
   }
   
   // Generate deployment configuration
   console.log('Generating deployment configuration...');
-  execSync(`node ${path.join(__dirname, 'deploy-config.js')} --env=${env}`, { stdio: 'inherit' });
+  const deployConfigPath = path.join(__dirname, 'deploy-config.js');
+  execSync(`node "${deployConfigPath}" --env=${env}`, { stdio: 'inherit' });
   
   // Create a .env file for the deployment environment
   console.log('Creating deployment environment file...');
-  const envFile = path.resolve(rootDir, `.env.${env}`);
-  const deployEnvFile = path.resolve(distDir, '.env');
+  const envFile = path.join(rootDir, `.env.${env}`);
+  const deployEnvFile = path.join(distDir, '.env');
   
   if (fs.existsSync(envFile)) {
     fs.copyFileSync(envFile, deployEnvFile);
@@ -61,7 +63,7 @@ try {
   
   // Create a deployment info file
   console.log('Creating deployment info file...');
-  const packageJsonPath = path.resolve(rootDir, 'package.json');
+  const packageJsonPath = path.join(rootDir, 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   
   const deploymentInfo = {
