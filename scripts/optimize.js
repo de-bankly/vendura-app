@@ -28,8 +28,26 @@ if (!fs.existsSync(distDir)) {
 try {
   // Get the size of the dist directory before optimization
   const getSizeInMB = (directory) => {
-    const { size } = execSync(`du -s -m "${directory}"`, { encoding: 'utf8' });
-    return parseFloat(size);
+    // Cross-platform directory size calculation
+    let totalSize = 0;
+    
+    function calculateSize(dirPath) {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        
+        if (entry.isDirectory()) {
+          calculateSize(fullPath);
+        } else if (entry.isFile()) {
+          const { size } = fs.statSync(fullPath);
+          totalSize += size;
+        }
+      }
+    }
+    
+    calculateSize(directory);
+    return totalSize / (1024 * 1024); // Convert bytes to MB
   };
   
   const initialSize = getSizeInMB(distDir);
