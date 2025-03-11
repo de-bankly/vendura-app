@@ -10,6 +10,11 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Get the environment from command line arguments or default to production
 const args = process.argv.slice(2);
@@ -26,11 +31,25 @@ if (!validEnvs.includes(env)) {
 }
 
 try {
+  // Clean the dist directory if it exists
+  const distDir = path.resolve(__dirname, '..', 'dist');
+  if (fs.existsSync(distDir)) {
+    console.log('Cleaning dist directory...');
+    fs.rmSync(distDir, { recursive: true, force: true });
+  }
+  
   // Run the build with the specified environment
+  console.log(`Running Vite build for ${env} environment...`);
   execSync(`vite build --mode ${env}`, { stdio: 'inherit' });
   
+  // Generate runtime configuration
+  console.log('Generating runtime configuration...');
+  execSync(`node ${path.join(__dirname, 'deploy-config.js')} --env=${env}`, { stdio: 'inherit' });
+  
   // Create a version.json file with build information
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  console.log('Creating version.json...');
+  const packageJsonPath = path.resolve(__dirname, '..', 'package.json');
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const buildInfo = {
     version: packageJson.version,
     name: packageJson.name,
@@ -39,7 +58,7 @@ try {
   };
   
   fs.writeFileSync(
-    path.join('dist', 'version.json'),
+    path.join(distDir, 'version.json'),
     JSON.stringify(buildInfo, null, 2)
   );
   

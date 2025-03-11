@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import faroUploader from '@grafana/faro-rollup-plugin';
 import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
+import viteCompression from 'vite-plugin-compression';
+import { splitVendorChunkPlugin } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -12,6 +14,7 @@ export default defineConfig(({ command, mode }) => {
   
   // Determine if bundle analysis is enabled
   const isAnalyze = process.env.ANALYZE === 'true';
+  const isProd = mode === 'production';
   
   const plugins = [
     MillionLint.vite({
@@ -26,8 +29,29 @@ export default defineConfig(({ command, mode }) => {
       stackId: '1194984',
       apiKey: env.GRAFANA_API_KEY,
       gzipContents: true,
-    })
+    }),
+    // Split vendor chunks for better caching
+    splitVendorChunkPlugin()
   ];
+  
+  // Add compression plugins for production builds
+  if (isProd) {
+    // Gzip compression
+    plugins.push(
+      viteCompression({
+        algorithm: 'gzip',
+        ext: '.gz',
+      })
+    );
+    
+    // Brotli compression (better than gzip but not supported by all browsers)
+    plugins.push(
+      viteCompression({
+        algorithm: 'brotliCompress',
+        ext: '.br',
+      })
+    );
+  }
   
   // Add visualizer plugin if analysis is enabled
   if (isAnalyze) {
@@ -56,8 +80,9 @@ export default defineConfig(({ command, mode }) => {
       minify: 'terser',
       terserOptions: {
         compress: {
-          drop_console: mode === 'production',
-          drop_debugger: mode === 'production',
+          drop_console: isProd,
+          drop_debugger: isProd,
+          pure_funcs: isProd ? ['console.log', 'console.debug', 'console.info'] : [],
         },
       },
       // Split chunks for better caching
@@ -67,6 +92,10 @@ export default defineConfig(({ command, mode }) => {
             vendor: ['react', 'react-dom', 'react-router-dom'],
             ui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
           },
+          // Add hashes to file names for cache busting
+          entryFileNames: isProd ? 'assets/[name].[hash].js' : 'assets/[name].js',
+          chunkFileNames: isProd ? 'assets/[name].[hash].js' : 'assets/[name].js',
+          assetFileNames: isProd ? 'assets/[name].[hash].[ext]' : 'assets/[name].[ext]',
         },
       },
       // Generate source maps for development only
@@ -83,6 +112,11 @@ export default defineConfig(({ command, mode }) => {
       port: 3000,
       open: true,
       cors: true,
+    },
+    // Add preview server configuration
+    preview: {
+      port: 4173,
+      open: true,
     },
   };
 });

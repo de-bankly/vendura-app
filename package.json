@@ -10,6 +10,10 @@
     "build:staging": "node scripts/build.js --env=staging",
     "build:prod": "node scripts/build.js --env=production",
     "analyze": "node scripts/analyze.js",
+    "deploy:config": "node scripts/deploy-config.js",
+    "deploy:config:dev": "node scripts/deploy-config.js --env=development",
+    "deploy:config:staging": "node scripts/deploy-config.js --env=staging",
+    "deploy:config:prod": "node scripts/deploy-config.js --env=production",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
@@ -45,6 +49,7 @@
     "prettier": "^3.2.5",
     "rollup-plugin-visualizer": "^5.12.0",
     "terser": "^5.29.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-compression": "^0.5.1"
   }
 }
