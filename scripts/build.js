@@ -20,6 +20,7 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 const envArg = args.find(arg => arg.startsWith('--env='));
 const env = envArg ? envArg.split('=')[1] : 'production';
+const shouldOptimize = args.includes('--optimize') || env === 'production';
 
 console.log(`Building for ${env} environment...`);
 
@@ -61,6 +62,12 @@ try {
     path.join(distDir, 'version.json'),
     JSON.stringify(buildInfo, null, 2)
   );
+  
+  // Run optimization for production builds
+  if (shouldOptimize) {
+    console.log('Running additional optimizations...');
+    execSync(`node ${path.join(__dirname, 'optimize.js')}`, { stdio: 'inherit' });
+  }
   
   console.log(`✅ Build completed successfully for ${env} environment!`);
 } catch (error) {

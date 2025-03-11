@@ -20,10 +20,16 @@ import ErrorBoundary from './components/error/ErrorBoundary';
 // Import configuration utility
 import { applyRuntimeConfig } from './utils/config';
 
+// Import service worker registration utility
+import { registerServiceWorker } from './utils/registerSW';
+
 // Create a function to initialize the app
 const initializeApp = async () => {
   // Apply runtime configuration before rendering
   await applyRuntimeConfig();
+
+  // Register service worker
+  registerServiceWorker();
 
   // Render the application
   createRoot(document.getElementById('root')).render(
