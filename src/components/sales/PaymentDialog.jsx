@@ -95,7 +95,7 @@ const PaymentDialog = ({
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            {cartItemsCount} {cartItemsCount === 1 ? 'Artikel' : 'Artikel'} im Warenkorb
+            {cartItemsCount} Artikel im Warenkorb
           </Typography>
 
           {voucherDiscount > 0 && (
