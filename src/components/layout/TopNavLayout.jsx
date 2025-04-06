@@ -29,19 +29,13 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import InfoIcon from '@mui/icons-material/Info';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ErrorIcon from '@mui/icons-material/Error';
-
-// Components
-import LayoutSwitcher from '../ui/LayoutSwitcher';
 
 const TopNavLayout = () => {
   const navigate = useNavigate();
@@ -63,14 +57,10 @@ const TopNavLayout = () => {
   // Navigation categories
   const navigationCategories = {
     main: [
-      { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-      { text: 'Kasse', path: '/pos', icon: <PointOfSaleIcon /> },
-      { text: 'Lager', path: '/inventory', icon: <InventoryIcon /> },
+      { text: 'Home', path: '/', icon: <ViewModuleIcon /> },
+      { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
     ],
-    other: [
-      { text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> },
-      { text: 'About', path: '/about', icon: <InfoIcon /> },
-    ],
+    other: [{ text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> }],
     system: [
       { text: 'Error Test', path: '/error-test', icon: <BugReportIcon /> },
       { text: 'Route Error', path: '/error-page', icon: <ErrorIcon /> },
@@ -684,33 +674,20 @@ const TopNavLayout = () => {
         </Container>
       </Box>
 
-      {/* Layout Switcher */}
-      <LayoutSwitcher />
-
       {/* Footer */}
       <Box
         component="footer"
         sx={{
-          py: 2,
-          px: 3,
+          py: 3,
+          px: 2,
           mt: 'auto',
-          backgroundColor: 'background.paper',
-          borderTop: `1px solid ${theme.palette.grey[200]}`,
-          position: 'relative',
-          '&:before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: 'linear-gradient(90deg, #2563EB, #10B981, #F59E0B, #EF4444)',
-            opacity: 0.7,
-          },
+          backgroundColor: theme.palette.background.paper,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          textAlign: 'center',
         }}
       >
-        <Typography variant="body2" color="text.secondary" align="center">
-          © {new Date().getFullYear()} Vendura Kassen- und Lagersystem
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Vendura
         </Typography>
       </Box>
     </Box>

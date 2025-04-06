@@ -2,15 +2,14 @@ import { createBrowserRouter } from 'react-router-dom';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
 
 // Layouts
-import MainLayout from '../components/layout/MainLayout';
 import TopNavLayout from '../components/layout/TopNavLayout';
 
 // Pages
 import Home from '../pages/Home';
-import About from '../pages/About';
 import ShowcasePage from '../pages/ShowcasePage';
 import NotFound from '../pages/NotFound';
 import ErrorPage from '../pages/ErrorPage';
+import SalesScreen from '../pages/SalesScreen';
 
 // Error handling
 import { RouterErrorBoundary } from '../components/error/ErrorBoundary';
@@ -31,44 +30,12 @@ const reactBrowserRouter = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: 'about',
-        element: <About />,
-      },
-      {
         path: 'showcase',
         element: <ShowcasePage />,
       },
       {
-        path: 'error-test',
-        element: <ErrorTest />,
-      },
-      {
-        path: 'error-page',
-        element: <ErrorPage />,
-      },
-      {
-        path: '*',
-        element: <NotFound />,
-      },
-    ],
-  },
-  // Keep the original sidebar layout as an alternative route
-  {
-    path: '/sidebar/*',
-    element: <MainLayout />,
-    errorElement: <RouterErrorBoundary />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: 'about',
-        element: <About />,
-      },
-      {
-        path: 'showcase',
-        element: <ShowcasePage />,
+        path: 'sales',
+        element: <SalesScreen />,
       },
       {
         path: 'error-test',

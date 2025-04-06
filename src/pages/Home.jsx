@@ -1,3 +1,4 @@
+import React from 'react';
 import { useTheme, alpha } from '@mui/material';
 import {
   Box,
@@ -24,7 +25,6 @@ import { motion } from 'framer-motion';
 
 // Icons
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -37,24 +37,18 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DonutLargeIcon from '@mui/icons-material/DonutLarge';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 
 const Home = () => {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  // Mock-Daten für das Dashboard
+  // Mock-Daten für die Startseite
   const salesData = {
     today: 1250.75,
     yesterday: 980.5,
     trend: 27.56,
     positive: true,
-  };
-
-  const inventoryData = {
-    total: 1876,
-    lowStock: 12,
-    outOfStock: 3,
-    newItems: 8,
   };
 
   const recentTransactions = [
@@ -68,13 +62,6 @@ const Home = () => {
     },
     { id: 'TX-1236', customer: 'Thomas Weber', amount: 49.99, time: '09:12', status: 'pending' },
     { id: 'TX-1237', customer: 'Anna Müller', amount: 199.5, time: '08:30', status: 'completed' },
-  ];
-
-  const lowStockItems = [
-    { id: 'P-567', name: 'Premium Kaffee 500g', stock: 5, threshold: 10 },
-    { id: 'P-238', name: 'Bio Vollmilch 1L', stock: 8, threshold: 15 },
-    { id: 'P-912', name: 'Frische Brötchen 6er', stock: 3, threshold: 20 },
-    { id: 'P-345', name: 'Mineralwasser 6x1L', stock: 4, threshold: 12 },
   ];
 
   // Card styles
@@ -109,239 +96,293 @@ const Home = () => {
       opacity: 1,
       transition: {
         type: 'spring',
-        stiffness: 300,
-        damping: 24,
+        stiffness: 100,
+        damping: 12,
       },
     },
   };
 
-  // Stat card with gradient background
-  const StatCard = ({ icon, title, value, trend, trendValue, trendLabel, color, onClick }) => {
-    const IconComponent = icon;
+  // Card with gradient background
+  const GradientCard = ({ title, value, icon: Icon, trend, trendValue, onClick }) => {
+    const gradientBg = `linear-gradient(135deg, ${alpha(
+      theme.palette.primary.main,
+      0.8
+    )} 0%, ${alpha(theme.palette.primary.dark, 0.9)} 100%)`;
 
     return (
-      <motion.div variants={itemVariants}>
-        <Card sx={cardStyle}>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '50%',
-              height: '100%',
-              background: `linear-gradient(135deg, transparent 30%, ${alpha(theme.palette[color].light, 0.2)})`,
-              zIndex: 0,
-            }}
-          />
-          <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar
-                sx={{
-                  bgcolor: alpha(theme.palette[color].main, 0.12),
-                  color: theme.palette[color].main,
-                  mr: 2,
-                  width: 48,
-                  height: 48,
-                  boxShadow: `0 4px 12px ${alpha(theme.palette[color].main, 0.3)}`,
-                  background: `linear-gradient(135deg, ${theme.palette[color].main}, ${theme.palette[color].dark})`,
-                }}
-              >
-                <IconComponent />
-              </Avatar>
-              <Typography variant="h6" color="text.secondary">
+      <Card
+        sx={{
+          ...cardStyle,
+          background: gradientBg,
+          color: 'white',
+          cursor: onClick ? 'pointer' : 'default',
+        }}
+        onClick={onClick}
+      >
+        {/* Decorative circles in background */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -20,
+            right: -20,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            background: alpha('#fff', 0.1),
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -40,
+            left: -30,
+            width: 160,
+            height: 160,
+            borderRadius: '50%',
+            background: alpha('#fff', 0.05),
+          }}
+        />
+
+        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ opacity: 0.8, mb: 0.5 }}>
                 {title}
               </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+                {value}
+              </Typography>
+              {trend && (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {trend === 'up' ? (
+                    <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  )}
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {trendValue}
+                  </Typography>
+                </Box>
+              )}
             </Box>
-            <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 700 }}>
-              {value}
-            </Typography>
-            {trend && (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Chip
-                  icon={trend === 'up' ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                  label={`${trendValue}%`}
-                  size="small"
-                  color={trend === 'up' ? 'success' : 'error'}
-                  sx={{
-                    mr: 1,
-                    fontWeight: 600,
-                    boxShadow: `0 2px 8px ${alpha(
-                      theme.palette[trend === 'up' ? 'success' : 'error'].main,
-                      0.3
-                    )}`,
-                  }}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  {trendLabel}
-                </Typography>
-              </Box>
-            )}
-            {onClick && (
-              <Button
-                variant="text"
-                color={color}
-                endIcon={<ArrowForwardIcon />}
-                onClick={onClick}
-                sx={{
-                  mt: 2,
-                  fontWeight: 600,
-                  p: 0,
-                  transition: 'transform 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateX(4px)',
-                    backgroundColor: 'transparent',
-                  },
-                }}
-              >
-                Details anzeigen
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+            <Avatar
+              sx={{
+                bgcolor: alpha('#fff', 0.2),
+                color: 'white',
+                width: 48,
+                height: 48,
+              }}
+            >
+              <Icon />
+            </Avatar>
+          </Box>
+        </CardContent>
+      </Card>
     );
   };
 
   return (
-    <Box sx={{ pb: 5 }}>
-      {/* Dashboard Header */}
+    <Box sx={{ py: 4, px: { xs: 2, sm: 3 } }}>
+      {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box
-          sx={{
-            mb: 4,
-            pb: 3,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', md: 'center' },
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{
-                mb: 1,
-                fontWeight: 800,
-                color: 'text.primary',
-                background: 'linear-gradient(90deg, #1E293B, #334155)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Willkommen zurück!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Hier ist Ihre Übersicht für heute, den{' '}
-              {new Date().toLocaleDateString('de-DE', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={2} sx={{ mt: { xs: 2, md: 0 } }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PointOfSaleIcon />}
-              onClick={() => navigate('/pos')}
-              sx={{
-                borderRadius: 10,
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: '0 8px 16px 0 rgba(37, 99, 235, 0.2)',
-                background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 20px 0 rgba(37, 99, 235, 0.3)',
-                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                },
-              }}
-            >
-              Zur Kasse
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<InventoryIcon />}
-              onClick={() => navigate('/inventory')}
-              sx={{
-                borderRadius: 10,
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                borderWidth: '1.5px',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 16px 0 rgba(37, 99, 235, 0.15)',
-                  borderWidth: '1.5px',
-                },
-              }}
-            >
-              Zum Lager
-            </Button>
-          </Stack>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            Willkommen bei Vendura
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Hier finden Sie eine Übersicht über die wichtigsten Funktionen und Kennzahlen.
+          </Typography>
         </Box>
       </motion.div>
 
-      {/* Key Metrics */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      {/* Main Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              icon={PointOfSaleIcon}
-              title="Tagesumsatz"
-              value={`€${salesData.today.toFixed(2)}`}
-              trend={salesData.positive ? 'up' : 'down'}
-              trendValue={salesData.trend}
-              trendLabel={`vs. Gestern (€${salesData.yesterday.toFixed(2)})`}
-              color="primary"
-              onClick={() => navigate('/pos')}
-            />
+          <Grid item xs={12} md={6}>
+            <Card
+              sx={{
+                ...cardStyle,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: 'center',
+                p: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  mr: { xs: 0, sm: 3 },
+                  mb: { xs: 3, sm: 0 },
+                }}
+              >
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                  Verkaufsbereich
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Starten Sie einen neuen Verkauf, verwalten Sie Transaktionen und erstellen Sie
+                  Rechnungen.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<PointOfSaleIcon />}
+                  onClick={() => navigate('/sales')}
+                  sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+                >
+                  Zum Verkauf
+                </Button>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  borderRadius: '50%',
+                  p: 2,
+                  width: { xs: 100, sm: 120 },
+                  height: { xs: 100, sm: 120 },
+                }}
+              >
+                <PointOfSaleIcon
+                  sx={{ fontSize: { xs: 48, sm: 64 }, color: theme.palette.primary.main }}
+                />
+              </Box>
+            </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              icon={InventoryIcon}
-              title="Lagerbestand"
-              value={`${inventoryData.total} Artikel`}
-              color="secondary"
-              onClick={() => navigate('/inventory')}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              icon={WarningAmberIcon}
-              title="Kritischer Bestand"
-              value={`${inventoryData.lowStock} Artikel`}
-              color="warning"
-              onClick={() => navigate('/inventory')}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              icon={ShoppingCartIcon}
-              title="Neue Artikel"
-              value={`${inventoryData.newItems} Artikel`}
-              color="info"
-              onClick={() => navigate('/inventory')}
-            />
+          <Grid item xs={12} md={6}>
+            <Card
+              sx={{
+                ...cardStyle,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: 'center',
+                p: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  mr: { xs: 0, sm: 3 },
+                  mb: { xs: 3, sm: 0 },
+                }}
+              >
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                  Komponenten
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Entdecken Sie alle verfügbaren UI-Komponenten und deren Verwendungsmöglichkeiten.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<ViewModuleIcon />}
+                  onClick={() => navigate('/showcase')}
+                  sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+                >
+                  Zur Komponentenübersicht
+                </Button>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  borderRadius: '50%',
+                  p: 2,
+                  width: { xs: 100, sm: 120 },
+                  height: { xs: 100, sm: 120 },
+                }}
+              >
+                <ViewModuleIcon
+                  sx={{ fontSize: { xs: 48, sm: 64 }, color: theme.palette.secondary.main }}
+                />
+              </Box>
+            </Card>
           </Grid>
         </Grid>
       </motion.div>
 
-      {/* Recent Transactions and Low Stock */}
+      {/* Stats Cards */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ staggerChildren: 0.1 }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
+          Verkaufsübersicht
+        </Typography>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <motion.div variants={itemVariants}>
+              <GradientCard
+                icon={PointOfSaleIcon}
+                title="Heutiger Umsatz"
+                value={`${salesData.today.toLocaleString('de-DE', {
+                  style: 'currency',
+                  currency: 'EUR',
+                })}`}
+                trend={salesData.positive ? 'up' : 'down'}
+                trendValue={`${salesData.trend}% seit gestern`}
+                onClick={() => navigate('/sales')}
+              />
+            </motion.div>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <motion.div variants={itemVariants}>
+              <GradientCard
+                icon={ShoppingCartIcon}
+                title="Transaktionen"
+                value="24 heute"
+                trend="up"
+                trendValue="12% seit gestern"
+              />
+            </motion.div>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <motion.div variants={itemVariants}>
+              <GradientCard
+                icon={ReceiptLongIcon}
+                title="Durchschn. Bestellung"
+                value="52,11 €"
+                trend="up"
+                trendValue="8% seit letzter Woche"
+              />
+            </motion.div>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <motion.div variants={itemVariants}>
+              <GradientCard
+                icon={StorefrontIcon}
+                title="Aktive Kunden"
+                value="128"
+                trend="up"
+                trendValue="5% seit letztem Monat"
+              />
+            </motion.div>
+          </Grid>
+        </Grid>
+      </motion.div>
+
+      {/* Recent Transactions */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -349,477 +390,251 @@ const Home = () => {
         transition={{ delay: 0.3 }}
       >
         <Grid container spacing={3}>
-          {/* Recent Transactions */}
-          <Grid item xs={12} lg={7}>
+          <Grid item xs={12} lg={6}>
             <motion.div variants={itemVariants}>
               <Card sx={cardStyle}>
                 <CardHeader
-                  title={
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.12),
-                          color: theme.palette.primary.main,
-                          mr: 1.5,
-                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                        }}
-                      >
-                        <ReceiptLongIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Letzte Transaktionen
-                      </Typography>
-                    </Box>
-                  }
+                  title="Letzte Transaktionen"
                   action={
-                    <Tooltip title="Mehr Optionen">
-                      <IconButton
-                        aria-label="settings"
-                        sx={{
-                          transition: 'transform 0.2s ease',
-                          '&:hover': {
-                            transform: 'rotate(90deg)',
-                            color: theme.palette.primary.main,
-                          },
-                        }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <IconButton size="small">
+                      <MoreVertIcon />
+                    </IconButton>
                   }
-                  sx={{ pb: 0 }}
                 />
-                <CardContent>
-                  <List sx={{ '& .MuiListItem-root': { px: 2 } }}>
+                <Divider />
+                <CardContent sx={{ p: 0 }}>
+                  <List sx={{ p: 0 }}>
                     {recentTransactions.map((transaction, index) => (
-                      <Box key={transaction.id}>
+                      <React.Fragment key={transaction.id}>
                         <ListItem
-                          secondaryAction={
-                            <Chip
-                              icon={
-                                transaction.status === 'completed' ? (
-                                  <CheckCircleIcon fontSize="small" />
-                                ) : (
-                                  <WarningAmberIcon fontSize="small" />
-                                )
-                              }
-                              label={
-                                transaction.status === 'completed' ? 'Abgeschlossen' : 'Ausstehend'
-                              }
-                              size="small"
-                              color={transaction.status === 'completed' ? 'success' : 'warning'}
-                              sx={{
-                                fontWeight: 600,
-                                '& .MuiChip-icon': { ml: 0.5 },
-                                boxShadow: `0 2px 8px ${alpha(
-                                  theme.palette[
-                                    transaction.status === 'completed' ? 'success' : 'warning'
-                                  ].main,
-                                  0.3
-                                )}`,
-                              }}
-                            />
-                          }
                           sx={{
-                            py: 1.5,
-                            borderRadius: 2,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.primary.main, 0.04),
-                              transform: 'translateX(4px)',
-                              cursor: 'pointer',
-                            },
+                            px: 3,
+                            py: 2,
+                            '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.02)' },
                           }}
                         >
-                          <ListItemText
-                            primary={
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              width: '100%',
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor:
+                                  transaction.status === 'completed'
+                                    ? 'success.light'
+                                    : 'warning.light',
+                                color:
+                                  transaction.status === 'completed'
+                                    ? 'success.dark'
+                                    : 'warning.dark',
+                                mr: 2,
+                              }}
+                            >
+                              {transaction.status === 'completed' ? (
+                                <CheckCircleIcon />
+                              ) : (
+                                <WarningAmberIcon />
+                              )}
+                            </Avatar>
+                            <Box sx={{ flexGrow: 1 }}>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  mb: 0.5,
+                                }}
+                              >
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                  {transaction.customer}
+                                </Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                  {transaction.amount.toLocaleString('de-DE', {
+                                    style: 'currency',
+                                    currency: 'EUR',
+                                  })}
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                }}
+                              >
+                                <Typography variant="body2" color="text.secondary">
                                   {transaction.id}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                                  {transaction.time}
+                                <Typography variant="body2" color="text.secondary">
+                                  {transaction.time} Uhr
                                 </Typography>
                               </Box>
-                            }
-                            secondary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                <Typography variant="body2">{transaction.customer}</Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    ml: 'auto',
-                                    fontWeight: 600,
-                                    color: theme.palette.primary.main,
-                                  }}
-                                >
-                                  €{transaction.amount.toFixed(2)}
-                                </Typography>
-                              </Box>
-                            }
-                          />
+                            </Box>
+                          </Box>
                         </ListItem>
-                        {index < recentTransactions.length - 1 && <Divider sx={{ my: 0.5 }} />}
-                      </Box>
+                        {index < recentTransactions.length - 1 && (
+                          <Divider sx={{ mx: 3 }} component="li" />
+                        )}
+                      </React.Fragment>
                     ))}
                   </List>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                    <Button
-                      variant="text"
-                      color="primary"
-                      endIcon={<ArrowForwardIcon />}
-                      onClick={() => navigate('/pos')}
-                      sx={{
-                        fontWeight: 600,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateX(4px)',
-                          backgroundColor: 'transparent',
-                        },
-                      }}
-                    >
-                      Alle Transaktionen anzeigen
-                    </Button>
-                  </Box>
                 </CardContent>
+                <Divider />
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Button
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => navigate('/sales')}
+                    size="small"
+                  >
+                    Alle Transaktionen anzeigen
+                  </Button>
+                </Box>
               </Card>
             </motion.div>
           </Grid>
 
-          {/* Low Stock Items */}
-          <Grid item xs={12} lg={5}>
+          <Grid item xs={12} lg={6}>
             <motion.div variants={itemVariants}>
-              <Card sx={cardStyle}>
+              <Card sx={{ ...cardStyle, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardHeader
-                  title={
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.error.main, 0.12),
-                          color: theme.palette.error.main,
-                          mr: 1.5,
-                          boxShadow: `0 4px 12px ${alpha(theme.palette.error.main, 0.3)}`,
-                          background: `linear-gradient(135deg, ${theme.palette.error.main}, ${theme.palette.error.dark})`,
-                        }}
-                      >
-                        <StorefrontIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Artikel mit niedrigem Bestand
-                      </Typography>
-                    </Box>
-                  }
+                  title="Verkaufsstatistik"
                   action={
-                    <Tooltip title="Mehr Optionen">
-                      <IconButton
-                        aria-label="settings"
-                        sx={{
-                          transition: 'transform 0.2s ease',
-                          '&:hover': {
-                            transform: 'rotate(90deg)',
-                            color: theme.palette.error.main,
-                          },
-                        }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <IconButton size="small">
+                      <MoreVertIcon />
+                    </IconButton>
                   }
-                  sx={{ pb: 0 }}
                 />
-                <CardContent>
-                  <List sx={{ '& .MuiListItem-root': { px: 2 } }}>
-                    {lowStockItems.map((item, index) => (
-                      <Box key={item.id}>
-                        <ListItem
-                          sx={{
-                            py: 1.5,
-                            borderRadius: 2,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.error.main, 0.04),
-                              transform: 'translateX(4px)',
-                              cursor: 'pointer',
-                            },
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: alpha(theme.palette.error.main, 0.12),
-                                color: theme.palette.error.main,
-                                width: 40,
-                                height: 40,
-                                mr: 2,
-                                boxShadow: `0 4px 12px ${alpha(theme.palette.error.main, 0.2)}`,
-                                background: `linear-gradient(135deg, ${theme.palette.error.main}, ${theme.palette.error.dark})`,
-                              }}
-                            >
-                              <WarningAmberIcon fontSize="small" />
-                            </Avatar>
-                            <Box sx={{ flex: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                  {item.name}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="error"
-                                  sx={{ ml: 'auto', fontWeight: 600 }}
-                                >
-                                  {item.stock} / {item.threshold}
-                                </Typography>
-                              </Box>
-                              <LinearProgress
-                                variant="determinate"
-                                value={(item.stock / item.threshold) * 100}
-                                color="error"
-                                sx={{
-                                  height: 8,
-                                  borderRadius: 4,
-                                  bgcolor: alpha(theme.palette.error.main, 0.12),
-                                  '& .MuiLinearProgress-bar': {
-                                    borderRadius: 4,
-                                    backgroundImage: `linear-gradient(90deg, ${theme.palette.error.dark}, ${theme.palette.error.main})`,
-                                  },
-                                }}
-                              />
-                            </Box>
-                          </Box>
-                        </ListItem>
-                        {index < lowStockItems.length - 1 && <Divider sx={{ my: 0.5 }} />}
-                      </Box>
-                    ))}
-                  </List>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                    <Button
-                      variant="text"
-                      color="error"
-                      endIcon={<ArrowForwardIcon />}
-                      onClick={() => navigate('/inventory')}
+                <Divider />
+                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flex: 1,
+                      p: 3,
+                    }}
+                  >
+                    <Box
                       sx={{
-                        fontWeight: 600,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateX(4px)',
-                          backgroundColor: 'transparent',
-                        },
+                        position: 'relative',
+                        width: '100%',
+                        height: 250,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                       }}
                     >
-                      Zum Lagerbestand
-                    </Button>
+                      <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.5 }}
+                        sx={{
+                          position: 'absolute',
+                          width: '70%',
+                          height: '70%',
+                          borderRadius: '50%',
+                          background: `conic-gradient(
+                            ${theme.palette.primary.main} 0% 35%, 
+                            ${theme.palette.secondary.main} 35% 60%, 
+                            ${theme.palette.success.main} 60% 75%, 
+                            ${theme.palette.warning.main} 75% 100%
+                          )`,
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          width: '50%',
+                          height: '50%',
+                          borderRadius: '50%',
+                          bgcolor: 'background.paper',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                        }}
+                      >
+                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                          Gesamt
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              bgcolor: theme.palette.primary.main,
+                              mr: 1,
+                            }}
+                          />
+                          <Typography variant="body2">Verkauf vor Ort (35%)</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              bgcolor: theme.palette.secondary.main,
+                              mr: 1,
+                            }}
+                          />
+                          <Typography variant="body2">Online-Verkauf (25%)</Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              bgcolor: theme.palette.success.main,
+                              mr: 1,
+                            }}
+                          />
+                          <Typography variant="body2">Großhandel (15%)</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              bgcolor: theme.palette.warning.main,
+                              mr: 1,
+                            }}
+                          />
+                          <Typography variant="body2">Sonstige (25%)</Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
                   </Box>
                 </CardContent>
+                <Divider />
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Button
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => navigate('/sales')}
+                    size="small"
+                  >
+                    Detaillierte Statistiken
+                  </Button>
+                </Box>
               </Card>
             </motion.div>
           </Grid>
         </Grid>
-      </motion.div>
-
-      {/* Additional Analytics Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-      >
-        <Box sx={{ mt: 4 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              mb: 3,
-              fontWeight: 700,
-              background: 'linear-gradient(90deg, #1E293B, #334155)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Analysen & Berichte
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-              >
-                <Card sx={cardStyle}>
-                  <CardHeader
-                    title={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: alpha(theme.palette.info.main, 0.12),
-                            color: theme.palette.info.main,
-                            mr: 1.5,
-                            boxShadow: `0 4px 12px ${alpha(theme.palette.info.main, 0.3)}`,
-                            background: `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`,
-                          }}
-                        >
-                          <BarChartIcon />
-                        </Avatar>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Umsatzentwicklung
-                        </Typography>
-                      </Box>
-                    }
-                    action={
-                      <Tooltip title="Mehr Optionen">
-                        <IconButton
-                          aria-label="settings"
-                          sx={{
-                            transition: 'transform 0.2s ease',
-                            '&:hover': {
-                              transform: 'rotate(90deg)',
-                              color: theme.palette.info.main,
-                            },
-                          }}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </Tooltip>
-                    }
-                  />
-                  <CardContent>
-                    <Box
-                      sx={{
-                        height: 200,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: alpha(theme.palette.info.main, 0.04),
-                        borderRadius: 3,
-                        p: 2,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: '4px',
-                          background: `linear-gradient(90deg, ${theme.palette.info.main}, ${theme.palette.info.light})`,
-                        },
-                      }}
-                    >
-                      <Typography variant="body1" color="text.secondary">
-                        Hier würde ein Umsatz-Chart angezeigt werden
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                      <Button
-                        variant="text"
-                        color="info"
-                        endIcon={<ArrowForwardIcon />}
-                        sx={{
-                          fontWeight: 600,
-                          transition: 'transform 0.2s ease',
-                          '&:hover': {
-                            transform: 'translateX(4px)',
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        Detaillierte Analyse
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-              >
-                <Card sx={cardStyle}>
-                  <CardHeader
-                    title={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: alpha(theme.palette.success.main, 0.12),
-                            color: theme.palette.success.main,
-                            mr: 1.5,
-                            boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.3)}`,
-                            background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`,
-                          }}
-                        >
-                          <DonutLargeIcon />
-                        </Avatar>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Produktkategorien
-                        </Typography>
-                      </Box>
-                    }
-                    action={
-                      <Tooltip title="Mehr Optionen">
-                        <IconButton
-                          aria-label="settings"
-                          sx={{
-                            transition: 'transform 0.2s ease',
-                            '&:hover': {
-                              transform: 'rotate(90deg)',
-                              color: theme.palette.success.main,
-                            },
-                          }}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </Tooltip>
-                    }
-                  />
-                  <CardContent>
-                    <Box
-                      sx={{
-                        height: 200,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: alpha(theme.palette.success.main, 0.04),
-                        borderRadius: 3,
-                        p: 2,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: '4px',
-                          background: `linear-gradient(90deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
-                        },
-                      }}
-                    >
-                      <Typography variant="body1" color="text.secondary">
-                        Hier würde ein Kategorien-Chart angezeigt werden
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                      <Button
-                        variant="text"
-                        color="success"
-                        endIcon={<ArrowForwardIcon />}
-                        sx={{
-                          fontWeight: 600,
-                          transition: 'transform 0.2s ease',
-                          '&:hover': {
-                            transform: 'translateX(4px)',
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        Kategorieübersicht
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-          </Grid>
-        </Box>
       </motion.div>
     </Box>
   );

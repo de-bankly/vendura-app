@@ -27,7 +27,6 @@ export { default as Paper } from './Paper';
 export { default as Divider } from './Divider';
 export { default as Typography } from './Typography';
 export { default as Avatar } from './Avatar';
-export { default as LayoutSwitcher } from './LayoutSwitcher';
 export { default as List } from './List';
 export { default as ListItem } from './ListItem';
 export { default as ListItemText } from './ListItemText';
