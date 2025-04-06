@@ -4,3 +4,8 @@ export { default as AuthService } from './AuthService';
 export { default as UserService } from './UserService';
 export { default as RoleService } from './RoleService';
 export { default as apiClient } from './ApiConfig';
+export { default as BrandService } from './BrandService';
+export { default as ProductCategoryService } from './ProductCategoryService';
+export { default as SupplierService } from './SupplierService';
+export { default as SupplierOrderService } from './SupplierOrderService';
+export { default as GiftCardService } from './GiftCardService';

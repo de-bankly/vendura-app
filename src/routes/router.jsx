@@ -18,6 +18,10 @@ import {
   RoleManagementPage,
 } from '../pages';
 
+// New Admin Pages
+import ProductManagementPage from '../pages/admin/ProductManagementPage';
+import GiftCardManagementPage from '../pages/admin/GiftCardManagementPage';
+
 // Components
 import { ProtectedRoute } from '../components/auth';
 
@@ -75,6 +79,22 @@ const reactBrowserRouter = createBrowserRouter([
             element: (
               <ProtectedRoute adminOnly>
                 <RoleManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'products',
+            element: (
+              <ProtectedRoute adminOnly>
+                <ProductManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'giftcards',
+            element: (
+              <ProtectedRoute adminOnly>
+                <GiftCardManagementPage />
               </ProtectedRoute>
             ),
           },

@@ -78,6 +78,8 @@ const TopNavLayout = () => {
     admin: [
       { text: 'Benutzerverwaltung', path: '/admin/users', icon: <GroupIcon /> },
       { text: 'Rollenverwaltung', path: '/admin/roles', icon: <VpnKeyIcon /> },
+      { text: 'Produktverwaltung', path: '/admin/products', icon: <ViewModuleIcon /> },
+      { text: 'Gutscheinverwaltung', path: '/admin/giftcards', icon: <PointOfSaleIcon /> },
     ],
     other: [{ text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> }],
     system: [

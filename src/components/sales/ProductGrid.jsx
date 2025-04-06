@@ -131,7 +131,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                       }}
                     >
                       <Typography variant="body1" fontWeight="bold">
-                        {product.price.toFixed(2)} €
+                        {(product.price ?? 0).toFixed(2)} €
                       </Typography>
                     </Box>
                   </Paper>
