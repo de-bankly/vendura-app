@@ -188,7 +188,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.main.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -238,7 +238,7 @@ const TopNavLayout = () => {
           <List>
             {navigationCategories.admin.map(item => (
               <ListItem
-                button
+                button={true}
                 key={item.text}
                 onClick={() => {
                   navigate(item.path);
@@ -288,7 +288,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.other.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -336,7 +336,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.system.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
