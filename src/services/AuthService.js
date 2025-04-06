@@ -19,8 +19,19 @@ class AuthService {
       });
 
       if (response.data && response.data.token) {
+        // Store the token
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // If response has roles as array of strings, convert them to objects for consistency
+        if (response.data.roles && Array.isArray(response.data.roles)) {
+          const user = {
+            username: response.data.username,
+            roles: response.data.roles.map(role => ({ name: role })),
+          };
+          localStorage.setItem('user', JSON.stringify(user));
+        } else if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
       }
 
       return response.data;
@@ -72,16 +83,99 @@ class AuthService {
   }
 
   /**
+   * Decode JWT token to inspect payload (for debugging)
+   * @returns {Object|null} Decoded token payload or null
+   */
+  decodeToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      // JWT tokens consist of three parts separated by dots
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      // The payload is the second part, base64 encoded
+      const payload = parts[1];
+
+      // Decode the base64 payload
+      const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+
+      // Parse the JSON payload
+      const payloadObj = JSON.parse(decodedPayload);
+      console.log('JWT Token Payload:', payloadObj);
+
+      return payloadObj;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+
+  /**
    * Check if user has a specific role
    * @param {string} role - Role name to check
    * @returns {boolean} True if user has the role
    */
   hasRole(role) {
+    console.log(`Checking for role: ${role}`);
+
+    // First priority: Check roles directly from JWT token
+    const tokenData = this.decodeToken();
+    if (tokenData && tokenData.roles) {
+      console.log('JWT Token roles:', tokenData.roles);
+
+      // Spring Security prefixes roles with ROLE_
+      const hasRoleInToken = tokenData.roles.some(r => {
+        const roleString = String(r); // Ensure it's a string
+        return (
+          roleString === role ||
+          roleString === `ROLE_${role}` ||
+          (roleString.startsWith('ROLE_') && roleString.substring(5) === role)
+        );
+      });
+
+      if (hasRoleInToken) {
+        console.log(`Role ${role} found in JWT token`);
+        return true;
+      }
+    }
+
+    // Second priority: Check user from localStorage
     const user = this.getCurrentUser();
+    console.log('User from localStorage:', user);
+
     if (!user || !user.roles) {
+      console.log('No user or roles found in localStorage');
       return false;
     }
-    return user.roles.some(r => r.name === role);
+
+    // Check roles in user object
+    const userRoles = user.roles;
+
+    // If roles are strings (direct array of role names)
+    if (Array.isArray(userRoles) && typeof userRoles[0] === 'string') {
+      const hasRole = userRoles.some(
+        r =>
+          r === role || r === `ROLE_${role}` || (r.startsWith('ROLE_') && r.substring(5) === role)
+      );
+
+      console.log(`Role ${role} in localStorage (as strings): ${hasRole}`);
+      return hasRole;
+    }
+
+    // If roles are objects with name property
+    const hasRole = userRoles.some(r => {
+      const roleName = r.name;
+      return (
+        roleName === role ||
+        roleName === `ROLE_${role}` ||
+        (roleName.startsWith('ROLE_') && roleName.substring(5) === role)
+      );
+    });
+
+    console.log(`Role ${role} in localStorage (as objects): ${hasRole}`);
+    return hasRole;
   }
 
   /**
