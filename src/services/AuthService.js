@@ -12,6 +12,7 @@ class AuthService {
    */
   async login(username, password) {
     try {
+      // First check if the server is reachable
       const response = await apiClient.post('/v1/authentication/authenticate', {
         username,
         password,
@@ -24,7 +25,16 @@ class AuthService {
 
       return response.data;
     } catch (error) {
+      // Log detailed error for debugging
       console.error('Login error:', error);
+
+      // Handle specific network errors
+      if (error.message === 'Network Error') {
+        throw new Error(
+          'Unable to connect to the server. Please check if the server is running and try again.'
+        );
+      }
+
       throw error;
     }
   }

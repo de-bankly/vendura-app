@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Typography, Box, Paper, Alert } from '@mui/material';
 import { AuthService } from '../../services';
+import { getUserFriendlyErrorMessage, isNetworkError } from '../../utils/errorUtils';
 
 /**
  * Login form component for user authentication
@@ -30,9 +31,13 @@ const LoginForm = ({ onLoginSuccess }) => {
       }
     } catch (err) {
       setLoading(false);
-      const errorMessage =
-        err.response?.data?.message || 'Login failed. Please check your credentials.';
+
+      // Use the error utils to get a user-friendly message
+      const errorMessage = getUserFriendlyErrorMessage(err);
       setError(errorMessage);
+
+      // Log the error for debugging
+      console.error('Login error details:', err);
     }
   };
 

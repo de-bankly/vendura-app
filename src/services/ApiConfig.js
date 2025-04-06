@@ -7,6 +7,9 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // Add 10 second timeout
+  // Enable withCredentials for authentication requests
+  withCredentials: true,
 });
 
 // Request interceptor for adding auth token
@@ -16,6 +19,7 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   error => {
@@ -33,6 +37,13 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       window.location = '/login';
     }
+
+    // Check for network errors
+    if (error.message === 'Network Error') {
+      console.error('Network error detected. Server might be down or unreachable.');
+      // You could dispatch an action to show a global notification here
+    }
+
     return Promise.reject(error);
   }
 );
