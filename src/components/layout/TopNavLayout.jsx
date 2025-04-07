@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -41,6 +41,10 @@ import GroupIcon from '@mui/icons-material/Group';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import PersonIcon from '@mui/icons-material/Person';
 import LoginIcon from '@mui/icons-material/Login';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
@@ -61,31 +65,23 @@ const TopNavLayout = () => {
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
   const userMenuOpen = Boolean(userMenuAnchorEl);
 
-  // State for notifications menu
-  const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
-  const notificationsMenuOpen = Boolean(notificationsAnchorEl);
-
-  // State for admin menu
-  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState(null);
-  const adminMenuOpen = Boolean(adminMenuAnchorEl);
-
   // Navigation categories
   const navigationCategories = {
     main: [
-      { text: 'Home', path: '/', icon: <ViewModuleIcon /> },
+      { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
+      { text: 'Inventar', path: '/inventory', icon: <InventoryIcon /> },
+      { text: 'Gutscheine', path: '/giftcards', icon: <CardGiftcardIcon /> },
+      { text: 'Angebote', path: '/vouchers', icon: <LocalOfferIcon /> },
     ],
-    admin: [
-      { text: 'Benutzerverwaltung', path: '/admin/users', icon: <GroupIcon /> },
-      { text: 'Rollenverwaltung', path: '/admin/roles', icon: <VpnKeyIcon /> },
-      { text: 'Produktverwaltung', path: '/admin/products', icon: <ViewModuleIcon /> },
-      { text: 'Gutscheinverwaltung', path: '/admin/giftcards', icon: <PointOfSaleIcon /> },
-    ],
-    other: [{ text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> }],
-    system: [
-      { text: 'Error Test', path: '/error-test', icon: <BugReportIcon /> },
-      { text: 'Route Error', path: '/error-page', icon: <ErrorIcon /> },
-    ],
+    admin: isAdmin
+      ? [
+          { text: 'Benutzer', path: '/admin/users', icon: <GroupIcon /> },
+          { text: 'Rollen', path: '/admin/roles', icon: <VpnKeyIcon /> },
+          { text: 'Produkte', path: '/admin/products', icon: <ViewModuleIcon /> },
+          { text: 'Gutscheine', path: '/admin/giftcards', icon: <CardGiftcardIcon /> },
+        ]
+      : [],
   };
 
   // User menu items
@@ -143,24 +139,6 @@ const TopNavLayout = () => {
     setUserMenuAnchorEl(null);
   };
 
-  // Handle notifications menu
-  const handleNotificationsOpen = event => {
-    setNotificationsAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationsClose = () => {
-    setNotificationsAnchorEl(null);
-  };
-
-  // Handle admin menu
-  const handleAdminMenuOpen = event => {
-    setAdminMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleAdminMenuClose = () => {
-    setAdminMenuAnchorEl(null);
-  };
-
   // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280, p: 2 }}>
@@ -171,8 +149,6 @@ const TopNavLayout = () => {
             width: 40,
             height: 40,
             mr: 2,
-            boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
-            background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
           }}
         >
           V
@@ -184,13 +160,10 @@ const TopNavLayout = () => {
 
       <Divider sx={{ mb: 2 }} />
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600, pl: 1 }}>
-        Hauptmenü
-      </Typography>
       <List>
         {navigationCategories.main.map(item => (
           <ListItem
-            button={true}
+            button
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -198,29 +171,29 @@ const TopNavLayout = () => {
             }}
             selected={isActive(item.path)}
             sx={{
-              borderRadius: '10px',
+              borderRadius: 1,
               mb: 0.5,
-              transition: 'all 0.2s ease',
               '&.Mui-selected': {
-                bgcolor: 'primary.main',
+                backgroundColor: 'primary.main',
                 color: 'white',
-                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
                 '& .MuiListItemIcon-root': {
                   color: 'white',
                 },
               },
               '&:hover': {
-                bgcolor: isActive(item.path)
-                  ? 'primary.dark'
-                  : alpha(theme.palette.primary.main, 0.08),
-                transform: 'translateY(-2px)',
-                boxShadow: isActive(item.path)
-                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
-                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
               },
             }}
           >
-            <ListItemIcon sx={{ color: isActive(item.path) ? 'white' : 'text.secondary' }}>
+            <ListItemIcon
+              sx={{
+                color: isActive(item.path) ? 'white' : 'primary.main',
+                minWidth: 36,
+              }}
+            >
               {item.icon}
             </ListItemIcon>
             <ListItemText primary={item.text} />
@@ -228,19 +201,17 @@ const TopNavLayout = () => {
         ))}
       </List>
 
-      {isLoggedIn() && isAdmin() && (
+      {isAdmin && navigationCategories.admin.length > 0 && (
         <>
-          <Typography
-            variant="subtitle2"
-            color="text.secondary"
-            sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
-          >
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, px: 1, fontWeight: 500 }}>
             Administration
           </Typography>
+
           <List>
             {navigationCategories.admin.map(item => (
               <ListItem
-                button={true}
+                button
                 key={item.text}
                 onClick={() => {
                   navigate(item.path);
@@ -248,29 +219,29 @@ const TopNavLayout = () => {
                 }}
                 selected={isActive(item.path)}
                 sx={{
-                  borderRadius: '10px',
+                  borderRadius: 1,
                   mb: 0.5,
-                  transition: 'all 0.2s ease',
                   '&.Mui-selected': {
-                    bgcolor: 'primary.main',
+                    backgroundColor: 'primary.main',
                     color: 'white',
-                    boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
                     '& .MuiListItemIcon-root': {
                       color: 'white',
                     },
                   },
                   '&:hover': {
-                    bgcolor: isActive(item.path)
-                      ? 'primary.dark'
-                      : alpha(theme.palette.primary.main, 0.08),
-                    transform: 'translateY(-2px)',
-                    boxShadow: isActive(item.path)
-                      ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
-                      : '0px 4px 12px rgba(37, 99, 235, 0.1)',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: isActive(item.path) ? 'white' : 'text.secondary' }}>
+                <ListItemIcon
+                  sx={{
+                    color: isActive(item.path) ? 'white' : 'primary.main',
+                    minWidth: 36,
+                  }}
+                >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.text} />
@@ -279,194 +250,99 @@ const TopNavLayout = () => {
           </List>
         </>
       )}
-
-      <Typography
-        variant="subtitle2"
-        color="text.secondary"
-        sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
-      >
-        Weitere
-      </Typography>
-      <List>
-        {navigationCategories.other.map(item => (
-          <ListItem
-            button={true}
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              setMobileDrawerOpen(false);
-            }}
-            selected={isActive(item.path)}
-            sx={{
-              borderRadius: '10px',
-              mb: 0.5,
-              transition: 'all 0.2s ease',
-              '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'white',
-                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-              },
-              '&:hover': {
-                bgcolor: isActive(item.path)
-                  ? 'primary.dark'
-                  : alpha(theme.palette.primary.main, 0.08),
-                transform: 'translateY(-2px)',
-                boxShadow: isActive(item.path)
-                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
-                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: isActive(item.path) ? 'white' : 'text.secondary' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
-      </List>
-
-      <Typography
-        variant="subtitle2"
-        color="text.secondary"
-        sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
-      >
-        System
-      </Typography>
-      <List>
-        {navigationCategories.system.map(item => (
-          <ListItem
-            button={true}
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              setMobileDrawerOpen(false);
-            }}
-            selected={isActive(item.path)}
-            sx={{
-              borderRadius: '10px',
-              mb: 0.5,
-              transition: 'all 0.2s ease',
-              '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'white',
-                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-              },
-              '&:hover': {
-                bgcolor: isActive(item.path)
-                  ? 'primary.dark'
-                  : alpha(theme.palette.primary.main, 0.08),
-                transform: 'translateY(-2px)',
-                boxShadow: isActive(item.path)
-                  ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
-                  : '0px 4px 12px rgba(37, 99, 235, 0.1)',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: isActive(item.path) ? 'white' : 'text.secondary' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
-      </List>
     </Box>
   );
 
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* AppBar */}
       <AppBar
-        position="static"
+        position="fixed"
+        color="default"
         elevation={0}
         sx={{
-          backgroundColor: 'white',
-          color: 'text.primary',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          borderBottom: 1,
+          borderColor: 'grey.200',
+          bgcolor: 'background.paper',
+          zIndex: theme => theme.zIndex.drawer + 1,
         }}
       >
-        <Container maxWidth="xl">
-          <Toolbar disableGutters>
-            {/* Mobile menu button */}
+        <Toolbar>
+          {/* Mobile menu icon */}
+          {isMobile && (
             <IconButton
-              size="large"
               edge="start"
               color="inherit"
               aria-label="menu"
               onClick={handleMobileDrawerToggle}
-              sx={{ mr: 2, display: { md: 'none' } }}
+              sx={{ mr: 1 }}
             >
               <MenuIcon />
             </IconButton>
+          )}
 
-            {/* Logo */}
-            <Box
+          {/* Logo */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => navigate('/')}
+          >
+            <Avatar
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
+                bgcolor: 'primary.main',
+                width: 32,
+                height: 32,
+                mr: 1,
               }}
-              onClick={() => navigate('/')}
             >
-              <Avatar
-                sx={{
-                  bgcolor: 'primary.main',
-                  width: 30,
-                  height: 30,
-                  mr: 1,
-                  boxShadow: '0px 2px 8px rgba(37, 99, 235, 0.25)',
-                  background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
-                  display: { xs: 'none', sm: 'flex' },
-                }}
-              >
-                V
-              </Avatar>
-              <Typography
-                variant="h6"
-                noWrap
-                component="div"
-                sx={{
-                  fontWeight: 700,
-                  color: 'primary.main',
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
-                }}
-              >
-                Vendura
-              </Typography>
-            </Box>
+              V
+            </Avatar>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                fontWeight: 700,
+                display: { xs: 'none', sm: 'block' },
+                color: 'primary.main',
+              }}
+            >
+              Vendura
+            </Typography>
+          </Box>
 
-            {/* Desktop navigation */}
-            <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+          {/* Desktop navigation */}
+          {!isMobile && (
+            <Box sx={{ ml: 4, display: 'flex', gap: 0.5 }}>
               {navigationCategories.main.map(item => (
                 <Button
                   key={item.text}
+                  color="inherit"
                   onClick={() => navigate(item.path)}
+                  startIcon={item.icon}
                   sx={{
-                    mx: 0.5,
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
                     color: isActive(item.path) ? 'primary.main' : 'text.primary',
                     fontWeight: isActive(item.path) ? 600 : 400,
                     position: 'relative',
-                    '&::after': {
+                    '&:after': {
                       content: '""',
                       position: 'absolute',
-                      width: '100%',
-                      height: '3px',
                       bottom: 0,
-                      left: 0,
-                      backgroundColor: 'primary.main',
-                      borderRadius: '4px 4px 0 0',
-                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                      transition: 'transform 0.2s ease-in-out',
+                      left: '20%',
+                      width: isActive(item.path) ? '60%' : '0%',
+                      height: '2px',
+                      bgcolor: 'primary.main',
+                      transition: 'width 0.3s ease',
                     },
                     '&:hover': {
                       backgroundColor: 'transparent',
-                      '&::after': {
-                        transform: 'scaleX(1)',
+                      '&:after': {
+                        width: '60%',
                       },
                     },
                   }}
@@ -474,212 +350,138 @@ const TopNavLayout = () => {
                   {item.text}
                 </Button>
               ))}
-
-              {isLoggedIn() && isAdmin() && (
-                <Box>
-                  <Button
-                    onClick={handleAdminMenuOpen}
-                    sx={{
-                      mx: 0.5,
-                      color: location.pathname.startsWith('/admin')
-                        ? 'primary.main'
-                        : 'text.primary',
-                      fontWeight: location.pathname.startsWith('/admin') ? 600 : 400,
-                      position: 'relative',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        width: '100%',
-                        height: '3px',
-                        bottom: 0,
-                        left: 0,
-                        backgroundColor: 'primary.main',
-                        borderRadius: '4px 4px 0 0',
-                        transform: location.pathname.startsWith('/admin')
-                          ? 'scaleX(1)'
-                          : 'scaleX(0)',
-                        transition: 'transform 0.2s ease-in-out',
-                      },
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        '&::after': {
-                          transform: 'scaleX(1)',
-                        },
-                      },
-                    }}
-                    endIcon={<AdminPanelSettingsIcon />}
-                  >
-                    Administration
-                  </Button>
-                  <Menu
-                    anchorEl={adminMenuAnchorEl}
-                    open={adminMenuOpen}
-                    onClose={handleAdminMenuClose}
-                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                  >
-                    {navigationCategories.admin.map(item => (
-                      <MenuItem
-                        key={item.text}
-                        onClick={() => {
-                          navigate(item.path);
-                          handleAdminMenuClose();
-                        }}
-                        sx={{
-                          minWidth: 180,
-                          borderLeft: isActive(item.path) ? '4px solid' : 'none',
-                          borderColor: 'primary.main',
-                          backgroundColor: isActive(item.path)
-                            ? alpha(theme.palette.primary.main, 0.1)
-                            : 'inherit',
-                          '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                          },
-                        }}
-                      >
-                        <ListItemIcon
-                          sx={{ color: isActive(item.path) ? 'primary.main' : 'inherit' }}
-                        >
-                          {item.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.text}
-                          primaryTypographyProps={{
-                            fontWeight: isActive(item.path) ? 600 : 400,
-                            color: isActive(item.path) ? 'primary.main' : 'inherit',
-                          }}
-                        />
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </Box>
-              )}
             </Box>
+          )}
 
-            {/* Right side icons */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {/* Notifications icon */}
-              <Tooltip title="Benachrichtigungen">
-                <IconButton onClick={handleNotificationsOpen} size="large" color="inherit">
-                  <Badge badgeContent={3} color="error">
-                    <NotificationsIcon />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
+          <Box sx={{ flexGrow: 1 }} />
 
-              {/* Notifications menu */}
-              <Menu
-                anchorEl={notificationsAnchorEl}
-                open={notificationsMenuOpen}
-                onClose={handleNotificationsClose}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          {/* User Avatar Button */}
+          {isLoggedIn ? (
+            <Tooltip title="Konto-Einstellungen">
+              <IconButton
+                onClick={handleUserMenuOpen}
+                size="small"
+                aria-controls={userMenuOpen ? 'user-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={userMenuOpen ? 'true' : undefined}
+                sx={{
+                  ml: 1,
+                  border: 2,
+                  borderColor: alpha(theme.palette.primary.main, 0.1),
+                  p: 0.5,
+                }}
               >
-                <Paper sx={{ width: 320, maxHeight: 340, overflow: 'auto' }}>
-                  <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="h6">Benachrichtigungen</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Sie haben 3 ungelesene Nachrichten
-                    </Typography>
-                  </Box>
-                  <MenuItem onClick={handleNotificationsClose}>Bestellung #1234 erhalten</MenuItem>
-                  <MenuItem onClick={handleNotificationsClose}>
-                    Neues Produkt wurde hinzugefügt
-                  </MenuItem>
-                  <MenuItem onClick={handleNotificationsClose}>Zahlungseingang bestätigt</MenuItem>
-                  <Box
-                    sx={{
-                      p: 1,
-                      textAlign: 'center',
-                      borderTop: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Button size="small" onClick={handleNotificationsClose}>
-                      Alle anzeigen
-                    </Button>
-                  </Box>
-                </Paper>
-              </Menu>
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                  {user?.displayName?.charAt(0) || 'U'}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<LoginIcon />}
+              onClick={() => navigate('/login')}
+            >
+              Anmelden
+            </Button>
+          )}
 
-              {/* User account */}
-              {isLoggedIn() ? (
-                <>
-                  <Tooltip title="Benutzerkonto">
-                    <IconButton
-                      onClick={handleUserMenuOpen}
-                      size="large"
-                      edge="end"
-                      color="inherit"
-                    >
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                        {user?.firstName?.charAt(0) || 'U'}
-                      </Avatar>
-                    </IconButton>
-                  </Tooltip>
-                  <Menu
-                    anchorEl={userMenuAnchorEl}
-                    open={userMenuOpen}
-                    onClose={handleUserMenuClose}
-                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                  >
-                    <Box sx={{ px: 2, py: 1.5 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        {user?.firstName} {user?.lastName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {user?.username}
-                      </Typography>
-                    </Box>
-                    <Divider />
-                    {userMenuItems.map(item => (
-                      <MenuItem key={item.text} onClick={item.action} sx={{ minWidth: 180 }}>
-                        <ListItemIcon>{item.icon}</ListItemIcon>
-                        <ListItemText primary={item.text} />
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </>
-              ) : (
-                <Button
-                  variant="contained"
-                  startIcon={<LoginIcon />}
-                  onClick={() => navigate('/login')}
-                  sx={{ ml: 2 }}
-                >
-                  Login
-                </Button>
-              )}
-            </Box>
-          </Toolbar>
-        </Container>
+          {/* User Menu */}
+          <Menu
+            id="user-menu"
+            anchorEl={userMenuAnchorEl}
+            open={userMenuOpen}
+            onClose={handleUserMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            PaperProps={{
+              sx: {
+                mt: 1.5,
+                minWidth: 200,
+                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
+                borderRadius: 1,
+              },
+            }}
+          >
+            <MenuItem sx={{ py: 1 }}>
+              <Avatar sx={{ mr: 2, width: 30, height: 30 }}>
+                {user?.displayName?.charAt(0) || 'U'}
+              </Avatar>
+              <Box>
+                <Typography variant="body2" fontWeight={600}>
+                  {user?.displayName || 'User'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user?.email || 'user@example.com'}
+                </Typography>
+              </Box>
+            </MenuItem>
+
+            <Divider />
+
+            {userMenuItems.map(item => (
+              <MenuItem
+                key={item.text}
+                onClick={item.action}
+                sx={{
+                  py: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mx: 0.5,
+                  borderRadius: 1,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'text.primary', minWidth: 36 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" fontWeight={500}>
+                      {item.text}
+                    </Typography>
+                  }
+                />
+              </MenuItem>
+            ))}
+          </Menu>
+        </Toolbar>
       </AppBar>
 
-      {/* Mobile drawer */}
+      {/* Mobile Drawer */}
       <Drawer
-        anchor="left"
+        variant="temporary"
         open={mobileDrawerOpen}
         onClose={handleMobileDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better performance on mobile
+          keepMounted: true, // Better mobile performance
         }}
         sx={{
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-          },
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { width: 280 },
         }}
       >
         {mobileDrawerContent}
       </Drawer>
 
-      {/* Main content */}
-      <Box component="main" sx={{ flexGrow: 1, py: 3 }}>
-        <Container maxWidth="xl">
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          pt: { xs: 8, sm: 9 },
+          pb: 3,
+          overflow: 'hidden',
+        }}
+      >
+        <Container maxWidth="xl" sx={{ height: '100%' }}>
           <Outlet />
         </Container>
       </Box>
-    </>
+    </Box>
   );
 };
 

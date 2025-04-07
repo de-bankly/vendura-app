@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { TextField, Button, Typography, Box, Paper, Alert } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
 import { AuthService } from '../../services';
-import { getUserFriendlyErrorMessage, isNetworkError } from '../../utils/errorUtils';
+import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 /**
  * Login form component for user authentication
  */
-const LoginForm = ({ onLoginSuccess }) => {
+const LoginForm = ({ onLoginSuccess, onSubmit }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +25,7 @@ const LoginForm = ({ onLoginSuccess }) => {
   const handleSubmit = async e => {
     e.preventDefault();
     if (!username || !password) {
-      setError('Please enter both username and password');
+      setError('Bitte geben Sie Benutzernamen und Passwort ein');
       return;
     }
 
@@ -23,11 +33,13 @@ const LoginForm = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await AuthService.login(username, password);
-      setLoading(false);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(response);
+      if (onSubmit) {
+        await onSubmit(username, password);
+      } else {
+        const response = await AuthService.login(username, password);
+        if (onLoginSuccess) {
+          onLoginSuccess(response);
+        }
       }
     } catch (err) {
       setLoading(false);
@@ -42,49 +54,82 @@ const LoginForm = ({ onLoginSuccess }) => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: 'auto', mt: 8 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Login
-      </Typography>
-
+    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
           {error}
         </Alert>
       )}
 
-      <Box component="form" onSubmit={handleSubmit}>
-        <TextField
-          label="Username"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-          autoFocus
-        />
+      <TextField
+        label="Benutzername"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        autoFocus
+        sx={{
+          mb: 2,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 1,
+          },
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <PersonOutlineIcon color="action" />
+            </InputAdornment>
+          ),
+        }}
+      />
 
-        <TextField
-          label="Password"
-          type="password"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
+      <TextField
+        label="Passwort"
+        type="password"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        sx={{
+          mb: 3,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 1,
+          },
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <LockOutlinedIcon color="action" />
+            </InputAdornment>
+          ),
+        }}
+      />
 
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </Button>
+      <Button
+        type="submit"
+        variant="contained"
+        fullWidth
+        size="large"
+        sx={{
+          py: 1.5,
+          borderRadius: 1,
+          textTransform: 'none',
+          fontWeight: 600,
+          boxShadow: 'none',
+        }}
+        disabled={loading}
+      >
+        {loading ? <CircularProgress size={24} color="inherit" /> : 'Anmelden'}
+      </Button>
+
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Demo Zugangsdaten: admin / password
+        </Typography>
       </Box>
-    </Paper>
+    </Box>
   );
 };
 
