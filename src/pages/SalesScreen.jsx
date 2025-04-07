@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Box, Grid, Typography, Alert } from '../components/ui';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Box, Grid, Typography, Alert, CircularProgress } from '../components/ui';
 import { Slide, Snackbar, useTheme } from '@mui/material';
 import {
   RedeemVoucherDialog,
@@ -7,7 +7,7 @@ import {
   PurchaseVoucherDialog,
 } from '../components/vouchers';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
-import { ProductService, CartService } from '../services';
+import { ProductService, CartService, GiftCardService } from '../services';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 
 // Transition for dialog
@@ -22,11 +22,32 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 const SalesScreen = () => {
   const theme = useTheme();
 
-  // Get products from service
-  const products = useMemo(() => ProductService.getProducts(), []);
+  // State for products and loading
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [productsByCategory, setProductsByCategory] = useState({});
 
-  // Group products by category
-  const productsByCategory = useMemo(() => ProductService.groupByCategory(products), [products]);
+  // Load products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const productData = await ProductService.getProducts({ page: 0, size: 100 });
+        setProducts(productData.content || []);
+        const groupedProducts = ProductService.groupByCategory(productData.content || []);
+        setProductsByCategory(groupedProducts);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Fehler beim Laden der Produkte. Bitte versuchen Sie es später erneut.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // State for cart items
   const [cartItems, setCartItems] = useState([]);
@@ -189,8 +210,24 @@ const SalesScreen = () => {
   }, []);
 
   // Handle voucher redeemed
-  const handleVoucherRedeemed = useCallback(voucher => {
-    setAppliedVouchers(prev => [...prev, voucher]);
+  const handleVoucherRedeemed = useCallback(async voucherId => {
+    try {
+      // Get gift card data and balance from API
+      const giftCard = await GiftCardService.getGiftCardById(voucherId);
+      const giftCardBalance = await GiftCardService.getGiftCardBalance(voucherId);
+
+      // Use balance from balance endpoint
+      const voucher = {
+        ...giftCard,
+        balance: giftCardBalance.remainingBalance,
+      };
+
+      setAppliedVouchers(prev => [...prev, voucher]);
+    } catch (err) {
+      console.error('Error redeeming gift card:', err);
+      // Show error message to user
+      alert('Fehler beim Einlösen des Gutscheins. Bitte versuchen Sie es später erneut.');
+    }
   }, []);
 
   // Handle remove applied voucher
@@ -228,35 +265,47 @@ const SalesScreen = () => {
 
       {/* Main Content */}
       <Box sx={{ p: 3, flexGrow: 1, overflow: 'hidden' }}>
-        <Grid container spacing={3} sx={{ height: '100%' }}>
-          {/* Product selection area */}
-          <Grid item xs={12} md={8} sx={{ height: '100%' }}>
-            <ProductGrid productsByCategory={productsByCategory} onProductSelect={addToCart} />
-          </Grid>
+        {loading ? (
+          <Box
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : (
+          <Grid container spacing={3} sx={{ height: '100%' }}>
+            {/* Product selection area */}
+            <Grid item xs={12} md={8} sx={{ height: '100%' }}>
+              <ProductGrid productsByCategory={productsByCategory} onProductSelect={addToCart} />
+            </Grid>
 
-          {/* Cart area */}
-          <Grid item xs={12} md={4} sx={{ height: '100%' }}>
-            <ShoppingCart
-              cartItems={cartItems}
-              appliedVouchers={appliedVouchers}
-              subtotal={subtotal}
-              voucherDiscount={voucherDiscount}
-              total={total}
-              receiptReady={receiptReady}
-              onAddItem={addToCart}
-              onRemoveItem={removeFromCart}
-              onDeleteItem={deleteFromCart}
-              onClearCart={clearCart}
-              onPayment={handlePaymentModalOpen}
-              onPrintReceipt={handlePrintReceipt}
-              onNewTransaction={handleNewTransaction}
-              onRemoveVoucher={handleRemoveVoucher}
-              onRedeemVoucher={handleRedeemVoucherDialogOpen}
-              onManageVouchers={handleVoucherManagementDialogOpen}
-              onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-            />
+            {/* Cart area */}
+            <Grid item xs={12} md={4} sx={{ height: '100%' }}>
+              <ShoppingCart
+                cartItems={cartItems}
+                appliedVouchers={appliedVouchers}
+                subtotal={subtotal}
+                voucherDiscount={voucherDiscount}
+                total={total}
+                receiptReady={receiptReady}
+                onAddItem={addToCart}
+                onRemoveItem={removeFromCart}
+                onDeleteItem={deleteFromCart}
+                onClearCart={clearCart}
+                onPayment={handlePaymentModalOpen}
+                onPrintReceipt={handlePrintReceipt}
+                onNewTransaction={handleNewTransaction}
+                onRedeemVoucher={handleRedeemVoucherDialogOpen}
+                onManageVouchers={handleVoucherManagementDialogOpen}
+                onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
+                onRemoveVoucher={handleRemoveVoucher}
+              />
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </Box>
 
       {/* Payment Dialog */}

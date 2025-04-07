@@ -7,3 +7,4 @@ export { default as ProgressIndicator } from './ProgressIndicator';
 export { default as Table } from './Table';
 export { default as Chip } from './Chip';
 export { default as LinearProgress } from './LinearProgress';
+export { CircularProgress } from '@mui/material';

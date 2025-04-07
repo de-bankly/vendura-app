@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -36,12 +36,23 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ErrorIcon from '@mui/icons-material/Error';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import GroupIcon from '@mui/icons-material/Group';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import PersonIcon from '@mui/icons-material/Person';
+import LoginIcon from '@mui/icons-material/Login';
+
+// Auth context
+import { useAuth } from '../../contexts/AuthContext';
 
 const TopNavLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Auth context
+  const { user, isLoggedIn, logout, isAdmin } = useAuth();
 
   // State for mobile drawer
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -54,11 +65,21 @@ const TopNavLayout = () => {
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
   const notificationsMenuOpen = Boolean(notificationsAnchorEl);
 
+  // State for admin menu
+  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState(null);
+  const adminMenuOpen = Boolean(adminMenuAnchorEl);
+
   // Navigation categories
   const navigationCategories = {
     main: [
       { text: 'Home', path: '/', icon: <ViewModuleIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
+    ],
+    admin: [
+      { text: 'Benutzerverwaltung', path: '/admin/users', icon: <GroupIcon /> },
+      { text: 'Rollenverwaltung', path: '/admin/roles', icon: <VpnKeyIcon /> },
+      { text: 'Produktverwaltung', path: '/admin/products', icon: <ViewModuleIcon /> },
+      { text: 'Gutscheinverwaltung', path: '/admin/giftcards', icon: <PointOfSaleIcon /> },
     ],
     other: [{ text: 'Component Showcase', path: '/showcase', icon: <ViewModuleIcon /> }],
     system: [
@@ -67,13 +88,13 @@ const TopNavLayout = () => {
     ],
   };
 
-  // Footer navigation items
+  // User menu items
   const userMenuItems = [
     {
       text: 'Profil',
-      icon: <AccountCircleIcon />,
+      icon: <PersonIcon />,
       action: () => {
-        console.log('Profile clicked');
+        navigate('/profile');
         handleUserMenuClose();
       },
     },
@@ -97,7 +118,8 @@ const TopNavLayout = () => {
       text: 'Abmelden',
       icon: <LogoutIcon />,
       action: () => {
-        console.log('Logout clicked');
+        logout();
+        navigate('/login');
         handleUserMenuClose();
       },
     },
@@ -130,6 +152,15 @@ const TopNavLayout = () => {
     setNotificationsAnchorEl(null);
   };
 
+  // Handle admin menu
+  const handleAdminMenuOpen = event => {
+    setAdminMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchorEl(null);
+  };
+
   // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280, p: 2 }}>
@@ -159,7 +190,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.main.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -197,6 +228,58 @@ const TopNavLayout = () => {
         ))}
       </List>
 
+      {isLoggedIn() && isAdmin() && (
+        <>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={{ mt: 2, mb: 1, fontWeight: 600, pl: 1 }}
+          >
+            Administration
+          </Typography>
+          <List>
+            {navigationCategories.admin.map(item => (
+              <ListItem
+                button={true}
+                key={item.text}
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileDrawerOpen(false);
+                }}
+                selected={isActive(item.path)}
+                sx={{
+                  borderRadius: '10px',
+                  mb: 0.5,
+                  transition: 'all 0.2s ease',
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
+                    '& .MuiListItemIcon-root': {
+                      color: 'white',
+                    },
+                  },
+                  '&:hover': {
+                    bgcolor: isActive(item.path)
+                      ? 'primary.dark'
+                      : alpha(theme.palette.primary.main, 0.08),
+                    transform: 'translateY(-2px)',
+                    boxShadow: isActive(item.path)
+                      ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
+                      : '0px 4px 12px rgba(37, 99, 235, 0.1)',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: isActive(item.path) ? 'white' : 'text.secondary' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+
       <Typography
         variant="subtitle2"
         color="text.secondary"
@@ -207,7 +290,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.other.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -255,7 +338,7 @@ const TopNavLayout = () => {
       <List>
         {navigationCategories.system.map(item => (
           <ListItem
-            button
+            button={true}
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -296,401 +379,307 @@ const TopNavLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Top Navigation Bar */}
+    <>
       <AppBar
-        position="sticky"
+        position="static"
         elevation={0}
-        color="default"
         sx={{
-          bgcolor: 'background.paper',
-          borderBottom: `1px solid ${theme.palette.grey[200]}`,
-          backdropFilter: 'blur(8px)',
-          background: 'rgba(255, 255, 255, 0.9)',
+          backgroundColor: 'white',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
-        <Toolbar>
-          {/* Logo and Brand */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 36,
-                height: 36,
-                mr: 1.5,
-                boxShadow: '0px 4px 12px rgba(37, 99, 235, 0.25)',
-                background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
-                transition: 'transform 0.3s ease',
-                '&:hover': {
-                  transform: 'rotate(10deg) scale(1.1)',
-                },
-              }}
+        <Container maxWidth="xl">
+          <Toolbar disableGutters>
+            {/* Mobile menu button */}
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={handleMobileDrawerToggle}
+              sx={{ mr: 2, display: { md: 'none' } }}
             >
-              V
-            </Avatar>
-            <Typography
-              variant="h6"
-              color="primary"
-              fontWeight="bold"
+              <MenuIcon />
+            </IconButton>
+
+            {/* Logo */}
+            <Box
               sx={{
-                display: { xs: 'none', sm: 'block' },
-                background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
               }}
+              onClick={() => navigate('/')}
             >
-              Vendura
-            </Typography>
-          </Box>
-
-          {/* Mobile Menu Button */}
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleMobileDrawerToggle}
-            sx={{
-              mr: 2,
-              display: { md: 'none' },
-              transition: 'transform 0.2s ease',
-              '&:hover': {
-                transform: 'scale(1.1)',
-              },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-
-          {/* Desktop Navigation */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: 1 }}>
-            {navigationCategories.main.map(item => (
-              <Button
-                key={item.text}
-                startIcon={item.icon}
-                onClick={() => navigate(item.path)}
-                color={isActive(item.path) ? 'primary' : 'inherit'}
-                variant={isActive(item.path) ? 'contained' : 'text'}
+              <Avatar
                 sx={{
-                  mx: 0.5,
-                  borderRadius: '10px',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  px: 2,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: isActive(item.path)
-                      ? 'primary.dark'
-                      : 'rgba(37, 99, 235, 0.08)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: isActive(item.path)
-                      ? '0px 6px 16px rgba(37, 99, 235, 0.3)'
-                      : '0px 4px 12px rgba(37, 99, 235, 0.1)',
-                  },
+                  bgcolor: 'primary.main',
+                  width: 30,
+                  height: 30,
+                  mr: 1,
+                  boxShadow: '0px 2px 8px rgba(37, 99, 235, 0.25)',
+                  background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
+                  display: { xs: 'none', sm: 'flex' },
                 }}
               >
-                {item.text}
-              </Button>
-            ))}
-          </Box>
-
-          {/* Right Side Icons */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* Notifications */}
-            <Tooltip title="Benachrichtigungen">
-              <IconButton
-                onClick={handleNotificationsOpen}
-                size="large"
-                aria-controls={notificationsMenuOpen ? 'notifications-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={notificationsMenuOpen ? 'true' : undefined}
+                V
+              </Avatar>
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
                 sx={{
-                  mx: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                  },
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  fontSize: { xs: '1.1rem', md: '1.3rem' },
                 }}
               >
-                <Badge
-                  badgeContent={4}
-                  color="error"
+                Vendura
+              </Typography>
+            </Box>
+
+            {/* Desktop navigation */}
+            <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+              {navigationCategories.main.map(item => (
+                <Button
+                  key={item.text}
+                  onClick={() => navigate(item.path)}
                   sx={{
-                    '& .MuiBadge-badge': {
-                      animation: 'pulse 1.5s infinite',
-                      '@keyframes pulse': {
-                        '0%': {
-                          transform: 'scale(1)',
-                          boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)',
-                        },
-                        '70%': {
-                          transform: 'scale(1.1)',
-                          boxShadow: '0 0 0 6px rgba(239, 68, 68, 0)',
-                        },
-                        '100%': {
-                          transform: 'scale(1)',
-                          boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)',
-                        },
+                    mx: 0.5,
+                    color: isActive(item.path) ? 'primary.main' : 'text.primary',
+                    fontWeight: isActive(item.path) ? 600 : 400,
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      width: '100%',
+                      height: '3px',
+                      bottom: 0,
+                      left: 0,
+                      backgroundColor: 'primary.main',
+                      borderRadius: '4px 4px 0 0',
+                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
+                      transition: 'transform 0.2s ease-in-out',
+                    },
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      '&::after': {
+                        transform: 'scaleX(1)',
                       },
                     },
                   }}
                 >
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+                  {item.text}
+                </Button>
+              ))}
 
-            {/* User Menu */}
-            <Tooltip title="Benutzerprofil">
-              <IconButton
-                onClick={handleUserMenuOpen}
-                size="large"
-                aria-controls={userMenuOpen ? 'user-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={userMenuOpen ? 'true' : undefined}
-                sx={{
-                  ml: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                  },
-                }}
+              {isLoggedIn() && isAdmin() && (
+                <Box>
+                  <Button
+                    onClick={handleAdminMenuOpen}
+                    sx={{
+                      mx: 0.5,
+                      color: location.pathname.startsWith('/admin')
+                        ? 'primary.main'
+                        : 'text.primary',
+                      fontWeight: location.pathname.startsWith('/admin') ? 600 : 400,
+                      position: 'relative',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        width: '100%',
+                        height: '3px',
+                        bottom: 0,
+                        left: 0,
+                        backgroundColor: 'primary.main',
+                        borderRadius: '4px 4px 0 0',
+                        transform: location.pathname.startsWith('/admin')
+                          ? 'scaleX(1)'
+                          : 'scaleX(0)',
+                        transition: 'transform 0.2s ease-in-out',
+                      },
+                      '&:hover': {
+                        backgroundColor: 'transparent',
+                        '&::after': {
+                          transform: 'scaleX(1)',
+                        },
+                      },
+                    }}
+                    endIcon={<AdminPanelSettingsIcon />}
+                  >
+                    Administration
+                  </Button>
+                  <Menu
+                    anchorEl={adminMenuAnchorEl}
+                    open={adminMenuOpen}
+                    onClose={handleAdminMenuClose}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                  >
+                    {navigationCategories.admin.map(item => (
+                      <MenuItem
+                        key={item.text}
+                        onClick={() => {
+                          navigate(item.path);
+                          handleAdminMenuClose();
+                        }}
+                        sx={{
+                          minWidth: 180,
+                          borderLeft: isActive(item.path) ? '4px solid' : 'none',
+                          borderColor: 'primary.main',
+                          backgroundColor: isActive(item.path)
+                            ? alpha(theme.palette.primary.main, 0.1)
+                            : 'inherit',
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{ color: isActive(item.path) ? 'primary.main' : 'inherit' }}
+                        >
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.text}
+                          primaryTypographyProps={{
+                            fontWeight: isActive(item.path) ? 600 : 400,
+                            color: isActive(item.path) ? 'primary.main' : 'inherit',
+                          }}
+                        />
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </Box>
+              )}
+            </Box>
+
+            {/* Right side icons */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {/* Notifications icon */}
+              <Tooltip title="Benachrichtigungen">
+                <IconButton onClick={handleNotificationsOpen} size="large" color="inherit">
+                  <Badge badgeContent={3} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+
+              {/* Notifications menu */}
+              <Menu
+                anchorEl={notificationsAnchorEl}
+                open={notificationsMenuOpen}
+                onClose={handleNotificationsClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
               >
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    bgcolor: 'primary.main',
-                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)',
-                    background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
-                  }}
-                >
-                  <AccountCircleIcon fontSize="small" />
-                </Avatar>
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Toolbar>
+                <Paper sx={{ width: 320, maxHeight: 340, overflow: 'auto' }}>
+                  <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6">Benachrichtigungen</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Sie haben 3 ungelesene Nachrichten
+                    </Typography>
+                  </Box>
+                  <MenuItem onClick={handleNotificationsClose}>Bestellung #1234 erhalten</MenuItem>
+                  <MenuItem onClick={handleNotificationsClose}>
+                    Neues Produkt wurde hinzugefügt
+                  </MenuItem>
+                  <MenuItem onClick={handleNotificationsClose}>Zahlungseingang bestätigt</MenuItem>
+                  <Box
+                    sx={{
+                      p: 1,
+                      textAlign: 'center',
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Button size="small" onClick={handleNotificationsClose}>
+                      Alle anzeigen
+                    </Button>
+                  </Box>
+                </Paper>
+              </Menu>
 
-        {/* Secondary Navigation for Desktop */}
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'flex' },
-            bgcolor: alpha(theme.palette.background.default, 0.8),
-            px: 2,
-            py: 0.5,
-            borderTop: `1px solid ${theme.palette.grey[200]}`,
-            justifyContent: 'center',
-          }}
-        >
-          {[...navigationCategories.other, ...navigationCategories.system].map(item => (
-            <Button
-              key={item.text}
-              startIcon={item.icon}
-              onClick={() => navigate(item.path)}
-              color={isActive(item.path) ? 'primary' : 'inherit'}
-              size="small"
-              sx={{
-                mx: 1,
-                textTransform: 'none',
-                fontWeight: isActive(item.path) ? 600 : 400,
-                fontSize: '0.875rem',
-                borderRadius: '8px',
-                py: 0.5,
-                px: 1.5,
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                  color: 'primary.main',
-                  transform: 'translateY(-2px)',
-                },
-                color: isActive(item.path) ? 'primary.main' : 'text.secondary',
-              }}
-            >
-              {item.text}
-            </Button>
-          ))}
-        </Box>
+              {/* User account */}
+              {isLoggedIn() ? (
+                <>
+                  <Tooltip title="Benutzerkonto">
+                    <IconButton
+                      onClick={handleUserMenuOpen}
+                      size="large"
+                      edge="end"
+                      color="inherit"
+                    >
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                        {user?.firstName?.charAt(0) || 'U'}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    anchorEl={userMenuAnchorEl}
+                    open={userMenuOpen}
+                    onClose={handleUserMenuClose}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                  >
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {user?.firstName} {user?.lastName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user?.username}
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    {userMenuItems.map(item => (
+                      <MenuItem key={item.text} onClick={item.action} sx={{ minWidth: 180 }}>
+                        <ListItemIcon>{item.icon}</ListItemIcon>
+                        <ListItemText primary={item.text} />
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={<LoginIcon />}
+                  onClick={() => navigate('/login')}
+                  sx={{ ml: 2 }}
+                >
+                  Login
+                </Button>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
       </AppBar>
 
-      {/* Notifications Menu */}
-      <Menu
-        id="notifications-menu"
-        anchorEl={notificationsAnchorEl}
-        open={notificationsMenuOpen}
-        onClose={handleNotificationsClose}
-        MenuListProps={{
-          'aria-labelledby': 'notifications-button',
-        }}
-        PaperProps={{
-          elevation: 3,
-          sx: {
-            mt: 1.5,
-            width: 320,
-            maxHeight: 400,
-            overflow: 'auto',
-            borderRadius: '16px',
-            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.12)',
-            border: `1px solid ${theme.palette.grey[200]}`,
-          },
-        }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-            Benachrichtigungen
-          </Typography>
-          <Divider />
-          <List sx={{ py: 0 }}>
-            {[1, 2, 3, 4].map(item => (
-              <ListItem
-                key={item}
-                sx={{
-                  py: 1.5,
-                  borderRadius: '10px',
-                  mb: 0.5,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                    transform: 'translateX(4px)',
-                  },
-                }}
-              >
-                <ListItemText
-                  primary={`Benachrichtigung ${item}`}
-                  secondary={`Dies ist eine Beispielbenachrichtigung ${item}`}
-                  primaryTypographyProps={{ fontWeight: 600 }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Menu>
-
-      {/* User Menu */}
-      <Menu
-        id="user-menu"
-        anchorEl={userMenuAnchorEl}
-        open={userMenuOpen}
-        onClose={handleUserMenuClose}
-        MenuListProps={{
-          'aria-labelledby': 'user-button',
-        }}
-        PaperProps={{
-          elevation: 3,
-          sx: {
-            mt: 1.5,
-            minWidth: 220,
-            borderRadius: '16px',
-            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.12)',
-            border: `1px solid ${theme.palette.grey[200]}`,
-            overflow: 'visible',
-            '&:before': {
-              content: '""',
-              display: 'block',
-              position: 'absolute',
-              top: -6,
-              right: 14,
-              width: 12,
-              height: 12,
-              bgcolor: 'background.paper',
-              transform: 'rotate(45deg)',
-              zIndex: 0,
-              borderTop: `1px solid ${theme.palette.grey[200]}`,
-              borderLeft: `1px solid ${theme.palette.grey[200]}`,
-            },
-          },
-        }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            Max Mustermann
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            max@example.com
-          </Typography>
-        </Box>
-        <Divider />
-        {userMenuItems.map(item => (
-          <MenuItem
-            key={item.text}
-            onClick={item.action}
-            sx={{
-              py: 1.5,
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                transform: 'translateX(4px)',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: 'primary.main' }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </MenuItem>
-        ))}
-      </Menu>
-
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       <Drawer
-        variant="temporary"
+        anchor="left"
         open={mobileDrawerOpen}
         onClose={handleMobileDrawerToggle}
         ModalProps={{
-          keepMounted: true,
+          keepMounted: true, // Better performance on mobile
         }}
         sx={{
-          display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
-            width: 280,
-            boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.15)',
-            borderTopRightRadius: 16,
-            borderBottomRightRadius: 16,
           },
         }}
       >
         {mobileDrawerContent}
       </Drawer>
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          bgcolor: 'background.default',
-          overflow: 'auto',
-          backgroundImage:
-            'radial-gradient(circle at 25px 25px, rgba(37, 99, 235, 0.03) 2%, transparent 0%), radial-gradient(circle at 75px 75px, rgba(16, 185, 129, 0.03) 2%, transparent 0%)',
-          backgroundSize: '100px 100px',
-        }}
-      >
+      {/* Main content */}
+      <Box component="main" sx={{ flexGrow: 1, py: 3 }}>
         <Container maxWidth="xl">
           <Outlet />
         </Container>
       </Box>
-
-      {/* Footer */}
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          px: 2,
-          mt: 'auto',
-          backgroundColor: theme.palette.background.paper,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          textAlign: 'center',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          © {new Date().getFullYear()} Vendura
-        </Typography>
-      </Box>
-    </Box>
+    </>
   );
 };
 

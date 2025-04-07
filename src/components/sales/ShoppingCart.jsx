@@ -140,7 +140,7 @@ const ShoppingCart = ({
                     }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      {item.price.toFixed(2)} € × {item.quantity}
+                      {(item.price ?? 0).toFixed(2)} € × {item.quantity}
                     </Typography>
 
                     <Box sx={{ display: 'flex' }}>

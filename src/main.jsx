@@ -17,6 +17,9 @@ import router from './routes/router';
 // Import error boundary
 import ErrorBoundary from './components/error/ErrorBoundary';
 
+// Import AuthProvider
+import { AuthProvider } from './contexts/AuthContext';
+
 // Import configuration utility
 import { applyRuntimeConfig } from './utils/config';
 
@@ -37,7 +40,9 @@ const initializeApp = async () => {
       <ErrorBoundary>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <RouterProvider router={router} />
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
     </StrictMode>

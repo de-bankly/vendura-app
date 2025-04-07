@@ -39,6 +39,7 @@
     "@million/lint": "^1.0.14",
     "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.5",
+    "axios": "^1.8.4",
     "framer-motion": "^12.4.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

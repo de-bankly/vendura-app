@@ -48,6 +48,12 @@ export const initializeFaro = () => {
     return;
   }
 
+  // For local development, don't initialize Faro
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.debug('Skipping Faro initialization in local development');
+    return null;
+  }
+
   // Dynamically import Faro to ensure it's only loaded in the browser
   import('@grafana/faro-web-sdk')
     .then(({ initializeFaro }) => {
@@ -79,6 +85,7 @@ export const initializeFaro = () => {
           transportOptions: {
             maxRetries: 0, // Don't retry if blocked
             captureException: false, // Don't report transport errors
+            mode: 'no-cors', // Use no-cors mode to avoid CORS issues
           },
         });
 
