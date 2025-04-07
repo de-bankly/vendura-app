@@ -1,6 +1,16 @@
 import React from 'react';
-import { Box, Paper, Typography, Divider, Stack } from '../../components/ui';
-import { Button, Chip, IconButton, useTheme, Badge, Tooltip } from '@mui/material';
+import { Box, Paper, Typography, Divider, Stack, LinearProgress } from '../../components/ui';
+import {
+  Button,
+  Chip,
+  IconButton,
+  useTheme,
+  Badge,
+  Tooltip,
+  alpha,
+  Avatar,
+  Grid,
+} from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -11,6 +21,27 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import LocalMallIcon from '@mui/icons-material/LocalMall';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import SummarizeIcon from '@mui/icons-material/Summarize';
+import { motion } from 'framer-motion';
+
+// Animation variants
+const listItemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -20,
+    transition: { duration: 0.2 },
+  },
+};
 
 /**
  * ShoppingCart component for displaying and managing cart items
@@ -38,16 +69,12 @@ const ShoppingCart = ({
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Paper
-      elevation={4}
+    <Box
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 2,
         overflow: 'hidden',
-        bgcolor: 'background.paper',
-        transition: 'all 0.3s ease',
       }}
     >
       {/* Header */}
@@ -58,14 +85,14 @@ const ShoppingCart = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: `1px solid ${theme.palette.divider}`,
-          background: theme.palette.background.default,
+          background: theme.palette.background.paper,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Badge badgeContent={itemCount} color="primary" showZero sx={{ mr: 1.5 }}>
             <ShoppingCartIcon color="primary" />
           </Badge>
-          <Typography variant="h5" fontWeight="medium">
+          <Typography variant="h6" fontWeight="medium">
             Warenkorb
           </Typography>
         </Box>
@@ -88,7 +115,14 @@ const ShoppingCart = ({
       </Box>
 
       {/* Cart items */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'auto',
+          p: 2,
+          bgcolor: alpha(theme.palette.background.default, 0.5),
+        }}
+      >
         {cartItems.length === 0 ? (
           <Box
             sx={{
@@ -107,77 +141,106 @@ const ShoppingCart = ({
           </Box>
         ) : (
           <Stack spacing={2}>
-            {cartItems.map(item => (
-              <Paper
+            {cartItems.map((item, index) => (
+              <motion.div
                 key={item.id}
-                variant="outlined"
-                sx={{
-                  p: 0,
-                  overflow: 'hidden',
-                  borderRadius: 1.5,
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    boxShadow: 2,
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={listItemVariants}
+                custom={index}
               >
-                <Box sx={{ p: 1.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="subtitle1" fontWeight="medium">
-                      {item.name}
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
-                      {(item.price * item.quantity).toFixed(2)} €
-                    </Typography>
-                  </Box>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    overflow: 'hidden',
+                    borderRadius: 2,
+                    transition: 'all 0.2s',
+                    border: `1px solid ${theme.palette.divider}`,
+                    '&:hover': {
+                      boxShadow: 2,
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    {/* Product Avatar */}
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette.primary.light}30`,
+                        color: theme.palette.primary.dark,
+                        width: 40,
+                        height: 40,
+                      }}
+                    >
+                      {item.name.charAt(0)}
+                    </Avatar>
 
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {(item.price ?? 0).toFixed(2)} € × {item.quantity}
-                    </Typography>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {item.name}
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
+                          {(item.price * item.quantity).toFixed(2)} €
+                        </Typography>
+                      </Box>
 
-                    <Box sx={{ display: 'flex' }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onRemoveItem(item.id)}
+                      <Box
                         sx={{
-                          color: theme.palette.text.secondary,
-                          '&:hover': { color: theme.palette.primary.main },
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <RemoveIcon fontSize="small" />
-                      </IconButton>
+                        <Chip
+                          size="small"
+                          label={`${(item.price ?? 0).toFixed(2)} € × ${item.quantity}`}
+                          sx={{
+                            fontSize: '0.75rem',
+                            bgcolor: `${theme.palette.primary.light}15`,
+                            color: theme.palette.primary.dark,
+                          }}
+                        />
 
-                      <IconButton
-                        size="small"
-                        onClick={() => onAddItem(item)}
-                        sx={{
-                          color: theme.palette.success.main,
-                          '&:hover': { color: theme.palette.success.dark },
-                        }}
-                      >
-                        <AddIcon fontSize="small" />
-                      </IconButton>
+                        <Box sx={{ display: 'flex' }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => onRemoveItem(item.id)}
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              '&:hover': { color: theme.palette.primary.main },
+                            }}
+                          >
+                            <RemoveIcon fontSize="small" />
+                          </IconButton>
 
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => onDeleteItem(item.id)}
-                        sx={{ '&:hover': { color: theme.palette.error.dark } }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => onAddItem(item)}
+                            sx={{
+                              color: theme.palette.success.main,
+                              '&:hover': { color: theme.palette.success.dark },
+                            }}
+                          >
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => onDeleteItem(item.id)}
+                            sx={{ '&:hover': { color: theme.palette.error.dark } }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
-              </Paper>
+                </Paper>
+              </motion.div>
             ))}
 
             {/* Applied vouchers */}
@@ -194,24 +257,22 @@ const ShoppingCart = ({
                   {appliedVouchers.map(voucher => (
                     <Paper
                       key={voucher.id}
-                      variant="outlined"
+                      elevation={0}
                       sx={{
                         p: 1.5,
-                        bgcolor: theme.palette.primary.light + '15',
-                        borderRadius: 1.5,
-                        borderColor: theme.palette.primary.light,
+                        bgcolor: `${theme.palette.info.light}15`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.info.light, 0.4)}`,
                         transition: 'all 0.2s',
                         '&:hover': {
-                          boxShadow: 2,
+                          boxShadow: 1,
+                          borderColor: theme.palette.info.main,
                         },
                       }}
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CardGiftcardIcon
-                            fontSize="small"
-                            sx={{ mr: 1, color: 'primary.main' }}
-                          />
+                          <CardGiftcardIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
                           <Typography variant="body2" fontWeight="medium">
                             {voucher.code}
                           </Typography>
@@ -228,7 +289,7 @@ const ShoppingCart = ({
                         }}
                       >
                         {voucher.remainingValue > 0 && (
-                          <Typography variant="caption" color="primary.main">
+                          <Typography variant="caption" color="info.main">
                             Restguthaben: {voucher.remainingValue.toFixed(2)} €
                           </Typography>
                         )}
@@ -255,60 +316,69 @@ const ShoppingCart = ({
       {/* Cart summary */}
       <Box
         sx={{
-          p: 2,
+          p: 3,
           borderTop: `1px solid ${theme.palette.divider}`,
-          bgcolor: theme.palette.background.default,
+          bgcolor: theme.palette.background.paper,
         }}
       >
         {/* Voucher buttons */}
-        <Box sx={{ mb: 2 }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<CardGiftcardIcon />}
-            onClick={onPurchaseVoucher}
-            size="small"
-            fullWidth
-            sx={{ mb: 1 }}
-          >
-            Gutschein kaufen
-          </Button>
+        {!receiptReady && (
+          <Box sx={{ mb: 3 }}>
+            <Grid container spacing={1}>
+              <Grid item xs={12} sm={6}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<CardGiftcardIcon />}
+                  onClick={onPurchaseVoucher}
+                  size="small"
+                  fullWidth
+                >
+                  Gutschein kaufen
+                </Button>
+              </Grid>
 
-          {!receiptReady && cartItems.length > 0 && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<CardGiftcardIcon />}
-                onClick={onRedeemVoucher}
-                size="small"
-                fullWidth
-              >
-                Gutschein einlösen
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<SettingsIcon />}
-                onClick={onManageVouchers}
-                size="small"
-              >
-                Verwalten
-              </Button>
-            </Box>
-          )}
-        </Box>
+              <Grid item xs={12} sm={6}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<CardGiftcardIcon />}
+                  onClick={onRedeemVoucher}
+                  size="small"
+                  fullWidth
+                  disabled={cartItems.length === 0}
+                >
+                  Einlösen
+                </Button>
+              </Grid>
 
-        <Divider sx={{ mb: 2 }} />
+              <Grid item xs={12}>
+                <Button
+                  variant="text"
+                  color="primary"
+                  startIcon={<SettingsIcon />}
+                  onClick={onManageVouchers}
+                  size="small"
+                  sx={{ width: 'auto' }}
+                >
+                  Gutscheine verwalten
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 2 }} />
 
         {/* Subtotal and discount */}
-        {voucherDiscount > 0 && (
-          <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body1">Zwischensumme:</Typography>
-              <Typography variant="body1">{subtotal.toFixed(2)} €</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+        <Stack spacing={1.5} sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="body1">Zwischensumme:</Typography>
+            <Typography variant="body1">{subtotal.toFixed(2)} €</Typography>
+          </Box>
+
+          {voucherDiscount > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body1" color="error.main">
                 Gutschein-Rabatt:
               </Typography>
@@ -316,19 +386,18 @@ const ShoppingCart = ({
                 -{voucherDiscount.toFixed(2)} €
               </Typography>
             </Box>
-            <Divider sx={{ my: 1 }} />
-          </>
-        )}
+          )}
+        </Stack>
 
         {/* Total */}
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            mb: 2,
-            p: 1.5,
-            bgcolor: theme.palette.primary.main + '15',
-            borderRadius: 1.5,
+            mb: 3,
+            p: 2,
+            bgcolor: alpha(theme.palette.primary.main, 0.08),
+            borderRadius: 2,
           }}
         >
           <Typography variant="h6" fontWeight="bold">
@@ -348,7 +417,7 @@ const ShoppingCart = ({
               startIcon={<ReceiptIcon />}
               onClick={onPrintReceipt}
               sx={{
-                py: 1.2,
+                py: 1.5,
                 boxShadow: 3,
                 '&:hover': { boxShadow: 5 },
               }}
@@ -362,6 +431,7 @@ const ShoppingCart = ({
               fullWidth
               startIcon={<ShoppingCartIcon />}
               onClick={onNewTransaction}
+              sx={{ py: 1.2 }}
             >
               Neuer Verkauf
             </Button>
@@ -375,7 +445,7 @@ const ShoppingCart = ({
             onClick={onPayment}
             disabled={cartItems.length === 0}
             sx={{
-              py: 1.2,
+              py: 1.5,
               boxShadow: 3,
               '&:hover': { boxShadow: 5 },
             }}
@@ -384,7 +454,7 @@ const ShoppingCart = ({
           </Button>
         )}
       </Box>
-    </Paper>
+    </Box>
   );
 };
 
