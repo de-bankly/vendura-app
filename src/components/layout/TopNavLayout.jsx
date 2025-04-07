@@ -45,6 +45,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
@@ -64,6 +65,10 @@ const TopNavLayout = () => {
   // State for user menu
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
   const userMenuOpen = Boolean(userMenuAnchorEl);
+
+  // State for admin menu
+  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState(null);
+  const adminMenuOpen = Boolean(adminMenuAnchorEl);
 
   // Navigation categories
   const navigationCategories = {
@@ -137,6 +142,15 @@ const TopNavLayout = () => {
 
   const handleUserMenuClose = () => {
     setUserMenuAnchorEl(null);
+  };
+
+  // Handle admin menu
+  const handleAdminMenuOpen = event => {
+    setAdminMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchorEl(null);
   };
 
   // Mobile drawer content
@@ -350,6 +364,104 @@ const TopNavLayout = () => {
                   {item.text}
                 </Button>
               ))}
+
+              {/* Admin dropdown menu - only visible for admins */}
+              {isAdmin && navigationCategories.admin.length > 0 && (
+                <>
+                  <Button
+                    color="inherit"
+                    onClick={handleAdminMenuOpen}
+                    startIcon={<AdminPanelSettingsIcon />}
+                    endIcon={<KeyboardArrowDownIcon />}
+                    aria-controls={adminMenuOpen ? 'admin-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={adminMenuOpen ? 'true' : undefined}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      borderRadius: 1,
+                      color: location.pathname.startsWith('/admin')
+                        ? 'primary.main'
+                        : 'text.primary',
+                      fontWeight: location.pathname.startsWith('/admin') ? 600 : 400,
+                      position: 'relative',
+                      '&:after': {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: '20%',
+                        width: location.pathname.startsWith('/admin') ? '60%' : '0%',
+                        height: '2px',
+                        bgcolor: 'primary.main',
+                        transition: 'width 0.3s ease',
+                      },
+                      '&:hover': {
+                        backgroundColor: 'transparent',
+                        '&:after': {
+                          width: '60%',
+                        },
+                      },
+                    }}
+                  >
+                    Administration
+                  </Button>
+                  <Menu
+                    id="admin-menu"
+                    anchorEl={adminMenuAnchorEl}
+                    open={adminMenuOpen}
+                    onClose={handleAdminMenuClose}
+                    transformOrigin={{ horizontal: 'center', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
+                    PaperProps={{
+                      sx: {
+                        mt: 1,
+                        minWidth: 180,
+                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    {navigationCategories.admin.map(item => (
+                      <MenuItem
+                        key={item.text}
+                        onClick={() => {
+                          navigate(item.path);
+                          handleAdminMenuClose();
+                        }}
+                        selected={isActive(item.path)}
+                        sx={{
+                          py: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          mx: 0.5,
+                          borderRadius: 1,
+                          '&.Mui-selected': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                            fontWeight: 600,
+                          },
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: 'text.primary', minWidth: 36 }}>
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="body2"
+                              fontWeight={isActive(item.path) ? 600 : 400}
+                            >
+                              {item.text}
+                            </Typography>
+                          }
+                        />
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
             </Box>
           )}
 
