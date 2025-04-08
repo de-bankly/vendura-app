@@ -106,10 +106,10 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     const supplierId = event.target.value;
     const selectedSupplier = suppliers.find(s => s.id === supplierId);
 
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       supplier: selectedSupplier,
-    });
+    }));
 
     if (errors.supplier) {
       setErrors({

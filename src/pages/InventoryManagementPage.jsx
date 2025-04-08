@@ -18,7 +18,7 @@ import {
   Refresh as RefreshIcon,
   WarningAmber as WarningIcon,
 } from '@mui/icons-material';
-import { InventoryManagementService, ProductService } from '../services';
+import { InventoryManagementService, ProductService, SupplierOrderService } from '../services';
 import { InventoryProductList, StockAdjustmentDialog } from '../components/inventory';
 import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
 import SupplierOrderForm from '../components/inventory/SupplierOrderForm';
@@ -126,7 +126,7 @@ const InventoryManagementPage = () => {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {lowStockProducts.length} products below minimum stock level
               {lowStockProducts.filter(p => p.currentStock === 0).length > 0 && (
-                <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                <Typography variant="body2" color="error.main" sx={{ mt: 1 }} component="span">
                   {lowStockProducts.filter(p => p.currentStock === 0).length} products out of stock!
                 </Typography>
               )}
