@@ -2,7 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
+  Button,
   Chip,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -12,11 +14,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 
 /**
  * InventoryProductList displays products in a list/table format
  */
-const InventoryProductList = ({ products }) => {
+const InventoryProductList = ({ products, onAdjustStock }) => {
   // Format price
   const formatPrice = price => {
     return new Intl.NumberFormat('de-DE', {
@@ -27,17 +30,23 @@ const InventoryProductList = ({ products }) => {
 
   // Determine stock status
   const getStockStatus = product => {
-    if (!product.stockQuantity && product.stockQuantity !== 0) {
+    let currentStock = product.currentStock;
+
+    if (currentStock === null || currentStock === undefined) {
+      currentStock = product.stockQuantity;
+    }
+
+    if (currentStock === null || currentStock === undefined) {
       return { color: 'default', label: 'Unbekannt' };
     }
 
-    if (product.stockQuantity === 0) {
+    if (currentStock === 0) {
       return { color: 'error', label: 'Nicht vorrätig' };
     }
 
-    const lowThreshold = product.lowStockThreshold || 5;
+    const lowThreshold = product.minStockLevel || product.lowStockThreshold || 5;
 
-    if (product.stockQuantity <= lowThreshold) {
+    if (currentStock <= lowThreshold) {
       return { color: 'warning', label: 'Fast leer' };
     }
 
@@ -49,84 +58,57 @@ const InventoryProductList = ({ products }) => {
       <Table sx={{ minWidth: 650 }} size="medium">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'background.subtle' }}>
-            <TableCell width="40%">Produkt</TableCell>
+            <TableCell width="30%">Produkt</TableCell>
             <TableCell>Kategorie</TableCell>
             <TableCell>Marke</TableCell>
             <TableCell align="right">Preis</TableCell>
             <TableCell align="center">Bestand</TableCell>
-            <TableCell>SKU</TableCell>
+            <TableCell>Lieferant</TableCell>
+            <TableCell align="right">Aktionen</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {products.map(product => {
             const stockStatus = getStockStatus(product);
+            const currentStock =
+              product.currentStock !== null
+                ? product.currentStock
+                : product.stockQuantity !== null
+                  ? product.stockQuantity
+                  : null;
 
             return (
-              <TableRow
-                key={product.id}
-                hover
-                sx={{
-                  '&:last-child td, &:last-child th': { border: 0 },
-                  cursor: 'pointer',
-                  '&:hover': { backgroundColor: 'action.hover' },
-                }}
-              >
-                {/* Product Name & Image */}
-                <TableCell sx={{ py: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        flexShrink: 0,
-                        backgroundColor: 'grey.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 1,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt=""
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                        />
-                      ) : (
-                        <Box
-                          sx={{
-                            bgcolor: 'primary.main',
-                            color: 'primary.contrastText',
-                            width: '100%',
-                            height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          {product.name.charAt(0).toUpperCase()}
-                        </Box>
-                      )}
-                    </Box>
+              <TableRow key={product.id}>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {product.imageUrl && (
+                      <Box
+                        component="img"
+                        src={product.imageUrl}
+                        alt={product.name}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          objectFit: 'contain',
+                          mr: 2,
+                          borderRadius: 1,
+                        }}
+                      />
+                    )}
                     <Box>
-                      <Typography variant="body1" fontWeight={500}>
-                        {product.name}
-                      </Typography>
-                      {product.description && (
+                      <Typography variant="subtitle2">{product.name}</Typography>
+                      {product.shortDescription && (
                         <Typography
                           variant="body2"
                           color="text.secondary"
                           sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
                             display: '-webkit-box',
-                            WebkitLineClamp: 1,
+                            WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
                           }}
                         >
-                          {product.description}
+                          {product.shortDescription}
                         </Typography>
                       )}
                     </Box>
@@ -135,8 +117,8 @@ const InventoryProductList = ({ products }) => {
 
                 {/* Category */}
                 <TableCell>
-                  {product.category ? (
-                    <Typography variant="body2">{product.category.name}</Typography>
+                  {product.productCategory ? (
+                    <Typography variant="body2">{product.productCategory.name}</Typography>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
                       —
@@ -157,7 +139,7 @@ const InventoryProductList = ({ products }) => {
 
                 {/* Price */}
                 <TableCell align="right">
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={500}>
                     {formatPrice(product.price)}
                   </Typography>
                 </TableCell>
@@ -178,24 +160,36 @@ const InventoryProductList = ({ products }) => {
                       size="small"
                       sx={{ fontWeight: 500 }}
                     />
-                    {(product.stockQuantity || product.stockQuantity === 0) && (
+                    {currentStock !== null && (
                       <Typography variant="caption" color="text.secondary">
-                        {product.stockQuantity} Stk.
+                        {currentStock} Stk.
                       </Typography>
                     )}
                   </Box>
                 </TableCell>
 
-                {/* SKU */}
+                {/* Supplier */}
                 <TableCell>
-                  {product.sku ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {product.sku}
-                    </Typography>
+                  {product.defaultSupplier ? (
+                    <Typography variant="body2">{product.defaultSupplier.legalName}</Typography>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
                       —
                     </Typography>
+                  )}
+                </TableCell>
+
+                {/* Actions */}
+                <TableCell align="right">
+                  {onAdjustStock && (
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onAdjustStock(product)}
+                      title="Bestand anpassen"
+                    >
+                      <EditIcon />
+                    </IconButton>
                   )}
                 </TableCell>
               </TableRow>
@@ -213,12 +207,18 @@ InventoryProductList.propTypes = {
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       description: PropTypes.string,
+      shortDescription: PropTypes.string,
+      longDescription: PropTypes.string,
       price: PropTypes.number.isRequired,
       imageUrl: PropTypes.string,
       stockQuantity: PropTypes.number,
       lowStockThreshold: PropTypes.number,
+      minStockLevel: PropTypes.number,
+      maxStockLevel: PropTypes.number,
+      reorderPoint: PropTypes.number,
       sku: PropTypes.string,
-      category: PropTypes.shape({
+      currentStock: PropTypes.number,
+      productCategory: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
       }),
@@ -226,8 +226,13 @@ InventoryProductList.propTypes = {
         id: PropTypes.string,
         name: PropTypes.string,
       }),
+      defaultSupplier: PropTypes.shape({
+        id: PropTypes.string,
+        legalName: PropTypes.string,
+      }),
     })
   ).isRequired,
+  onAdjustStock: PropTypes.func,
 };
 
 export default InventoryProductList;

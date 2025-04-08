@@ -50,8 +50,8 @@ class SupplierOrderService {
   }
 
   /**
-   * Update an existing supplier order
-   * @param {String} id - The supplier order ID to update
+   * Update a supplier order
+   * @param {String} id - The supplier order ID
    * @param {Object} orderData - The updated supplier order data
    * @returns {Promise} Promise resolving to the updated supplier order
    */
@@ -68,14 +68,49 @@ class SupplierOrderService {
   /**
    * Delete a supplier order
    * @param {String} id - The supplier order ID to delete
-   * @returns {Promise} Promise resolving when supplier order is deleted
+   * @returns {Promise} Promise resolving when the supplier order is deleted
    */
   async deleteSupplierOrder(id) {
     try {
-      await apiClient.delete(`/v1/supplierorder/${id}`);
-      return true;
+      const response = await apiClient.delete(`/v1/supplierorder/${id}`);
+      return response.data;
     } catch (error) {
       console.error(`Error deleting supplier order with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a supplier order's status
+   * @param {String} id - The supplier order ID
+   * @param {String} status - The new status (PLACED, SHIPPED, DELIVERED, CANCELLED)
+   * @returns {Promise} Promise resolving to the updated supplier order
+   */
+  async updateSupplierOrderStatus(id, status) {
+    try {
+      const orderData = { orderStatus: status };
+      const response = await apiClient.put(`/v1/supplierorder/${id}`, orderData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating status for supplier order with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get supplier orders by supplier ID
+   * @param {String} supplierId - The supplier ID
+   * @param {Object} pageable - Pagination parameters
+   * @returns {Promise} Promise resolving to supplier orders
+   */
+  async getSupplierOrdersBySupplierId(supplierId, pageable = { page: 0, size: 10 }) {
+    try {
+      const response = await apiClient.get(`/v1/supplierorder/supplier/${supplierId}`, {
+        params: pageable,
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching supplier orders for supplier ${supplierId}:`, error);
       throw error;
     }
   }
