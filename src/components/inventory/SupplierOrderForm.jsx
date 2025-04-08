@@ -40,7 +40,7 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     expectedDeliveryDate: null,
     notes: '',
     positions: [],
-    orderStatus: 'PLACED',
+    orderStatus: '',
     isAutomaticOrder: false,
   });
 
@@ -72,7 +72,7 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
               : null,
             notes: initialData.notes || '',
             positions: initialData.positions || [],
-            orderStatus: initialData.orderStatus || 'PLACED',
+            orderStatus: initialData.orderStatus === 'PLACED' ? '' : initialData.orderStatus || '',
             isAutomaticOrder: initialData.isAutomaticOrder || false,
           });
         }
@@ -218,7 +218,13 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     event.preventDefault();
 
     if (validateForm()) {
-      onSubmit(formData);
+      // Convert empty orderStatus to "PLACED" before submitting
+      const dataToSubmit = {
+        ...formData,
+        orderStatus: formData.orderStatus === '' ? 'PLACED' : formData.orderStatus,
+      };
+
+      onSubmit(dataToSubmit);
     }
   };
 
@@ -291,6 +297,7 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
               onChange={handleStatusChange}
               label="Order Status"
             >
+              <MenuItem value="">Select a status</MenuItem>
               <MenuItem value="PLACED">Placed</MenuItem>
               <MenuItem value="SHIPPED">Shipped</MenuItem>
               <MenuItem value="DELIVERED">Delivered</MenuItem>

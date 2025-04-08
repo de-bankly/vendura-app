@@ -23,7 +23,7 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 const ProductGrid = ({ productsByCategory, onProductSelect }) => {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(0);
 
   // Handle search input change
   const handleSearchChange = event => {
@@ -47,14 +47,15 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
 
     // Filter by category first
     let filteredProducts = [];
-    if (selectedCategory === 'all') {
+    if (selectedCategory === 0) {
       // Get all products from all categories
       Object.values(productsByCategory).forEach(categoryProducts => {
         filteredProducts = [...filteredProducts, ...categoryProducts];
       });
     } else {
       // Get products from selected category
-      filteredProducts = productsByCategory[selectedCategory] || [];
+      const categoryName = categories[selectedCategory - 1]?.name;
+      filteredProducts = productsByCategory[categoryName] || [];
     }
 
     // Then filter by search term
@@ -149,10 +150,10 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                 />
               </Box>
             }
-            value="all"
+            value={0}
           />
 
-          {categories.map(category => (
+          {categories.map((category, index) => (
             <Tab
               key={category.name}
               label={
@@ -165,7 +166,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                   />
                 </Box>
               }
-              value={category.name}
+              value={index + 1}
             />
           ))}
         </Tabs>
