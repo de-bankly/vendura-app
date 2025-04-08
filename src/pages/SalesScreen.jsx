@@ -1,6 +1,18 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Box, Grid, Typography, Alert, CircularProgress } from '../components/ui';
-import { Slide, Snackbar, useTheme } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Typography,
+  Alert,
+  CircularProgress,
+  Card,
+  CardContent,
+  Button,
+  Paper,
+  Chip,
+  Divider,
+} from '../components/ui';
+import { Slide, Snackbar, useTheme, alpha, Container } from '@mui/material';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
@@ -8,12 +20,42 @@ import {
 } from '../components/vouchers';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import { ProductService, CartService, GiftCardService } from '../services';
+import { motion } from 'framer-motion';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 100,
+      damping: 12,
+    },
+  },
+};
 
 /**
  * SalesScreen component for the point-of-sale system
@@ -239,74 +281,250 @@ const SalesScreen = () => {
     <Box
       sx={{
         height: '100%',
-        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${theme.palette.primary.light}20 100%)`,
-        overflow: 'hidden',
+        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${alpha(theme.palette.primary.light, 0.1)} 100%)`,
+        overflow: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        pt: 2,
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          p: 2,
-          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          color: 'white',
-          boxShadow: 3,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-        }}
-      >
-        <StorefrontIcon fontSize="large" />
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Verkaufsbildschirm
-        </Typography>
-      </Box>
+      <Container maxWidth="xl">
+        {/* Page Header */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="sales-container"
+        >
+          <motion.div variants={itemVariants}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                pb: 2,
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+              }}
+            >
+              <PointOfSaleIcon
+                sx={{
+                  fontSize: 40,
+                  mr: 2,
+                  color: theme.palette.primary.main,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  p: 1,
+                  borderRadius: 2,
+                }}
+              />
+              <Typography variant="h4" component="h1" fontWeight="bold" color="primary.main">
+                Verkaufsbildschirm
+              </Typography>
+            </Box>
+          </motion.div>
 
-      {/* Main Content */}
-      <Box sx={{ p: 3, flexGrow: 1, overflow: 'hidden' }}>
-        {loading ? (
-          <Box
-            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
-          >
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        ) : (
-          <Grid container spacing={3} sx={{ height: '100%' }}>
-            {/* Product selection area */}
-            <Grid item xs={12} md={8} sx={{ height: '100%' }}>
-              <ProductGrid productsByCategory={productsByCategory} onProductSelect={addToCart} />
+          {/* Sales Summary Cards */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={4}>
+              <motion.div variants={itemVariants}>
+                <Card className="hover-card" sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Warenkorb
+                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={<ShoppingCartIcon fontSize="small" />}
+                        label={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                        color="primary"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </Box>
+
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                      {total.toLocaleString('de-DE', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
+                    </Typography>
+
+                    {cartItems.length > 0 && (
+                      <Typography variant="body2" color="text.secondary">
+                        {cartItems.length} Artikel im Warenkorb
+                      </Typography>
+                    )}
+
+                    {cartItems.length === 0 && (
+                      <Typography variant="body2" color="text.secondary">
+                        Keine Artikel im Warenkorb
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             </Grid>
 
-            {/* Cart area */}
-            <Grid item xs={12} md={4} sx={{ height: '100%' }}>
-              <ShoppingCart
-                cartItems={cartItems}
-                appliedVouchers={appliedVouchers}
-                subtotal={subtotal}
-                voucherDiscount={voucherDiscount}
-                total={total}
-                receiptReady={receiptReady}
-                onAddItem={addToCart}
-                onRemoveItem={removeFromCart}
-                onDeleteItem={deleteFromCart}
-                onClearCart={clearCart}
-                onPayment={handlePaymentModalOpen}
-                onPrintReceipt={handlePrintReceipt}
-                onNewTransaction={handleNewTransaction}
-                onRedeemVoucher={handleRedeemVoucherDialogOpen}
-                onManageVouchers={handleVoucherManagementDialogOpen}
-                onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-                onRemoveVoucher={handleRemoveVoucher}
-              />
+            <Grid item xs={12} md={4}>
+              <motion.div variants={itemVariants}>
+                <Card className="hover-card" sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Produkte
+                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={<InventoryIcon fontSize="small" />}
+                        label={products.length}
+                        color="success"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </Box>
+
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                      {Object.keys(productsByCategory).length}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Kategorien verfügbar
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <motion.div variants={itemVariants}>
+                <Card className="hover-card" sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Gutscheine
+                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={<CardGiftcardIcon fontSize="small" />}
+                        label={appliedVouchers.length}
+                        color="info"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    </Box>
+
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                      {voucherDiscount.toLocaleString('de-DE', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Rabatt angewendet
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </Grid>
           </Grid>
-        )}
-      </Box>
+
+          {/* Main Content */}
+          {loading ? (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '400px',
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          ) : (
+            <Box sx={{ mb: 4 }}>
+              <Grid container spacing={3}>
+                {/* Product Grid */}
+                <Grid item xs={12} md={8}>
+                  <motion.div variants={itemVariants}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: `1px solid ${theme.palette.divider}`,
+                        height: '70vh',
+                      }}
+                    >
+                      <ProductGrid
+                        productsByCategory={productsByCategory}
+                        onProductSelect={addToCart}
+                      />
+                    </Paper>
+                  </motion.div>
+                </Grid>
+
+                {/* Shopping Cart */}
+                <Grid item xs={12} md={4}>
+                  <motion.div variants={itemVariants}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: `1px solid ${theme.palette.divider}`,
+                        height: '70vh',
+                      }}
+                    >
+                      <ShoppingCart
+                        cartItems={cartItems}
+                        appliedVouchers={appliedVouchers}
+                        subtotal={subtotal}
+                        voucherDiscount={voucherDiscount}
+                        total={total}
+                        receiptReady={receiptReady}
+                        onAddItem={addToCart}
+                        onRemoveItem={removeFromCart}
+                        onDeleteItem={deleteFromCart}
+                        onClearCart={clearCart}
+                        onPayment={handlePaymentModalOpen}
+                        onPrintReceipt={handlePrintReceipt}
+                        onNewTransaction={handleNewTransaction}
+                        onRedeemVoucher={handleRedeemVoucherDialogOpen}
+                        onManageVouchers={handleVoucherManagementDialogOpen}
+                        onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
+                        onRemoveVoucher={handleRemoveVoucher}
+                      />
+                    </Paper>
+                  </motion.div>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </motion.div>
+      </Container>
 
       {/* Payment Dialog */}
       <PaymentDialog

@@ -16,6 +16,7 @@ import {
   UnauthorizedPage,
   UserManagementPage,
   RoleManagementPage,
+  InventoryPage,
 } from '../pages';
 
 // New Admin Pages
@@ -54,6 +55,14 @@ const reactBrowserRouter = createBrowserRouter([
       {
         path: 'sales',
         element: <SalesScreen />,
+      },
+      {
+        path: 'inventory',
+        element: (
+          <ProtectedRoute>
+            <InventoryPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'profile',

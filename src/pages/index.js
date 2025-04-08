@@ -8,3 +8,4 @@ export { default as UserManagementPage } from './admin/UserManagementPage';
 export { default as RoleManagementPage } from './admin/RoleManagementPage';
 export { default as ProductManagementPage } from './admin/ProductManagementPage';
 export { default as GiftCardManagementPage } from './admin/GiftCardManagementPage';
+export { default as InventoryPage } from './InventoryPage';
