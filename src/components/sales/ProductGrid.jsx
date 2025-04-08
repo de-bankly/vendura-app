@@ -237,7 +237,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                           {product.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" noWrap>
-                          {product.category}
+                          {product.category?.name || 'Unkategorisiert'}
                         </Typography>
                       </Box>
 
