@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme, alpha } from '@mui/material';
 import {
   Box,
@@ -14,6 +14,7 @@ import {
 } from '../components/ui';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { InventoryManagementService } from '../services';
 
 // Icons
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
@@ -29,6 +30,29 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 const Home = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const [inventoryStatus, setInventoryStatus] = useState({
+    total: 0,
+    lowStock: 0,
+    outOfStock: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch inventory status on component mount
+  useEffect(() => {
+    const fetchInventoryStatus = async () => {
+      try {
+        setIsLoading(true);
+        const data = await InventoryManagementService.getInventoryStatus();
+        setInventoryStatus(data);
+      } catch (error) {
+        console.error('Error fetching inventory status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInventoryStatus();
+  }, []);
 
   // Mock data for the dashboard
   const salesData = {
@@ -36,12 +60,6 @@ const Home = () => {
     yesterday: 980.5,
     trend: 27.56,
     positive: true,
-  };
-
-  const inventoryStatus = {
-    total: 287,
-    lowStock: 12,
-    outOfStock: 3,
   };
 
   const recentTransactions = [
@@ -407,7 +425,7 @@ const Home = () => {
                       Gesamtanzahl Produkte
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
-                      {inventoryStatus.total}
+                      {isLoading ? '...' : inventoryStatus.total}
                     </Typography>
                   </Box>
 
@@ -416,7 +434,7 @@ const Home = () => {
                       Produkte mit geringem Bestand
                     </Typography>
                     <Typography variant="body2" fontWeight={600} color="warning.main">
-                      {inventoryStatus.lowStock}
+                      {isLoading ? '...' : inventoryStatus.lowStock}
                     </Typography>
                   </Box>
 
@@ -425,7 +443,7 @@ const Home = () => {
                       Nicht vorrätige Produkte
                     </Typography>
                     <Typography variant="body2" fontWeight={600} color="error.main">
-                      {inventoryStatus.outOfStock}
+                      {isLoading ? '...' : inventoryStatus.outOfStock}
                     </Typography>
                   </Box>
                 </Box>
