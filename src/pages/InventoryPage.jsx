@@ -49,7 +49,7 @@ const InventoryPage = () => {
 
   // State for categories
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   // State for view mode
   const [viewMode, setViewMode] = useState('grid');
@@ -251,7 +251,7 @@ const InventoryPage = () => {
 
   // Handle view mode change
   const handleViewModeChange = (event, newValue) => {
-    setViewMode(newValue);
+    setViewMode(newValue === 0 ? 'grid' : 'list');
   };
 
   // Handle filter drawer toggle
@@ -282,7 +282,7 @@ const InventoryPage = () => {
     }
 
     // Apply category filter
-    if (selectedCategory !== 'all') {
+    if (selectedCategory !== '') {
       result = result.filter(
         product => product.category && product.category.id === selectedCategory
       );
@@ -410,7 +410,7 @@ const InventoryPage = () => {
                   ),
                 }}
               >
-                <MenuItem value="all">Alle Kategorien</MenuItem>
+                <MenuItem value="">Alle Kategorien</MenuItem>
                 {categories.map(category => (
                   <MenuItem key={category.id} value={category.id}>
                     {category.name}
@@ -430,7 +430,7 @@ const InventoryPage = () => {
               </Button>
 
               <Tabs
-                value={viewMode}
+                value={viewMode === 'grid' ? 0 : 1}
                 onChange={handleViewModeChange}
                 aria-label="view mode"
                 sx={{
@@ -439,8 +439,8 @@ const InventoryPage = () => {
                   '& .MuiTab-root': { minHeight: 'unset', py: 1 },
                 }}
               >
-                <Tab icon={<GridViewIcon />} value="grid" sx={{ minWidth: 'unset' }} />
-                <Tab icon={<ViewListIcon />} value="list" sx={{ minWidth: 'unset' }} />
+                <Tab icon={<GridViewIcon />} sx={{ minWidth: 'unset' }} />
+                <Tab icon={<ViewListIcon />} sx={{ minWidth: 'unset' }} />
               </Tabs>
             </Grid>
           </Grid>
