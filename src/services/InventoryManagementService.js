@@ -5,6 +5,25 @@ import apiClient from './ApiConfig';
  */
 class InventoryManagementService {
   /**
+   * Get inventory status summary for dashboard
+   * @returns {Promise} Promise resolving to inventory status data
+   */
+  async getInventoryStatus() {
+    try {
+      const response = await apiClient.get('/v1/inventory/status');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inventory status:', error);
+      // Return fallback data structure in case of error
+      return {
+        total: 0,
+        lowStock: 0,
+        outOfStock: 0,
+      };
+    }
+  }
+
+  /**
    * Get products with low stock
    * @returns {Promise} Promise resolving to low stock products data
    */
