@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -25,6 +26,7 @@ import {
   WarningAmber as WarningIcon,
   GridView as GridViewIcon,
   ViewList as ViewListIcon,
+  Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
 
 import { ProductService, ProductCategoryService } from '../services';
@@ -326,27 +328,30 @@ const InventoryPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 8 }}>
-      {/* Page Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Inventar
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Produktbestand
         </Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleRefresh}
-          startIcon={<RefreshIcon />}
-        >
-          Aktualisieren
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleRefresh}
+            startIcon={<RefreshIcon />}
+          >
+            Aktualisieren
+          </Button>
+          <Button
+            component={Link}
+            to="/inventory-management"
+            variant="contained"
+            color="primary"
+            startIcon={<Inventory2Icon />}
+          >
+            Bestandsverwaltung
+          </Button>
+        </Box>
       </Box>
 
       {/* Error Message */}
