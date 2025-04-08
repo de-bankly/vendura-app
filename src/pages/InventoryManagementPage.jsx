@@ -125,6 +125,11 @@ const InventoryManagementPage = () => {
             </Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {lowStockProducts.length} products below minimum stock level
+              {lowStockProducts.filter(p => p.currentStock === 0).length > 0 && (
+                <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                  {lowStockProducts.filter(p => p.currentStock === 0).length} products out of stock!
+                </Typography>
+              )}
             </Typography>
             <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => setActiveTab(1)}>
               View All
