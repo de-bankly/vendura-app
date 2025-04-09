@@ -19,7 +19,8 @@ import {
   PurchaseVoucherDialog,
 } from '../components/vouchers';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
-import { ProductService, CartService, GiftCardService } from '../services';
+import { PrinterConfigDialog } from '../components/settings';
+import { ProductService, CartService, GiftCardService, PrinterService } from '../services';
 import { motion } from 'framer-motion';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
@@ -27,6 +28,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import PrintIcon from '@mui/icons-material/Print';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -110,6 +112,9 @@ const SalesScreen = () => {
 
   // State for applied vouchers
   const [appliedVouchers, setAppliedVouchers] = useState([]);
+
+  // State for printer dialog
+  const [printerConfigDialogOpen, setPrinterConfigDialogOpen] = useState(false);
 
   // Add item to cart
   const addToCart = useCallback(product => {
@@ -204,11 +209,50 @@ const SalesScreen = () => {
   ]);
 
   // Handle print receipt
-  const handlePrintReceipt = useCallback(() => {
-    // In a real app, this would trigger receipt printing
-    console.log('Printing receipt for items:', cartItems);
-    alert('Rechnung wird gedruckt...');
-  }, [cartItems]);
+  const handlePrintReceipt = useCallback(async () => {
+    try {
+      const isConnected = await PrinterService.isPrinterConnected();
+
+      if (!isConnected) {
+        // Show error if printer is not connected
+        console.error('Drucker ist nicht verbunden');
+        alert('Fehler: Drucker ist nicht verbunden. Bitte überprüfen Sie die Verbindung.');
+        return;
+      }
+
+      // Print receipt using the PrinterService
+      const success = await PrinterService.printReceipt(
+        cartItems, // Cart items
+        subtotal, // Subtotal amount
+        appliedVouchers, // Applied vouchers
+        voucherDiscount, // Voucher discount amount
+        total, // Total amount
+        paymentMethod, // Payment method
+        cashReceived, // Cash received (for cash payments)
+        change // Change (for cash payments)
+      );
+
+      if (success) {
+        // Show success message
+        alert('Beleg wurde erfolgreich gedruckt!');
+      } else {
+        // Show error message
+        alert('Fehler beim Drucken des Belegs. Bitte versuchen Sie es erneut.');
+      }
+    } catch (error) {
+      console.error('Error printing receipt:', error);
+      alert(`Fehler beim Drucken: ${error.message}`);
+    }
+  }, [
+    cartItems,
+    subtotal,
+    appliedVouchers,
+    voucherDiscount,
+    total,
+    paymentMethod,
+    cashReceived,
+    change,
+  ]);
 
   // Handle snackbar close
   const handleSnackbarClose = useCallback(() => {
@@ -277,6 +321,16 @@ const SalesScreen = () => {
     setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
   }, []);
 
+  // Handle printer dialog open
+  const handlePrinterConfigDialogOpen = useCallback(() => {
+    setPrinterConfigDialogOpen(true);
+  }, []);
+
+  // Handle printer dialog close
+  const handlePrinterConfigDialogClose = useCallback(() => {
+    setPrinterConfigDialogOpen(false);
+  }, []);
+
   return (
     <Box
       sx={{
@@ -300,25 +354,37 @@ const SalesScreen = () => {
             <Box
               sx={{
                 display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 mb: 3,
                 pb: 2,
                 borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
               }}
             >
-              <PointOfSaleIcon
-                sx={{
-                  fontSize: 40,
-                  mr: 2,
-                  color: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  p: 1,
-                  borderRadius: 2,
-                }}
-              />
-              <Typography variant="h4" component="h1" fontWeight="bold" color="primary.main">
-                Verkaufsbildschirm
-              </Typography>
+              <Box display="flex" alignItems="center">
+                <PointOfSaleIcon
+                  sx={{
+                    fontSize: 40,
+                    mr: 2,
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    p: 1,
+                    borderRadius: 2,
+                  }}
+                />
+                <Typography variant="h4" component="h1" fontWeight="bold" color="primary.main">
+                  Verkaufsbildschirm
+                </Typography>
+              </Box>
+
+              <Button
+                startIcon={<PrintIcon />}
+                variant="outlined"
+                onClick={handlePrinterConfigDialogOpen}
+                sx={{ borderRadius: 8 }}
+              >
+                Drucker einrichten
+              </Button>
             </Box>
           </motion.div>
 
@@ -576,6 +642,12 @@ const SalesScreen = () => {
         open={purchaseVoucherDialogOpen}
         onClose={handlePurchaseVoucherDialogClose}
         onAddToCart={addToCart}
+      />
+
+      {/* Printer Config Dialog */}
+      <PrinterConfigDialog
+        open={printerConfigDialogOpen}
+        onClose={handlePrinterConfigDialogClose}
       />
     </Box>
   );

@@ -9,3 +9,4 @@ export { default as ProductCategoryService } from './ProductCategoryService';
 export { default as SupplierService } from './SupplierService';
 export { default as SupplierOrderService } from './SupplierOrderService';
 export { default as GiftCardService } from './GiftCardService';
+export { default as PrinterService } from './PrinterService';
