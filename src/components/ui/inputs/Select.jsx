@@ -39,6 +39,14 @@ const Select = ({
     name ||
     `select-${label?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(2, 9)}`;
 
+  // Handle onChange to ensure we return a proper event object
+  const handleChange = event => {
+    if (onChange) {
+      // Pass the event directly to maintain compatibility with standard MUI events
+      onChange(event);
+    }
+  };
+
   // Size-specific styles
   const sizeStyles = {
     small: {
@@ -110,7 +118,7 @@ const Select = ({
         labelId={`${selectId}-label`}
         id={selectId}
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         label={label}
         name={name}
         multiple={multiple}

@@ -11,11 +11,11 @@ import {
   FormControl,
   Grid,
   MenuItem,
-  Select,
   TextField,
   Typography,
 } from '@mui/material';
 import { InventoryManagementService } from '../../services';
+import { Select } from '../ui/inputs';
 
 /**
  * StockAdjustmentDialog allows users to manually adjust inventory stock levels
@@ -74,10 +74,14 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
                 <Typography variant="subtitle2" gutterBottom>
                   Adjustment Type
                 </Typography>
-                <Select value={adjustmentType} onChange={e => setAdjustmentType(e.target.value)}>
-                  <MenuItem value="add">Add Stock</MenuItem>
-                  <MenuItem value="remove">Remove Stock</MenuItem>
-                </Select>
+                <Select
+                  value={adjustmentType}
+                  onChange={e => setAdjustmentType(e.target.value)}
+                  options={[
+                    { value: 'add', label: 'Add Stock' },
+                    { value: 'remove', label: 'Remove Stock' },
+                  ]}
+                />
               </FormControl>
             </Grid>
 

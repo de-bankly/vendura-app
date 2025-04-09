@@ -15,7 +15,6 @@ import {
   InputLabel,
   MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -34,6 +33,7 @@ import {
   BrandService,
   SupplierService,
 } from '../../services';
+import { Select } from '../../components/ui/inputs';
 
 /**
  * ProductManagementPage - Admin page to manage products
@@ -142,6 +142,14 @@ const ProductManagementPage = () => {
     setCurrentProduct({
       ...currentProduct,
       [name]: parsedValue,
+    });
+  };
+
+  // Handle select change for our custom Select component
+  const handleSelectChange = (name, e) => {
+    setCurrentProduct({
+      ...currentProduct,
+      [name]: e.target.value,
     });
   };
 
@@ -408,54 +416,42 @@ const ProductManagementPage = () => {
               />
 
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="category-label">Kategorie</InputLabel>
                 <Select
-                  labelId="category-label"
+                  label="Kategorie"
                   name="categoryId"
                   value={currentProduct.categoryId}
-                  label="Kategorie"
-                  onChange={handleInputChange}
-                >
-                  {categories.map(category => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </Select>
+                  onChange={e => handleSelectChange('categoryId', e)}
+                  options={categories.map(category => ({
+                    value: category.id,
+                    label: category.name,
+                  }))}
+                />
               </FormControl>
 
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="brand-label">Marke</InputLabel>
                 <Select
-                  labelId="brand-label"
+                  label="Marke"
                   name="brandId"
                   value={currentProduct.brandId}
-                  label="Marke"
-                  onChange={handleInputChange}
-                >
-                  {brands.map(brand => (
-                    <MenuItem key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </MenuItem>
-                  ))}
-                </Select>
+                  onChange={e => handleSelectChange('brandId', e)}
+                  options={brands.map(brand => ({
+                    value: brand.id,
+                    label: brand.name,
+                  }))}
+                />
               </FormControl>
 
               <FormControl fullWidth>
-                <InputLabel id="supplier-label">Lieferant</InputLabel>
                 <Select
-                  labelId="supplier-label"
+                  label="Lieferant"
                   name="supplierId"
                   value={currentProduct.supplierId}
-                  label="Lieferant"
-                  onChange={handleInputChange}
-                >
-                  {suppliers.map(supplier => (
-                    <MenuItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </MenuItem>
-                  ))}
-                </Select>
+                  onChange={e => handleSelectChange('supplierId', e)}
+                  options={suppliers.map(supplier => ({
+                    value: supplier.id,
+                    label: supplier.name,
+                  }))}
+                />
               </FormControl>
             </>
           )}

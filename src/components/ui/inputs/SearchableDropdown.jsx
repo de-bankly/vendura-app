@@ -53,7 +53,17 @@ const SearchableDropdown = ({
   // Handle value change
   const handleChange = (event, newValue) => {
     if (onChange) {
-      onChange(newValue);
+      // Create a synthetic event object that mimics MUI's onChange behavior
+      const syntheticEvent = {
+        target: {
+          name: props.name,
+          value: newValue,
+        },
+        // Preserve the original event properties
+        ...event,
+      };
+
+      onChange(syntheticEvent);
     }
   };
 

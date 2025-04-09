@@ -14,7 +14,6 @@ import {
   InputAdornment,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Divider,
 } from '@mui/material';
@@ -22,6 +21,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import EuroIcon from '@mui/icons-material/Euro';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { issueVoucher } from '../../utils/voucherUtils';
+import { Select } from '../ui/inputs';
 
 /**
  * Dialog component for purchasing vouchers
@@ -58,8 +58,8 @@ const PurchaseVoucherDialog = ({ open, onClose, onAddToCart }) => {
   };
 
   // Handle quantity change
-  const handleQuantityChange = event => {
-    setQuantity(event.target.value);
+  const handleQuantityChange = e => {
+    setQuantity(parseInt(e.target.value));
   };
 
   // Handle add to cart
@@ -157,19 +157,15 @@ const PurchaseVoucherDialog = ({ open, onClose, onAddToCart }) => {
         />
 
         <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel id="quantity-label">Anzahl</InputLabel>
           <Select
-            labelId="quantity-label"
-            value={quantity}
             label="Anzahl"
+            value={quantity}
             onChange={handleQuantityChange}
-          >
-            {[1, 2, 3, 4, 5, 10].map(num => (
-              <MenuItem key={num} value={num}>
-                {num}
-              </MenuItem>
-            ))}
-          </Select>
+            options={[1, 2, 3, 4, 5, 10].map(num => ({
+              value: num,
+              label: num.toString(),
+            }))}
+          />
         </FormControl>
 
         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>

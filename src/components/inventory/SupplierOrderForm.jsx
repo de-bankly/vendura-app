@@ -10,7 +10,6 @@ import {
   InputLabel,
   MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +28,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { SupplierService, ProductService } from '../../services';
+import { Select } from '../ui/inputs';
 
 /**
  * SupplierOrderForm component for creating or editing supplier orders
@@ -102,8 +102,8 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     }
   };
 
-  const handleSupplierChange = event => {
-    const supplierId = event.target.value;
+  const handleSupplierChange = e => {
+    const supplierId = e.target.value;
     const selectedSupplier = suppliers.find(s => s.id === supplierId);
 
     setFormData(prevData => ({
@@ -133,10 +133,10 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     }
   };
 
-  const handleStatusChange = event => {
+  const handleStatusChange = e => {
     setFormData({
       ...formData,
-      orderStatus: event.target.value,
+      orderStatus: e.target.value,
     });
   };
 
@@ -163,8 +163,8 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     });
   };
 
-  const handleProductChange = (index, event) => {
-    const productId = event.target.value;
+  const handleProductChange = (index, e) => {
+    const productId = e.target.value;
     const selectedProduct = products.find(p => p.id === productId);
 
     const updatedPositions = [...formData.positions];
@@ -242,25 +242,18 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
         {/* Supplier Selection */}
         <Grid item xs={12} md={6}>
           <FormControl fullWidth error={!!errors.supplier}>
-            <InputLabel id="supplier-label">Supplier *</InputLabel>
             <Select
-              labelId="supplier-label"
+              label="Supplier *"
               value={formData.supplier ? formData.supplier.id : ''}
               onChange={handleSupplierChange}
-              label="Supplier *"
+              options={suppliers.map(supplier => ({
+                value: supplier.id,
+                label: supplier.legalName,
+              }))}
+              error={!!errors.supplier}
+              helperText={errors.supplier}
               disabled={isEditing}
-            >
-              {suppliers.map(supplier => (
-                <MenuItem key={supplier.id} value={supplier.id}>
-                  {supplier.legalName}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.supplier && (
-              <Typography variant="caption" color="error">
-                {errors.supplier}
-              </Typography>
-            )}
+            />
           </FormControl>
         </Grid>
 
@@ -289,21 +282,18 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
 
         {/* Order Status */}
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel id="status-label">Order Status</InputLabel>
-            <Select
-              labelId="status-label"
-              value={formData.orderStatus}
-              onChange={handleStatusChange}
-              label="Order Status"
-            >
-              <MenuItem value="">Select a status</MenuItem>
-              <MenuItem value="PLACED">Placed</MenuItem>
-              <MenuItem value="SHIPPED">Shipped</MenuItem>
-              <MenuItem value="DELIVERED">Delivered</MenuItem>
-              <MenuItem value="CANCELLED">Cancelled</MenuItem>
-            </Select>
-          </FormControl>
+          <Select
+            label="Order Status"
+            value={formData.orderStatus}
+            onChange={handleStatusChange}
+            options={[
+              { value: '', label: 'Select a status' },
+              { value: 'PLACED', label: 'Placed' },
+              { value: 'SHIPPED', label: 'Shipped' },
+              { value: 'DELIVERED', label: 'Delivered' },
+              { value: 'CANCELLED', label: 'Cancelled' },
+            ]}
+          />
         </Grid>
 
         {/* Notes */}
@@ -359,22 +349,19 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
                   {formData.positions.map((position, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <FormControl fullWidth size="small">
-                          <Select
-                            value={position.product ? position.product.id : ''}
-                            onChange={e => handleProductChange(index, e)}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>
-                              Select a product
-                            </MenuItem>
-                            {products.map(product => (
-                              <MenuItem key={product.id} value={product.id}>
-                                {product.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                        <Select
+                          value={position.product ? position.product.id : ''}
+                          onChange={e => handleProductChange(index, e)}
+                          options={[
+                            { value: '', label: 'Select a product' },
+                            ...products.map(product => ({
+                              value: product.id,
+                              label: product.name,
+                            })),
+                          ]}
+                          size="small"
+                          fullWidth
+                        />
                       </TableCell>
                       <TableCell align="center">
                         <TextField
