@@ -148,6 +148,7 @@ const SearchableDropdown = ({
       clearOnEscape={clearOnEscape}
       disableClearable={disableClearable}
       groupBy={groupBy}
+      isOptionEqualToValue={(option, val) => option.id === val?.id}
       PaperComponent={props => (
         <Paper
           elevation={4}

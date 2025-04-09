@@ -489,6 +489,7 @@ const ComponentShowcase = () => {
                       { value: 'option1', label: 'Option 1' },
                       { value: 'option2', label: 'Option 2' },
                     ]}
+                    value="option1"
                     fullWidth
                   />
                 </Grid>
@@ -505,7 +506,7 @@ const ComponentShowcase = () => {
                     label="Searchable Dropdown"
                     options={dropdownOptions}
                     value={searchableValue}
-                    onChange={(event, newValue) => setSearchableValue(newValue)}
+                    onChange={newValue => setSearchableValue(newValue)}
                     placeholder="Search options..."
                     fullWidth
                   />
@@ -515,7 +516,7 @@ const ComponentShowcase = () => {
                     label="Multiple Selection"
                     options={dropdownOptions}
                     value={multiSearchableValue}
-                    onChange={(event, newValue) => setMultiSearchableValue(newValue)}
+                    onChange={newValue => setMultiSearchableValue(newValue)}
                     placeholder="Select multiple..."
                     multiple
                     fullWidth
