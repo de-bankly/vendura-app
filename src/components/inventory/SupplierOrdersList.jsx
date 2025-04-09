@@ -84,12 +84,18 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
         await SupplierOrderService.deleteSupplierOrder(selectedOrder.id);
       } else if (statusAction && statusAction.type === 'status') {
         await SupplierOrderService.updateSupplierOrderStatus(selectedOrder.id, statusAction.status);
+
+        // Force refresh inventory data if order was marked as delivered
+        if (statusAction.status === 'DELIVERED' && onRefresh) {
+          onRefresh();
+        }
       }
 
       setConfirmDialogOpen(false);
       setSelectedOrder(null);
       setStatusAction(null);
 
+      // Ensure refresh happens in all cases
       if (onRefresh) {
         onRefresh();
       }
