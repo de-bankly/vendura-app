@@ -16,7 +16,7 @@ import PropTypes from 'prop-types';
  */
 const Select = ({
   label,
-  value,
+  value = '',
   onChange,
   options = [],
   error = false,
@@ -123,6 +123,14 @@ const Select = ({
               marginTop: '4px',
               maxHeight: '300px',
             },
+          },
+          anchorOrigin: {
+            vertical: 'bottom',
+            horizontal: 'left',
+          },
+          transformOrigin: {
+            vertical: 'top',
+            horizontal: 'left',
           },
         }}
         {...props}
