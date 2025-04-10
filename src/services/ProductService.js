@@ -7,11 +7,17 @@ class ProductService {
   /**
    * Get all products with pagination
    * @param {Object} pageable - Pagination parameters
+   * @param {Boolean} calculateStock - Whether to calculate current stock
    * @returns {Promise} Promise resolving to paginated product data
    */
-  async getProducts(pageable = { page: 0, size: 10 }) {
+  async getProducts(pageable = { page: 0, size: 10 }, calculateStock = true) {
     try {
-      const response = await apiClient.get('/v1/product', { params: pageable });
+      const response = await apiClient.get('/v1/product', {
+        params: {
+          ...pageable,
+          calculateStock,
+        },
+      });
 
       // Transform the data to match the frontend format
       if (response.data && response.data.content) {

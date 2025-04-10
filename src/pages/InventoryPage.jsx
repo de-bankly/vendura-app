@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -25,6 +26,7 @@ import {
   WarningAmber as WarningIcon,
   GridView as GridViewIcon,
   ViewList as ViewListIcon,
+  Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
 
 import { ProductService, ProductCategoryService } from '../services';
@@ -47,7 +49,7 @@ const InventoryPage = () => {
 
   // State for categories
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   // State for view mode
   const [viewMode, setViewMode] = useState('grid');
@@ -249,7 +251,7 @@ const InventoryPage = () => {
 
   // Handle view mode change
   const handleViewModeChange = (event, newValue) => {
-    setViewMode(newValue);
+    setViewMode(newValue === 0 ? 'grid' : 'list');
   };
 
   // Handle filter drawer toggle
@@ -280,7 +282,7 @@ const InventoryPage = () => {
     }
 
     // Apply category filter
-    if (selectedCategory !== 'all') {
+    if (selectedCategory !== '') {
       result = result.filter(
         product => product.category && product.category.id === selectedCategory
       );
@@ -326,27 +328,30 @@ const InventoryPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 8 }}>
-      {/* Page Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Inventar
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Produktbestand
         </Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleRefresh}
-          startIcon={<RefreshIcon />}
-        >
-          Aktualisieren
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleRefresh}
+            startIcon={<RefreshIcon />}
+          >
+            Aktualisieren
+          </Button>
+          <Button
+            component={Link}
+            to="/inventory-management"
+            variant="contained"
+            color="primary"
+            startIcon={<Inventory2Icon />}
+          >
+            Bestandsverwaltung
+          </Button>
+        </Box>
       </Box>
 
       {/* Error Message */}
@@ -405,7 +410,7 @@ const InventoryPage = () => {
                   ),
                 }}
               >
-                <MenuItem value="all">Alle Kategorien</MenuItem>
+                <MenuItem value="">Alle Kategorien</MenuItem>
                 {categories.map(category => (
                   <MenuItem key={category.id} value={category.id}>
                     {category.name}
@@ -425,7 +430,7 @@ const InventoryPage = () => {
               </Button>
 
               <Tabs
-                value={viewMode}
+                value={viewMode === 'grid' ? 0 : 1}
                 onChange={handleViewModeChange}
                 aria-label="view mode"
                 sx={{
@@ -434,8 +439,8 @@ const InventoryPage = () => {
                   '& .MuiTab-root': { minHeight: 'unset', py: 1 },
                 }}
               >
-                <Tab icon={<GridViewIcon />} value="grid" sx={{ minWidth: 'unset' }} />
-                <Tab icon={<ViewListIcon />} value="list" sx={{ minWidth: 'unset' }} />
+                <Tab icon={<GridViewIcon />} sx={{ minWidth: 'unset' }} />
+                <Tab icon={<ViewListIcon />} sx={{ minWidth: 'unset' }} />
               </Tabs>
             </Grid>
           </Grid>

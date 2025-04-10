@@ -17,7 +17,6 @@ import {
   TextField,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Chip,
   Box,
@@ -29,6 +28,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Person as PersonIcon } from '@mui/icons-material';
 import { UserService, RoleService } from '../../services';
+import { Select } from '../../components/ui/inputs';
 
 /**
  * User management page for administrators
@@ -354,14 +354,16 @@ const UserManagementPage = () => {
           />
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="roles-label">Roles</InputLabel>
             <Select
-              labelId="roles-label"
+              label="Roles"
               multiple
-              name="roles"
               value={formData.roles}
               onChange={handleRoleChange}
-              renderValue={selected => (
+              options={roles.map(role => ({
+                value: role.id,
+                label: role.name,
+              }))}
+              renderTags={selected => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map(value => {
                     const role = roles.find(r => r.id === value);
@@ -369,13 +371,7 @@ const UserManagementPage = () => {
                   })}
                 </Box>
               )}
-            >
-              {roles.map(role => (
-                <MenuItem key={role.id} value={role.id}>
-                  {role.name}
-                </MenuItem>
-              ))}
-            </Select>
+            />
           </FormControl>
         </DialogContent>
         <DialogActions>

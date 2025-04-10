@@ -17,6 +17,7 @@ import {
   UserManagementPage,
   RoleManagementPage,
   InventoryPage,
+  InventoryManagementPage,
 } from '../pages';
 
 // New Admin Pages
@@ -61,6 +62,14 @@ const reactBrowserRouter = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <InventoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'inventory-management',
+        element: (
+          <ProtectedRoute>
+            <InventoryManagementPage />
           </ProtectedRoute>
         ),
       },
