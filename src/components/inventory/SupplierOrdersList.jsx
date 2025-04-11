@@ -115,14 +115,14 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
     if (!selectedOrder) return '';
 
     if (statusAction === 'delete') {
-      return `Are you sure you want to delete order ${selectedOrder.purchaseOrderNumber || selectedOrder.id}? This action cannot be undone.`;
+      return `Are you sure you want to delete order ${selectedOrder.id}? This action cannot be undone.`;
     } else if (statusAction && statusAction.type === 'status') {
       let message = '';
 
       if (statusAction.status === 'SHIPPED') {
-        message = `Mark order ${selectedOrder.purchaseOrderNumber || selectedOrder.id} as shipped?`;
+        message = `Mark order ${selectedOrder.id} as shipped?`;
       } else if (statusAction.status === 'DELIVERED') {
-        message = `Mark order ${selectedOrder.purchaseOrderNumber || selectedOrder.id} as delivered? This will update inventory stock levels.`;
+        message = `Mark order ${selectedOrder.id} as delivered? This will update inventory stock levels.`;
       }
 
       return message;
@@ -157,7 +157,7 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
           <TableBody>
             {orders.map(order => (
               <TableRow key={order.id}>
-                <TableCell>{order.purchaseOrderNumber || order.id}</TableCell>
+                <TableCell>{order.id}</TableCell>
                 <TableCell>{order.supplier ? order.supplier.legalName : '—'}</TableCell>
                 <TableCell>{formatDate(order.timestamp)}</TableCell>
                 <TableCell>{formatDate(order.expectedDeliveryDate)}</TableCell>
