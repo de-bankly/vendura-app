@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+
+# Version control
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Development files
+*.md
+LICENSE
+.prettierrc
+.prettierignore
+.eslintrc.json
+eslint.config.js
+*.million
