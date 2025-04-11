@@ -142,7 +142,7 @@ class ProductService {
             name: product.defaultSupplier.name,
           }
         : null,
-      sku: product.id.substring(0, 8), // Using part of ID as SKU since backend doesn't have SKU
+      sku: product.id, // Using ID as SKU since backend doesn't have separate SKU field
     };
   };
 
