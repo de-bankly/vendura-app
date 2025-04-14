@@ -58,7 +58,26 @@ class ProductService {
    */
   async createProduct(productData) {
     try {
-      const response = await apiClient.post('/v1/product', productData);
+      // Ensure product has a priceHistory entry for the current price
+      const dataToSend = { ...productData };
+
+      // If price is set but no priceHistories, create an initial price history
+      if (
+        dataToSend.price &&
+        (!dataToSend.priceHistories || dataToSend.priceHistories.length === 0)
+      ) {
+        dataToSend.priceHistories = [
+          {
+            timestamp: new Date(),
+            price: dataToSend.price,
+            purchasePrice: dataToSend.price * 0.7, // Default purchase price if not specified
+            supplier: dataToSend.supplier, // Use the selected supplier
+          },
+        ];
+      }
+
+      console.log('Sending product data to backend:', dataToSend);
+      const response = await apiClient.post('/v1/product', dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
       console.error('Error creating product:', error);
