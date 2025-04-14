@@ -36,7 +36,6 @@ import { Select } from '../ui/inputs';
 const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
   const [formData, setFormData] = useState({
     supplier: null,
-    purchaseOrderNumber: '',
     expectedDeliveryDate: null,
     notes: '',
     positions: [],
@@ -66,7 +65,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
         if (initialData) {
           setFormData({
             supplier: initialData.supplier || null,
-            purchaseOrderNumber: initialData.purchaseOrderNumber || '',
             expectedDeliveryDate: initialData.expectedDeliveryDate
               ? new Date(initialData.expectedDeliveryDate)
               : null,
@@ -255,17 +253,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
               disabled={isEditing}
             />
           </FormControl>
-        </Grid>
-
-        {/* Purchase Order Number */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            label="Purchase Order Number"
-            value={formData.purchaseOrderNumber}
-            onChange={handleChange('purchaseOrderNumber')}
-            fullWidth
-            placeholder="Auto-generated if empty"
-          />
         </Grid>
 
         {/* Expected Delivery Date */}
