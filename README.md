@@ -125,6 +125,53 @@ Wir freuen uns über Beiträge zum Vendura Projekt! Bitte lesen Sie vor dem Beit
 - **Code-Formatierung**: Prettier mit maximal 80 Zeichen Länge
 - **Barrierefreiheit**: ARIA-Attribute und semantisches HTML
 
+## 👥 Contributors
+
+Wir danken allen, die zu diesem Projekt beigetragen haben:
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/lulkebit">
+        <img src="https://avatars.githubusercontent.com/u/64534456?v=4" width="100px;" alt="Luke"/>
+        <br />
+        <sub><b>Luke</b></sub>
+      </a>
+      <br />
+      <sub>Hauptentwickler & Frontend-Architektur</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/antonbowe">
+        <img src="https://avatars.githubusercontent.com/u/54149917?v=4" width="100px;" alt="Anton Bowe"/>
+        <br />
+        <sub><b>Anton Bowe</b></sub>
+      </a>
+      <br />
+      <sub>CI/CD & Deployment-Konfiguration</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/soenkevogelsberg">
+        <img src="https://github.com/soenkevogelsberg.png" width="100px;" alt="Sönke Vogelsberg"/>
+        <br />
+        <sub><b>Sönke Vogelsberg</b></sub>
+      </a>
+      <br />
+      <sub>Projektunterstützung</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/SanguarY">
+        <img src="https://github.com/SanguarY.png" width="100px;" alt="SanguarY"/>
+        <br />
+        <sub><b>SanguarY</b></sub>
+      </a>
+      <br />
+      <sub>Projektunterstützung</sub>
+    </td>
+  </tr>
+</table>
+
 ## 🔒 Sicherheit
 
 Informationen zu Sicherheitsrichtlinien und zum Melden von Sicherheitslücken finden Sie in der [SECURITY.md](./SECURITY.md).
@@ -139,4 +186,4 @@ Bei Fragen oder Anregungen wenden Sie sich bitte an das Entwicklungsteam über G
 
 ---
 
-© 2024 de-bankly. Alle Rechte vorbehalten.
+© 2025 de-bankly. Alle Rechte vorbehalten.
