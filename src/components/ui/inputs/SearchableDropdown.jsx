@@ -102,13 +102,18 @@ const SearchableDropdown = ({
   );
 
   // Custom rendering of the option
-  const defaultRenderOption = (props, option) => (
-    <li {...props}>
-      <Typography variant="body2" noWrap>
-        {getOptionLabel(option)}
-      </Typography>
-    </li>
-  );
+  const defaultRenderOption = (props, option, state) => {
+    const { key, ...otherProps } = props;
+    // Generate a unique key if none is provided
+    const uniqueKey = key || `option-${option.id || JSON.stringify(option)}`;
+    return (
+      <li key={uniqueKey} {...otherProps}>
+        <Typography variant="body2" noWrap>
+          {getOptionLabel(option)}
+        </Typography>
+      </li>
+    );
+  };
 
   // Custom rendering of the tags in multiple mode
   const defaultRenderTags = (tagValue, getTagProps) =>
@@ -158,7 +163,14 @@ const SearchableDropdown = ({
       clearOnEscape={clearOnEscape}
       disableClearable={disableClearable}
       groupBy={groupBy}
-      isOptionEqualToValue={(option, val) => option.id === val?.id}
+      isOptionEqualToValue={
+        props.isOptionEqualToValue ||
+        ((option, val) => {
+          if (!val) return false;
+          if (!option) return false;
+          return option.id === val.id;
+        })
+      }
       PaperComponent={props => (
         <Paper
           elevation={4}
