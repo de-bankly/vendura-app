@@ -161,10 +161,8 @@ const UserManagementPage = () => {
       // Format data for API
       const userData = {
         ...formData,
-        roles: formData.roles.map(roleId => {
-          const role = roles.find(r => r.id === roleId);
-          return { id: roleId, name: role?.name };
-        }),
+        // Send role IDs as strings instead of objects
+        roles: formData.roles,
       };
 
       if (editMode && currentUser) {
@@ -266,14 +264,23 @@ const UserManagementPage = () => {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      {user.roles?.map(role => (
-                        <Chip
-                          key={role.id}
-                          label={role.name}
-                          size="small"
-                          sx={{ mr: 0.5, mb: 0.5 }}
-                        />
-                      ))}
+                      {user.roles?.map(role => {
+                        // Check if role is an object with id and name or just an ID
+                        const roleId = typeof role === 'object' ? role.id : role;
+                        const roleName =
+                          typeof role === 'object' && role.name
+                            ? role.name
+                            : roles.find(r => r.id === roleId)?.name || roleId;
+
+                        return (
+                          <Chip
+                            key={roleId}
+                            label={roleName}
+                            size="small"
+                            sx={{ mr: 0.5, mb: 0.5 }}
+                          />
+                        );
+                      })}
                     </TableCell>
                     <TableCell>
                       <Chip
