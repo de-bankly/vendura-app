@@ -256,23 +256,30 @@ const ProductForm = ({
 
   // Handle form submission
   const handleSubmit = () => {
-    // Map form data to match backend expectations
-    const submitData = {
+    if (!isFormValid()) return;
+
+    // Create different submission data based on mode
+    let submitData = {
       ...formData,
       // Ensure proper field mapping for backend
       productCategory: formData.category, // Backend expects 'productCategory', not 'category'
       defaultSupplier: formData.supplier, // Backend expects 'defaultSupplier', not 'supplier'
+    };
 
-      // Add price history if price is set
-      priceHistories: [
+    // Only add price history for new products or when price changed in edit mode
+    if (
+      mode === 'create' ||
+      (mode === 'edit' && initialData.price !== parseFloat(formData.price))
+    ) {
+      submitData.priceHistories = [
         {
           timestamp: new Date(),
           price: parseFloat(formData.price) || 0,
           purchasePrice: (parseFloat(formData.price) || 0) * 0.7, // Default purchase price
           supplier: formData.supplier, // Use the selected supplier
         },
-      ],
-    };
+      ];
+    }
 
     console.log('Submitting product data:', submitData);
     onSubmit(submitData);
