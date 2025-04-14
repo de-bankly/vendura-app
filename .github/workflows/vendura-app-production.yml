@@ -3,8 +3,6 @@ name: BankLy Vendura App Production
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
 
 jobs:
   build:
