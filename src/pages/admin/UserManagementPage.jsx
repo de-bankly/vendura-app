@@ -193,14 +193,36 @@ const UserManagementPage = () => {
         <Typography variant="h4" component="h1">
           User Management
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Add User
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={async () => {
+              try {
+                setLoading(true);
+                await UserService.initializeUserData();
+                setError('');
+                fetchUsers(); // Refresh the list
+              } catch (err) {
+                setError(
+                  'Failed to initialize data: ' + (err.response?.data?.message || err.message)
+                );
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            Initialize Data
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddDialog}
+          >
+            Add User
+          </Button>
+        </Box>
       </Box>
 
       {error && (

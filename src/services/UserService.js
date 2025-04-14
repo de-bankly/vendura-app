@@ -32,6 +32,7 @@ class UserService {
           size,
         },
       });
+      console.log('User API response:', JSON.stringify(response.data));
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -81,6 +82,21 @@ class UserService {
       return response.data;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize user data (admin only)
+   * This will populate missing fields on existing users
+   * @returns {Promise} Promise with success message
+   */
+  async initializeUserData() {
+    try {
+      const response = await apiClient.post('/v1/user/initialize-data');
+      return response.data;
+    } catch (error) {
+      console.error('Error initializing user data:', error);
       throw error;
     }
   }
