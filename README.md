@@ -1,25 +1,36 @@
-# Vendura
+# Vendura App
 
-Vendura ist eine moderne Web-Anwendung, die mit React und Material UI entwickelt wird. Dieses Projekt befindet sich derzeit in der **frühen Entwicklungsphase**.
+Vendura ist eine moderne Point-of-Sale (POS) Webanwendung, entwickelt mit React 19 und Material UI 6. Diese Anwendung ermöglicht die Verwaltung von Inventar, Verkäufen, Gutscheinen und Pfandsystemen in einem benutzerfreundlichen Interface.
 
-## Entwicklungsstatus
+## 🚧 Entwicklungsstatus
 
-⚠️ **HINWEIS: Dieses Projekt befindet sich noch in aktiver Entwicklung** ⚠️
+⚠️ **HINWEIS: Dieses Projekt befindet sich in aktiver Entwicklung** ⚠️
 
 Die Anwendung ist noch nicht für den produktiven Einsatz bereit.
 
-## Dokumentation
+## 🚀 Hauptfunktionen
 
-Detaillierte Informationen zum Projekt, zum Entwicklungsprozess und zu den Beitragsrichtlinien finden Sie in unserem **[GitHub Wiki](https://github.com/de-bankly/vendura-app/wiki)**.
+- **Verkaufsabwicklung**: Schnelles und intuitives POS-Interface
+- **Inventarverwaltung**: Verfolgung von Produkten, Beständen und Kategorien
+- **Gutschein- und Pfandsystem**: Verwaltung von Gutscheinkarten und Pfandrückgaben
+- **Benutzerverwaltung**: Rollenbasierte Zugriffssteuerung
+- **Admin-Bereich**: Erweiterte Konfigurationsoptionen für Administratoren
+- **PWA-Unterstützung**: Offline-Funktionalität durch Service Worker
+- **Monitoring**: Integration mit Grafana Faro für Leistungsüberwachung
 
-Das Wiki enthält ausführliche Dokumentation zu folgenden Themen:
-- [Projektübersicht und Vision](https://github.com/de-bankly/vendura-app/wiki/Projektübersicht)
-- [Entwicklungsrichtlinien](https://github.com/de-bankly/vendura-app/wiki/Entwicklungsrichtlinien)
-- [Workflow & Prozesse](https://github.com/de-bankly/vendura-app/wiki/Workflow-Prozesse)
-- [Code-Review Checkliste](https://github.com/de-bankly/vendura-app/wiki/Code-Reviews)
-- [Tooling](https://github.com/de-bankly/vendura-app/wiki/Tooling)
+## 🛠️ Technologie-Stack
 
-## Schnellstart
+- **Frontend Framework**: React 19
+- **UI-Bibliothek**: Material UI 6
+- **Build-Tool**: Vite 6
+- **Performance-Optimierung**: Million.js
+- **Code-Qualität**: ESLint 9, Prettier
+- **Routing**: React Router 7
+- **Monitoring**: Grafana Faro SDK
+- **Animation**: Framer Motion
+- **Date Handling**: date-fns, dayjs
+
+## 🚀 Schnellstart
 
 ```bash
 # Repository klonen
@@ -35,23 +46,94 @@ npm install
 npm run dev
 ```
 
-Weitere Informationen zur Installation und Konfiguration finden Sie in der [Installation & Setup](https://github.com/de-bankly/vendura-app/wiki/Installation-Setup) Wiki-Seite.
+## 📦 Build & Deployment
 
-## Technologie-Stack
+Vendura unterstützt verschiedene Build- und Deployment-Konfigurationen:
 
-- React 19
-- Material UI 6
-- Vite 6
-- ESLint 9
-- Million.js
+```bash
+# Standard-Build (Produktion)
+npm run build
 
-Detaillierte Informationen zu unserem Tech-Stack finden Sie in der [Technischer Stack](https://github.com/de-bankly/vendura-app/wiki/Technischer-Stack) Wiki-Seite.
+# Umgebungsspezifische Builds
+npm run build:dev      # Entwicklung
+npm run build:staging  # Staging
+npm run build:prod     # Produktion
 
-## Beitragen
+# Optimierter Produktions-Build
+npm run build:optimize
+
+# Umgebungsspezifisches Deployment
+npm run deploy:dev     # Entwicklung
+npm run deploy:staging # Staging
+npm run deploy:prod    # Produktion
+```
+
+Für detaillierte Informationen zum Build-Prozess, siehe [BUILD.md](./BUILD.md).
+
+## 📋 Projektstruktur
+
+```
+vendura-app/
+├── public/          # Statische Assets
+├── src/
+│   ├── components/  # Wiederverwendbare UI-Komponenten
+│   ├── contexts/    # React Context Provider
+│   ├── pages/       # Seiten-Komponenten
+│   ├── routes/      # Routing-Konfiguration
+│   ├── services/    # API-Services
+│   ├── style/       # Globale Styles und Theme
+│   ├── utils/       # Hilfsfunktionen
+│   ├── App.jsx      # Haupt-App-Komponente
+│   └── main.jsx     # Einstiegspunkt
+├── scripts/         # Build- und Deployment-Skripte
+└── ...
+```
+
+## 🧪 Qualitätssicherung
+
+```bash
+# Linting
+npm run lint
+
+# Formatierung überprüfen
+npm run format:check
+
+# Formatierung anwenden
+npm run format
+```
+
+## 📚 Dokumentation
+
+Umfassende Dokumentation ist im [GitHub Wiki](https://github.com/de-bankly/vendura-app/wiki) verfügbar:
+
+- [Projektübersicht und Vision](https://github.com/de-bankly/vendura-app/wiki/Projektübersicht)
+- [Entwicklungsrichtlinien](https://github.com/de-bankly/vendura-app/wiki/Entwicklungsrichtlinien)
+- [Workflow & Prozesse](https://github.com/de-bankly/vendura-app/wiki/Workflow-Prozesse)
+- [Code-Review Checkliste](https://github.com/de-bankly/vendura-app/wiki/Code-Reviews)
+- [Tooling](https://github.com/de-bankly/vendura-app/wiki/Tooling)
+- [Installation & Setup](https://github.com/de-bankly/vendura-app/wiki/Installation-Setup)
+- [Technischer Stack](https://github.com/de-bankly/vendura-app/wiki/Technischer-Stack)
+
+## 🤝 Mitwirken
 
 Wir freuen uns über Beiträge zum Vendura Projekt! Bitte lesen Sie vor dem Beitragen die [Workflow & Prozesse](https://github.com/de-bankly/vendura-app/wiki/Workflow-Prozesse) und [Entwicklungsrichtlinien](https://github.com/de-bankly/vendura-app/wiki/Entwicklungsrichtlinien) Wiki-Seiten.
 
-## Kontakt
+### Entwicklungsstandards
+
+- **Komponenten**: Funktionale Komponenten mit React Hooks
+- **Namenskonventionen**: PascalCase für Komponenten, camelCase für Funktionen/Variablen
+- **Code-Formatierung**: Prettier mit maximal 80 Zeichen Länge
+- **Barrierefreiheit**: ARIA-Attribute und semantisches HTML
+
+## 🔒 Sicherheit
+
+Informationen zu Sicherheitsrichtlinien und zum Melden von Sicherheitslücken finden Sie in der [SECURITY.md](./SECURITY.md).
+
+## 📝 Lizenz
+
+Dieses Projekt steht unter der in [LICENSE](./LICENSE) angegebenen Lizenz.
+
+## 📞 Kontakt
 
 Bei Fragen oder Anregungen wenden Sie sich bitte an das Entwicklungsteam über GitHub Issues oder die im Wiki angegebenen Kontaktmöglichkeiten.
 
