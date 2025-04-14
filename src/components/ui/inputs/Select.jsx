@@ -151,7 +151,10 @@ const Select = ({
 
         {options.map(option => (
           <MenuItem
-            key={option.value}
+            key={
+              option.key ||
+              `option-${typeof option.value === 'object' ? Math.random() : option.value}`
+            }
             value={option.value}
             sx={{
               transition: 'background-color 0.15s ease-in-out',

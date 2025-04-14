@@ -1,4 +1,4 @@
-name: x-app
+name: vendura-app
 id: ari:cloud:compass:40a813cb-5068-4dc8-a072-0dcff427bdef:component/654e8a8a-c711-4cf8-858a-dc0e404760db/757436ac-e521-49e0-a80c-22f536577e57
 description: Vendura ist eine moderne Web-Anwendung, die mit React und Material UI entwickelt wird. Dieses Projekt befindet sich derzeit in der frühen Entwicklungsphase.
 configVersion: 1
@@ -9,7 +9,7 @@ fields:
 links:
   - name: null
     type: REPOSITORY
-    url: https://github.com/de-bankly/x-app
+    url: https://github.com/de-bankly/vendura-app
 relationships:
   DEPENDS_ON: []
 labels:

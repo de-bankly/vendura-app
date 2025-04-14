@@ -58,7 +58,26 @@ class ProductService {
    */
   async createProduct(productData) {
     try {
-      const response = await apiClient.post('/v1/product', productData);
+      // Ensure product has a priceHistory entry for the current price
+      const dataToSend = { ...productData };
+
+      // If price is set but no priceHistories, create an initial price history
+      if (
+        dataToSend.price &&
+        (!dataToSend.priceHistories || dataToSend.priceHistories.length === 0)
+      ) {
+        dataToSend.priceHistories = [
+          {
+            timestamp: new Date(),
+            price: dataToSend.price,
+            purchasePrice: dataToSend.price * 0.7, // Default purchase price if not specified
+            supplier: dataToSend.supplier, // Use the selected supplier
+          },
+        ];
+      }
+
+      console.log('Sending product data to backend:', dataToSend);
+      const response = await apiClient.post('/v1/product', dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
       console.error('Error creating product:', error);
@@ -74,7 +93,25 @@ class ProductService {
    */
   async updateProduct(id, productData) {
     try {
-      const response = await apiClient.put(`/v1/product/${id}`, productData);
+      // Create a properly formatted data object for the backend
+      const dataToSend = {
+        id: id,
+        name: productData.name,
+        productCategory: productData.productCategory || productData.category,
+        brand: productData.brand,
+        defaultSupplier: productData.defaultSupplier || productData.supplier,
+        // Only add new price history if the price has changed
+        priceHistories: productData.priceHistories,
+      };
+
+      // Remove any undefined or null values
+      Object.keys(dataToSend).forEach(key => {
+        if (dataToSend[key] === undefined || dataToSend[key] === null) {
+          delete dataToSend[key];
+        }
+      });
+
+      const response = await apiClient.put(`/v1/product/${id}`, dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
       console.error(`Error updating product with ID ${id}:`, error);

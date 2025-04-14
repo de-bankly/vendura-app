@@ -194,6 +194,7 @@ const theme = createTheme({
     '0px 72px 144px rgba(15, 23, 42, 0.06)',
     '0px 76px 152px rgba(15, 23, 42, 0.06)',
     '0px 80px 160px rgba(15, 23, 42, 0.06)',
+    '0px 84px 168px rgba(15, 23, 42, 0.06)',
   ],
   components: {
     MuiCssBaseline: {
