@@ -85,11 +85,15 @@ class UserService {
         lastName: userData.lastName,
         email: userData.email,
         active: userData.active,
-        // Send role IDs as strings to the backend
-        roles: Array.isArray(userData.roles)
-          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
-          : [],
       };
+
+      // Only include roles if they're explicitly provided
+      // This prevents the API from removing roles when they're not specified
+      if (userData.roles !== undefined) {
+        cleanedData.roles = Array.isArray(userData.roles)
+          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
+          : [];
+      }
 
       // Only include password if it's provided
       if (userData.password) {
