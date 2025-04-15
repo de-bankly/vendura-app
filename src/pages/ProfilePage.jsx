@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { UserService } from '../services';
+import { UserService, RoleService } from '../services';
 
 /**
  * User profile page to display current user information
@@ -23,6 +23,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [profileData, setProfileData] = useState(null);
+  const [roles, setRoles] = useState([]);
 
   // Load user profile data
   useEffect(() => {
@@ -33,6 +34,10 @@ const ProfilePage = () => {
       try {
         const userData = await UserService.getCurrentUserProfile();
         setProfileData(userData);
+
+        // Fetch roles to ensure we have role names
+        const rolesResponse = await RoleService.getAllRoles(0, 100);
+        setRoles(rolesResponse.content || []);
       } catch (err) {
         setError('Failed to load profile: ' + (err.response?.data?.message || err.message));
       } finally {
@@ -112,9 +117,24 @@ const ProfilePage = () => {
                 Roles
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {profileData.roles?.map(role => (
-                  <Chip key={role.id} label={role.name} variant="outlined" color="primary" />
-                ))}
+                {profileData.roles?.map(role => {
+                  // Check if role is an object with id and name or just an ID
+                  const roleId = typeof role === 'object' ? role.id : role;
+                  const roleName =
+                    typeof role === 'object' && role.name
+                      ? role.name
+                      : roles.find(r => r.id === roleId)?.name || roleId;
+
+                  return (
+                    <Chip
+                      key={roleId}
+                      label={roleName}
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                    />
+                  );
+                })}
                 {(!profileData.roles || profileData.roles.length === 0) && (
                   <Typography variant="body2" color="text.secondary">
                     No roles assigned
