@@ -104,7 +104,6 @@ const TopNavLayout = () => {
       text: 'Einstellungen',
       icon: <SettingsIcon />,
       action: () => {
-        console.log('Settings clicked');
         handleUserMenuClose();
       },
     },
@@ -112,7 +111,6 @@ const TopNavLayout = () => {
       text: 'Hilfe',
       icon: <HelpOutlineIcon />,
       action: () => {
-        console.log('Help clicked');
         handleUserMenuClose();
       },
     },

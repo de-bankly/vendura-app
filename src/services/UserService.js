@@ -32,7 +32,6 @@ class UserService {
           size,
         },
       });
-      console.log('User API response:', JSON.stringify(response.data));
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -100,7 +99,6 @@ class UserService {
         cleanedData.password = userData.password;
       }
 
-      console.log('Sending user data:', JSON.stringify(cleanedData));
       const response = await apiClient.put(`/v1/user/${id}`, cleanedData);
       return response.data;
     } catch (error) {

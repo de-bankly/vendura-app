@@ -103,7 +103,6 @@ class AuthService {
 
       // Parse the JSON payload
       const payloadObj = JSON.parse(decodedPayload);
-      console.log('JWT Token Payload:', payloadObj);
 
       return payloadObj;
     } catch (error) {
@@ -118,13 +117,9 @@ class AuthService {
    * @returns {boolean} True if user has the role
    */
   hasRole(role) {
-    console.log(`Checking for role: ${role}`);
-
     // First priority: Check roles directly from JWT token
     const tokenData = this.decodeToken();
     if (tokenData && tokenData.roles) {
-      console.log('JWT Token roles:', tokenData.roles);
-
       // Spring Security prefixes roles with ROLE_
       const hasRoleInToken = tokenData.roles.some(r => {
         const roleString = String(r); // Ensure it's a string
@@ -136,17 +131,14 @@ class AuthService {
       });
 
       if (hasRoleInToken) {
-        console.log(`Role ${role} found in JWT token`);
         return true;
       }
     }
 
     // Second priority: Check user from localStorage
     const user = this.getCurrentUser();
-    console.log('User from localStorage:', user);
 
     if (!user || !user.roles) {
-      console.log('No user or roles found in localStorage');
       return false;
     }
 
@@ -160,7 +152,6 @@ class AuthService {
           r === role || r === `ROLE_${role}` || (r.startsWith('ROLE_') && r.substring(5) === role)
       );
 
-      console.log(`Role ${role} in localStorage (as strings): ${hasRole}`);
       return hasRole;
     }
 
@@ -174,7 +165,6 @@ class AuthService {
       );
     });
 
-    console.log(`Role ${role} in localStorage (as objects): ${hasRole}`);
     return hasRole;
   }
 

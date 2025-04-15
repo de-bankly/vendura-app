@@ -120,7 +120,6 @@ const ProductManagementPage = () => {
   const handleSubmitProductForm = async productData => {
     try {
       setLoading(true);
-      console.log('Form submitted with data:', productData);
 
       if (formMode === 'create') {
         await ProductService.createProduct(productData);
