@@ -14,7 +14,7 @@ import {
   FormControl,
   FormControlLabel,
   RadioGroup,
-  Radio,
+  Radio as MuiRadio,
   InputAdornment,
   Box,
   Paper,
@@ -128,7 +128,7 @@ const PaymentDialog = ({
               <FormControlLabel
                 value="cash"
                 control={
-                  <Radio
+                  <MuiRadio
                     sx={{
                       color: theme.palette.primary.main,
                       '&.Mui-checked': {
@@ -166,7 +166,7 @@ const PaymentDialog = ({
               <FormControlLabel
                 value="card"
                 control={
-                  <Radio
+                  <MuiRadio
                     sx={{
                       color: theme.palette.primary.main,
                       '&.Mui-checked': {
@@ -203,7 +203,7 @@ const PaymentDialog = ({
               <FormControlLabel
                 value="bank"
                 control={
-                  <Radio
+                  <MuiRadio
                     sx={{
                       color: theme.palette.primary.main,
                       '&.Mui-checked': {

@@ -136,11 +136,11 @@ class ProductService {
   }
 
   /**
-   * Transform backend product data to frontend format
+   * Transform product data from backend format to frontend format
    * @param {Object} product - The product data from backend
    * @returns {Object} Transformed product data
    */
-  transformProductData = product => {
+  transformProductData(product) {
     if (!product) return null;
 
     // Get the latest price from priceHistories if available
@@ -181,7 +181,7 @@ class ProductService {
         : null,
       sku: product.id, // Using ID as SKU since backend doesn't have separate SKU field
     };
-  };
+  }
 
   /**
    * Group products by category

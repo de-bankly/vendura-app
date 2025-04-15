@@ -1,7 +1,7 @@
 import {
   FormControl,
   FormLabel,
-  RadioGroup as MuiRadioGroup,
+  RadioGroup,
   FormControlLabel,
   Radio,
   FormHelperText,
@@ -33,7 +33,7 @@ const StyledFormLabel = styled(FormLabel, {
   },
 }));
 
-const StyledMuiRadioGroup = styled(MuiRadioGroup)(({ theme, size }) => ({
+const StyledMuiRadioGroup = styled(RadioGroup)(({ theme, size }) => ({
   // Apply size styles to radio icons within the group
   '& .MuiSvgIcon-root': {
     fontSize: size === 'small' ? theme.typography.pxToRem(16) : theme.typography.pxToRem(20),
@@ -75,7 +75,7 @@ const StyledFormHelperText = styled(FormHelperText)(({ theme }) => ({
 /**
  * Enhanced RadioGroup component using styled components.
  */
-const RadioGroup = React.forwardRef(
+const CustomRadioGroup = React.forwardRef(
   (
     {
       label,
@@ -145,10 +145,10 @@ const RadioGroup = React.forwardRef(
   }
 );
 
-RadioGroup.displayName = 'RadioGroup';
+CustomRadioGroup.displayName = 'RadioGroup';
 
 // Keep PropTypes
-RadioGroup.propTypes = {
+CustomRadioGroup.propTypes = {
   /** The label content */
   label: PropTypes.node,
   /** The value of the selected radio button */
@@ -193,4 +193,4 @@ RadioGroup.propTypes = {
   sx: PropTypes.object,
 };
 
-export default RadioGroup;
+export default CustomRadioGroup;

@@ -10,7 +10,7 @@
  */
 export const logError = (error, errorInfo = {}, source = 'Application') => {
   // Log to console in development
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.DEV) {
     console.group(`Error caught by ${source}:`);
     console.error(error);
     if (Object.keys(errorInfo).length > 0) {
@@ -47,7 +47,7 @@ export const formatErrorForDisplay = (error, includeStack = false) => {
 
   // For security reasons, in production we might want to sanitize error messages
   // to avoid leaking sensitive information
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = import.meta.env.PROD;
 
   return {
     message: isProduction ? 'An application error occurred' : error.message || 'Unknown error',
@@ -72,41 +72,59 @@ export const isNetworkError = error => {
 /**
  * Gets a user-friendly message based on error type
  * @param {Error} error - The error object
- * @returns {string} - User-friendly error message
+ * @param {string} context - The context of the error
+ * @returns {string} User-friendly error message
  */
-export const getUserFriendlyErrorMessage = error => {
-  if (!error) return 'An unknown error occurred';
+export const getUserFriendlyErrorMessage = (error, context = 'An error occurred') => {
+  let message = `Error: ${context}.`;
 
-  if (isNetworkError(error)) {
-    return 'Unable to connect to the server. Please check your internet connection and try again.';
+  // Check if running in development environment using Vite env variables
+  const isDevelopment = import.meta.env.DEV;
+
+  if (isDevelopment) {
+    console.error('Detailed Error:', error);
   }
 
-  if (error.status === 404 || error.message.includes('404')) {
-    return 'The requested resource was not found.';
-  }
+  // Determine the type of error and provide more specific messages
+  if (error?.response) {
+    // Axios error with response from server
+    const { status, data } = error.response;
+    message = `Server Error (${status}): ${data?.message || 'Could not process request'}`;
 
-  if (
+    // Add more details in development
+    if (isDevelopment) {
+      message += ` (Trace ID: ${data?.traceId || 'N/A'})`;
+    }
+  } else if (isNetworkError(error)) {
+    message =
+      'Unable to connect to the server. Please check your internet connection and try again.';
+  } else if (error.status === 404 || error.message.includes('404')) {
+    message = 'The requested resource was not found.';
+  } else if (
     error.status === 403 ||
     error.message.includes('403') ||
     error.message.includes('forbidden')
   ) {
-    return 'You do not have permission to access this resource.';
-  }
-
-  if (
+    message = 'You do not have permission to access this resource.';
+  } else if (
     error.status === 401 ||
     error.message.includes('401') ||
     error.message.includes('unauthorized')
   ) {
-    return 'Please log in to access this resource.';
-  }
-
-  if (error.status === 500 || error.message.includes('500')) {
-    return 'The server encountered an error. Please try again later.';
+    message = 'Please log in to access this resource.';
+  } else if (error.status === 500 || error.message.includes('500')) {
+    message = 'The server encountered an error. Please try again later.';
   }
 
   // Default message for production
-  return process.env.NODE_ENV === 'production'
-    ? 'An error occurred. Please try again later.'
-    : error.message || 'An unknown error occurred';
+  if (import.meta.env.PROD) {
+    message = 'An error occurred. Please try again later.';
+  }
+
+  // Log the final user-facing message in development for debugging
+  if (isDevelopment) {
+    console.log('User-facing error message:', message);
+  }
+
+  return message;
 };
