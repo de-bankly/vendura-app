@@ -1,5 +1,21 @@
-import { useState, Suspense } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+
+// Icons
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import GroupIcon from '@mui/icons-material/Group';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import {
   AppBar,
   Box,
@@ -23,24 +39,8 @@ import {
   alpha,
   CircularProgress,
 } from '@mui/material';
-
-// Icons
-import MenuIcon from '@mui/icons-material/Menu';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import SettingsIcon from '@mui/icons-material/Settings';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import GroupIcon from '@mui/icons-material/Group';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import PersonIcon from '@mui/icons-material/Person';
-import LoginIcon from '@mui/icons-material/Login';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useState, Suspense } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';

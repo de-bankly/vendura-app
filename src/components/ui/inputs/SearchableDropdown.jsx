@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Autocomplete,
   Chip,
@@ -10,8 +9,11 @@ import {
   TextField as MuiTextField,
   alpha,
 } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect, useRef } from 'react';
+
 import TextField from './TextField';
-import SearchIcon from '@mui/icons-material/Search';
+
 
 /**
  * SearchableDropdown component that provides a dropdown menu with search functionality.

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FormControl,
   FormControlLabel,
@@ -8,6 +7,7 @@ import {
   styled,
 } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 // --- Styled Components --- //
 

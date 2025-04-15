@@ -1,3 +1,8 @@
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import HomeIcon from '@mui/icons-material/Home';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
 import {
   Box,
   Typography,
@@ -9,13 +14,8 @@ import {
   useTheme,
   alpha,
 } from '@mui/material';
-import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
-import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
-import HomeIcon from '@mui/icons-material/Home';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import { motion } from 'framer-motion';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 
 /**
  * Enhanced 404 Not Found page

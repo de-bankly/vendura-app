@@ -1,6 +1,6 @@
-import React from 'react';
 import { Snackbar, Alert as MuiAlert } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Toast component for displaying temporary notifications.

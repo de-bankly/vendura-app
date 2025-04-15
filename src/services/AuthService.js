@@ -1,5 +1,6 @@
-import apiClient from './ApiConfig';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+
+import apiClient from './ApiConfig';
 
 /**
  * Service for handling authentication operations

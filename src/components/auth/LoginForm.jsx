@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import {
   TextField,
   Button,
@@ -9,9 +10,10 @@ import {
   CircularProgress,
   useTheme,
 } from '@mui/material';
+import { useState } from 'react';
+
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+
 
 /**
  * Login form component for user authentication

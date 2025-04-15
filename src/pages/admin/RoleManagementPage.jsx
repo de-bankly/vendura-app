@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Container,
   Typography,
@@ -25,7 +25,8 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+
 import { RoleService } from '../../services';
 
 /**

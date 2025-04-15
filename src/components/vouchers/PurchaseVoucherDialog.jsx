@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import EuroIcon from '@mui/icons-material/Euro';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import {
   Dialog,
   DialogTitle,
@@ -17,9 +19,8 @@ import {
   MenuItem,
   Divider,
 } from '@mui/material';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import EuroIcon from '@mui/icons-material/Euro';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import React, { useState } from 'react';
+
 import { issueVoucher } from '../../utils/voucherUtils';
 import { Select } from '../ui/inputs';
 

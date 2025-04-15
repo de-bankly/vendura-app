@@ -1,7 +1,8 @@
-import { Component } from 'react';
-import { Box, Typography, Container, Button, Paper } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Typography, Container, Button, Paper } from '@mui/material';
+import { Component } from 'react';
 import { useNavigate, useRouteError } from 'react-router-dom';
+
 import {
   logError,
   formatErrorForDisplay,

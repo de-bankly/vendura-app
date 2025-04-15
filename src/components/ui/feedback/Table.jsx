@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import PropTypes from 'prop-types';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Table as MuiTable,
   TableBody,
@@ -20,8 +20,9 @@ import {
   Tooltip,
   TablePagination,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
 import LocalTextField from '../inputs/TextField';
 
 /**

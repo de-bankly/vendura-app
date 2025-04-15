@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useTheme, alpha } from '@mui/material';
-import {
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { useTheme, alpha ,
   Box,
   Typography,
   Grid,
@@ -12,19 +18,13 @@ import {
   Chip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { InventoryManagementService } from '../services';
+
 import QuickAccessCard from '../components/dashboard/QuickAccessCard';
+import { InventoryManagementService } from '../services';
 
 // Icons
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 const Home = () => {
   const navigate = useNavigate();

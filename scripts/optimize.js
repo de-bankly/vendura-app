@@ -6,10 +6,10 @@
  * This script analyzes the build output and optimizes it further
  */
 
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);

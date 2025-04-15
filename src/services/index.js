@@ -8,8 +8,8 @@ import ProductService from './ProductService';
 import RoleService from './RoleService';
 import SupplierOrderService from './SupplierOrderService';
 import SupplierService from './SupplierService';
-import UserService from './UserService';
 import TransactionService from './TransactionService';
+import UserService from './UserService';
 
 export {
   AuthService,

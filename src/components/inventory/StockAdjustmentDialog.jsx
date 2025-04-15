@@ -1,5 +1,3 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   Box,
   Button,
@@ -14,6 +12,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+
 import { InventoryManagementService } from '../../services';
 import { Select } from '../ui/inputs';
 

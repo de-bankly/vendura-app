@@ -1,5 +1,16 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+// Import local components
+// Other Icons
+import AddIcon from '@mui/icons-material/Add';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
+import DeleteIcon from '@mui/icons-material/Delete';
+import LocalMallIcon from '@mui/icons-material/LocalMall';
+import PaymentIcon from '@mui/icons-material/Payment';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import RemoveIcon from '@mui/icons-material/Remove';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 import {
   Box,
   Paper,
@@ -13,22 +24,12 @@ import {
   Avatar,
   Grid,
 } from '@mui/material';
-// Import local components
+import { motion, AnimatePresence } from 'framer-motion'; // Import AnimatePresence for exit animations
+import PropTypes from 'prop-types';
+import React from 'react';
+
 import { Button, IconButton } from '../ui/buttons';
 import { Chip } from '../ui/feedback';
-// Other Icons
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PaymentIcon from '@mui/icons-material/Payment';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import LocalMallIcon from '@mui/icons-material/LocalMall';
-import ClearAllIcon from '@mui/icons-material/ClearAll';
-import SummarizeIcon from '@mui/icons-material/Summarize';
-import { motion, AnimatePresence } from 'framer-motion'; // Import AnimatePresence for exit animations
 
 // Animation variants
 const listItemVariants = {

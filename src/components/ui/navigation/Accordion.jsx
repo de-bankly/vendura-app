@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion as MuiAccordion,
   AccordionSummary as MuiAccordionSummary,
@@ -9,7 +8,8 @@ import {
   useTheme,
   styled,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
 // --- Styled Components --- //
 

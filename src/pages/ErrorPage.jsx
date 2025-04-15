@@ -1,4 +1,7 @@
-import { useEffect } from 'react';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import CodeIcon from '@mui/icons-material/Code';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WarningIcon from '@mui/icons-material/Warning';
 import {
   Container,
   Typography,
@@ -11,10 +14,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CodeIcon from '@mui/icons-material/Code';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import WarningIcon from '@mui/icons-material/Warning';
+import { useEffect } from 'react';
 
 /**
  * Page that throws an error during rendering to test the RouterErrorBoundary

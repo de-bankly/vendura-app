@@ -1,6 +1,6 @@
-import React from 'react';
 import { Chip as MuiChip, useTheme, alpha, styled } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 // Styled Chip Component
 const StyledMuiChip = styled(MuiChip, {

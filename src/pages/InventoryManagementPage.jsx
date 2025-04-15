@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import {
+  Assessment as AssessmentIcon,
+  LocalShipping as LocalShippingIcon,
+  Refresh as RefreshIcon,
+  WarningAmber as WarningIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -12,16 +17,12 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
-import {
-  Assessment as AssessmentIcon,
-  LocalShipping as LocalShippingIcon,
-  Refresh as RefreshIcon,
-  WarningAmber as WarningIcon,
-} from '@mui/icons-material';
-import { InventoryManagementService, ProductService, SupplierOrderService } from '../services';
+import React, { useState, useEffect } from 'react';
+
 import { InventoryProductList, StockAdjustmentDialog } from '../components/inventory';
-import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
 import SupplierOrderForm from '../components/inventory/SupplierOrderForm';
+import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
+import { InventoryManagementService, ProductService, SupplierOrderService } from '../services';
 
 const InventoryManagementPage = () => {
   const [activeTab, setActiveTab] = useState(0);

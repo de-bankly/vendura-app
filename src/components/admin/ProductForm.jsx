@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import {
   Box,
   TextField,
@@ -13,10 +12,12 @@ import {
   Grid,
   Tooltip,
 } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
+import { ProductCategoryService, BrandService, SupplierService } from '../../services';
 import { Form } from '../ui/forms';
 import { Select } from '../ui/inputs';
-import { ProductCategoryService, BrandService, SupplierService } from '../../services';
 
 /**
  * ProductForm component for adding and editing products

@@ -1,4 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import {
   Box,
   Grid,
@@ -8,19 +13,21 @@ import {
   Divider,
   Alert as MuiAlert,
   CardContent,
-} from '@mui/material';
-import { Slide, Snackbar, useTheme, alpha, Container } from '@mui/material';
+ Slide, Snackbar, useTheme, alpha, Container } from '@mui/material';
+import { motion } from 'framer-motion';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+
 // Import local components
 import { Button } from '../../components/ui/buttons';
-import { Chip } from '../../components/ui/feedback';
 import { Card } from '../../components/ui/cards';
+import { Chip } from '../../components/ui/feedback';
 import { useToast } from '../../components/ui/feedback'; // Import useToast
+import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import {
   ProductService,
   CartService,
@@ -29,13 +36,7 @@ import {
   // TransactionService
 } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error helper
-import { motion } from 'framer-motion';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {

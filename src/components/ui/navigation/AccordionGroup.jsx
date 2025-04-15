@@ -1,6 +1,7 @@
-import React, { useState, Children, cloneElement, isValidElement } from 'react';
-import PropTypes from 'prop-types';
 import { Box, useTheme } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { useState, Children, cloneElement, isValidElement } from 'react';
+
 import Accordion from './Accordion';
 
 /**

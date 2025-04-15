@@ -1,7 +1,7 @@
-import React from 'react';
-import { Breadcrumbs as MuiBreadcrumbs, Link, Typography, Box, useTheme } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Breadcrumbs as MuiBreadcrumbs, Link, Typography, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Breadcrumbs component that extends MUI Breadcrumbs with consistent styling

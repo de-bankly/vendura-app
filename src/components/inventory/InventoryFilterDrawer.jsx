@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -17,7 +16,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 
 import { BrandService, SupplierService } from '../../services';
 

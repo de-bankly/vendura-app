@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Refresh as RefreshIcon,
+  CategoryOutlined as CategoryIcon,
+  WarningAmber as WarningIcon,
+  GridView as GridViewIcon,
+  ViewList as ViewListIcon,
+  Inventory2 as Inventory2Icon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -18,21 +26,13 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  CategoryOutlined as CategoryIcon,
-  WarningAmber as WarningIcon,
-  GridView as GridViewIcon,
-  ViewList as ViewListIcon,
-  Inventory2 as Inventory2Icon,
-} from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 
-import { ProductService, ProductCategoryService } from '../services';
-import InventoryProductList from '../components/inventory/InventoryProductList';
-import InventoryProductCard from '../components/inventory/InventoryProductCard';
 import InventoryFilterDrawer from '../components/inventory/InventoryFilterDrawer';
+import InventoryProductCard from '../components/inventory/InventoryProductCard';
+import InventoryProductList from '../components/inventory/InventoryProductList';
+import { ProductService, ProductCategoryService } from '../services';
 
 /**
  * InventoryPage displays a comprehensive view of all products in inventory

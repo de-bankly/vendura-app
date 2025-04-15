@@ -1,4 +1,4 @@
-import React from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Dialog as MuiDialog,
   DialogTitle,
@@ -10,8 +10,8 @@ import {
   Box,
   useTheme,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Dialog component that extends MUI Dialog with consistent styling

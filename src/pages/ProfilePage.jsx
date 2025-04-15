@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { Person as PersonIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -10,8 +10,9 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+
 import Chip from '../components/ui/feedback/Chip';
-import { Person as PersonIcon } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 /**

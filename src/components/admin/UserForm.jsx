@@ -1,5 +1,4 @@
-import React, { useCallback } from 'react';
-import PropTypes from 'prop-types';
+import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
 import {
   FormControl,
   Box,
@@ -10,12 +9,15 @@ import {
   Alert as MuiAlert,
   Grid,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
-import { Select, TextField } from '../ui/inputs';
-import { Form, FormField, FormSection } from '../ui/forms';
+import { useTheme } from '@mui/material/styles';
+import PropTypes from 'prop-types';
+import React, { useCallback } from 'react';
+
 import { Button, IconButton } from '../ui/buttons';
 import { Chip } from '../ui/feedback';
-import { useTheme } from '@mui/material/styles';
+import { Form, FormField, FormSection } from '../ui/forms';
+import { Select, TextField } from '../ui/inputs';
+
 
 /**
  * UserForm component for creating and editing users

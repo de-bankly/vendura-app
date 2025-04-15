@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   IconButton as MuiIconButton,
   CircularProgress,
@@ -7,6 +6,7 @@ import {
   alpha,
 } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 // Styled component definition
 const StyledIconButton = styled(MuiIconButton, {

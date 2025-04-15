@@ -1,6 +1,7 @@
-import React from 'react';
 import { CardContent, CardActions, Divider, Typography, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
 import Card from './Card';
 import CardHeader from './CardHeader';
 

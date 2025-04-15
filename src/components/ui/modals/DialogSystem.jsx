@@ -1,12 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Box, Typography, useTheme } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
-import Dialog from './Dialog';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import { Box, Typography, useTheme } from '@mui/material';
+import PropTypes from 'prop-types';
+import React from 'react';
+
+
 import { Button } from '../../components/ui/buttons';
+
+import Dialog from './Dialog';
 
 /**
  * DialogSystem component that provides a standardized way to display different types of dialogs

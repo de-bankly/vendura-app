@@ -1,11 +1,11 @@
-import MillionLint from "@million/lint";
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import faroUploader from '@grafana/faro-rollup-plugin';
 import { resolve } from 'path';
+
+import faroUploader from '@grafana/faro-rollup-plugin';
+import MillionLint from "@million/lint";
+import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig, loadEnv , splitVendorChunkPlugin } from 'vite';
 import viteCompression from 'vite-plugin-compression';
-import { splitVendorChunkPlugin } from 'vite';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import { VitePWA } from 'vite-plugin-pwa';
 

@@ -1,6 +1,6 @@
-import React from 'react';
 import { CardHeader as MuiCardHeader, styled, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 // Define styled component
 const StyledMuiCardHeader = styled(MuiCardHeader)(({ theme }) => ({

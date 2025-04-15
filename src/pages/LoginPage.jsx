@@ -1,11 +1,13 @@
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { Container, Typography, Box, Paper, Avatar, alpha } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
 import React, { useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Container, Typography, Box, Paper, Avatar, alpha } from '@mui/material';
+
 import LoginForm from '../components/auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useTheme } from '@mui/material/styles';
+
 
 /**
  * Login page component

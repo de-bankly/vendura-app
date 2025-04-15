@@ -1,5 +1,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
+
+import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
 
 // Layouts
@@ -22,7 +24,6 @@ const ProductManagementPage = lazy(() => import('../pages/admin/ProductManagemen
 const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagementPage'));
 
 // Components
-import { ProtectedRoute } from '../components/auth';
 
 // Error handling
 const RouterErrorBoundary = lazy(() =>

@@ -1,5 +1,6 @@
-import apiClient from './ApiConfig';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error utility
+
+import apiClient from './ApiConfig';
 
 /**
  * Service for managing product data

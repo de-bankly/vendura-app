@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { Box } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+
 import Toast from './Toast';
 
 // Create context for toast notifications

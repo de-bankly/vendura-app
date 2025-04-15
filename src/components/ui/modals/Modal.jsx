@@ -1,7 +1,8 @@
-import React from 'react';
-import { Modal as MuiModal, Box, useTheme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { Modal as MuiModal, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
 import { IconButton } from '../ui/buttons';
 
 /**

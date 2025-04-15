@@ -1,6 +1,6 @@
-import React from 'react';
 import { CircularProgress, LinearProgress, Box, Typography, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * ProgressIndicator component for showing loading or progress states.

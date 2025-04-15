@@ -1,5 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import PropTypes from 'prop-types';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import CategoryIcon from '@mui/icons-material/Category';
+import SearchIcon from '@mui/icons-material/Search';
+import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import {
   Box,
   Grid,
@@ -17,12 +19,12 @@ import {
   Tabs,
   IconButton as MuiIconButton, // Use MuiIconButton for search icon
 } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { useState, useMemo, useCallback } from 'react';
+
 // Import local components
 import { IconButton } from '../ui/buttons'; // Use local enhanced IconButton for add-to-cart
-import CategoryIcon from '@mui/icons-material/Category';
-import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
-import SearchIcon from '@mui/icons-material/Search';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+
 
 /**
  * ProductGrid component for displaying products by category

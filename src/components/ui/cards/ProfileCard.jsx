@@ -1,6 +1,6 @@
-import React from 'react';
-import PropTypes from 'prop-types';
 import { Avatar, Box, Typography, MenuItem } from '@mui/material';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * ProfileCard component displays user's profile information in a card format

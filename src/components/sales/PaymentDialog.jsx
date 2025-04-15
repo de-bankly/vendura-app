@@ -1,4 +1,10 @@
-import React from 'react';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import EuroIcon from '@mui/icons-material/Euro';
+import LocalAtmIcon from '@mui/icons-material/LocalAtm';
+import PaymentIcon from '@mui/icons-material/Payment';
 import {
   Dialog,
   DialogTitle,
@@ -18,13 +24,7 @@ import {
   Divider,
   Zoom,
 } from '@mui/material';
-import PaymentIcon from '@mui/icons-material/Payment';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import EuroIcon from '@mui/icons-material/Euro';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import LocalAtmIcon from '@mui/icons-material/LocalAtm';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CloseIcon from '@mui/icons-material/Close';
+import React from 'react';
 
 /**
  * PaymentDialog component for processing payments

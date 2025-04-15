@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
-import TextField from './TextField';
 import PropTypes from 'prop-types';
+import React, { useCallback } from 'react';
+
+import TextField from './TextField';
 
 /**
  * NumberField component for numeric input.

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Stepper as MuiStepper,
   Step,
@@ -10,6 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Stepper component that extends MUI Stepper with consistent styling

@@ -1,8 +1,10 @@
-import React from 'react';
-import PropTypes from 'prop-types';
 import { DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import PropTypes from 'prop-types';
+import React from 'react';
+
 // Import local components
 import { Button } from '../../components/ui/buttons';
+
 import Dialog from './Dialog';
 
 /**

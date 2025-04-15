@@ -1,8 +1,8 @@
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useTheme, alpha, Card, CardContent, Avatar, Typography, Button } from '@mui/material';
+import { motion } from 'framer-motion';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme, alpha, Card, CardContent, Avatar, Typography, Button } from '@mui/material';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { motion } from 'framer-motion';
 
 // Animation variant for the card item (can be passed down or defined here)
 const itemVariants = {

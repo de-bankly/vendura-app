@@ -1,6 +1,7 @@
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+
 import apiClient from './ApiConfig';
 // Import error utility
-import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 /**
  * Service for handling user operations

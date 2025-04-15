@@ -1,6 +1,6 @@
-import React from 'react';
-import PropTypes from 'prop-types';
 import { Box, Typography, Divider, useTheme } from '@mui/material';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * FormSection component that provides a way to group related form fields

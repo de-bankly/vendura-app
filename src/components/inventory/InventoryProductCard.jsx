@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import { Info as InfoIcon, Store as StoreIcon } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -11,7 +10,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { Info as InfoIcon, Store as StoreIcon } from '@mui/icons-material';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * InventoryProductCard displays product information in a card format
