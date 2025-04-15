@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
   Table as MuiTable,
@@ -18,10 +18,11 @@ import {
   useMediaQuery,
   IconButton,
   Tooltip,
+  TablePagination,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { Pagination } from '../navigation';
+import LocalTextField from '../inputs/TextField';
 
 /**
  * Enhanced Table component with sorting, filtering, pagination, and row selection capabilities.
@@ -63,101 +64,118 @@ const Table = ({
   // State for selected rows
   const [selectedRows, setSelectedRows] = useState([]);
 
-  // Reset pagination when data changes
+  // Reset pagination when data or search term changes
   useEffect(() => {
     setPage(1);
   }, [data.length, searchTerm]);
 
-  // Handle sort request
-  const handleRequestSort = property => {
-    const isAsc = sortBy === property && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortBy(property);
-  };
+  // Memoize handler functions with useCallback
+  const handleRequestSort = useCallback(
+    property => {
+      const isAsc = sortBy === property && sortDirection === 'asc';
+      setSortDirection(isAsc ? 'desc' : 'asc');
+      setSortBy(property);
+    },
+    [sortBy, sortDirection]
+  );
 
-  // Handle row selection
-  const handleSelectRow = id => {
-    const selectedIndex = selectedRows.indexOf(id);
-    let newSelected = [];
+  const handleSearch = useCallback(event => {
+    setSearchTerm(event.target.value);
+  }, []);
 
-    if (selectedIndex === -1) {
-      newSelected = [...selectedRows, id];
+  const handleChangePage = useCallback((event, newPage) => {
+    setPage(newPage);
+  }, []);
+
+  const handleChangeRowsPerPage = useCallback(event => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(1);
+  }, []);
+
+  // Memoize filtered data
+  const filteredData = useMemo(() => {
+    return data.filter(row => {
+      if (!searchTerm) return true;
+      return columns.some(column => {
+        const value = row[column.field];
+        if (value == null) return false;
+        return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+      });
+    });
+  }, [data, searchTerm, columns]);
+
+  // Memoize sorted data
+  const sortedData = useMemo(() => {
+    const sortableData = [...filteredData];
+    sortableData.sort((a, b) => {
+      if (!sortBy) return 0;
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+    return sortableData;
+  }, [filteredData, sortBy, sortDirection]);
+
+  // Memoize paginated data
+  const paginatedData = useMemo(() => {
+    return sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  }, [sortedData, page, rowsPerPage]);
+
+  // Memoize selection handlers
+  const handleSelectAllClick = useCallback(() => {
+    let newSelected;
+    if (selectedRows.length === filteredData.length) {
+      newSelected = [];
     } else {
-      newSelected = selectedRows.filter(rowId => rowId !== id);
+      newSelected = filteredData.map(row => row.id);
     }
-
     setSelectedRows(newSelected);
-
     if (onRowSelect) {
       onRowSelect(newSelected);
     }
-  };
+  }, [selectedRows, filteredData, onRowSelect]);
 
-  // Handle select all rows
-  const handleSelectAllClick = () => {
-    if (selectedRows.length === filteredData.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(filteredData.map(row => row.id));
-    }
-
-    if (onRowSelect) {
-      onRowSelect(
-        selectedRows.length === filteredData.length ? [] : filteredData.map(row => row.id)
-      );
-    }
-  };
-
-  // Handle page change
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
-  const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(1);
-  };
-
-  // Handle search
-  const handleSearch = event => {
-    setSearchTerm(event.target.value);
-  };
-
-  // Filter data based on search term
-  const filteredData = data.filter(row => {
-    if (!searchTerm) return true;
-
-    return columns.some(column => {
-      const value = row[column.field];
-      if (value == null) return false;
-      return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-    });
-  });
-
-  // Sort data
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortBy) return 0;
-
-    const aValue = a[sortBy];
-    const bValue = b[sortBy];
-
-    if (aValue == null && bValue == null) return 0;
-    if (aValue == null) return 1;
-    if (bValue == null) return -1;
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-    }
-
-    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-  });
-
-  // Paginate data
-  const paginatedData = sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const handleSelectRow = useCallback(
+    id => {
+      const selectedIndex = selectedRows.indexOf(id);
+      let newSelected = [];
+      if (selectedIndex === -1) {
+        newSelected = [...selectedRows, id];
+      } else {
+        newSelected = selectedRows.filter(rowId => rowId !== id);
+      }
+      setSelectedRows(newSelected);
+      if (onRowSelect) {
+        onRowSelect(newSelected);
+      }
+    },
+    [selectedRows, onRowSelect]
+  );
 
   // Check if a row is selected
-  const isSelected = id => selectedRows.indexOf(id) !== -1;
+  const isSelected = useCallback(id => selectedRows.indexOf(id) !== -1, [selectedRows]);
+
+  // Calculate total rows (length of filtered data)
+  const totalRows = useMemo(() => filteredData.length, [filteredData]);
+
+  // Handler for TablePagination page change (provides 0-based page)
+  const handleTblPageChange = useCallback((event, newZeroBasedPage) => {
+    setPage(newZeroBasedPage + 1); // Convert to 1-based for internal state
+  }, []);
+
+  // Handler for TablePagination rowsPerPage change
+  const handleTblRowsPerPageChange = useCallback(event => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(1); // Reset to first page
+  }, []);
 
   return (
     <Paper
@@ -165,7 +183,7 @@ const Table = ({
       sx={{
         width: '100%',
         overflow: 'hidden',
-        borderRadius: 2,
+        borderRadius: theme.shape.borderRadius,
         ...sx,
       }}
       {...props}
@@ -190,7 +208,7 @@ const Table = ({
           )}
 
           {searchable && (
-            <TextField
+            <LocalTextField
               size="small"
               placeholder={searchPlaceholder}
               value={searchTerm}
@@ -326,25 +344,20 @@ const Table = ({
         </MuiTable>
       </TableContainer>
 
-      {/* Pagination */}
-      {filteredData.length > 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Pagination
-            count={Math.ceil(filteredData.length / rowsPerPage)}
-            page={page}
-            onChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            rowsPerPageOptions={rowsPerPageOptions}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Box>
+      {/* Pagination Controls - Use only TablePagination */}
+      {totalRows > 0 && (
+        <TablePagination
+          component="div"
+          count={totalRows} // Total number of rows
+          page={page - 1} // Convert 1-based state to 0-based prop
+          rowsPerPage={rowsPerPage}
+          rowsPerPageOptions={rowsPerPageOptions}
+          onPageChange={handleTblPageChange} // Use handler for 0-based index
+          onRowsPerPageChange={handleTblRowsPerPageChange}
+          // Customize labels if needed
+          // labelRowsPerPage="Rows per page:"
+          // sx={{ borderTop: `1px solid ${theme.palette.divider}` }} // Apply styling here if needed
+        />
       )}
     </Paper>
   );

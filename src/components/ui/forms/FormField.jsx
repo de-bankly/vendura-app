@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, FormHelperText, Typography } from '@mui/material';
+import { Box, FormHelperText, Typography, useTheme } from '@mui/material';
 
 /**
  * FormField component that provides consistent layout and error handling
@@ -16,6 +16,8 @@ const FormField = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   // Clone the child element to pass down props
   const childElement = React.Children.only(children);
 
@@ -43,13 +45,13 @@ const FormField = ({
           color={error ? 'error' : 'text.secondary'}
           sx={{
             display: 'block',
-            mb: 0.5,
+            mb: theme.spacing(0.5),
             fontWeight: 500,
           }}
         >
           {label}
           {required && (
-            <Typography component="span" color="error" sx={{ ml: 0.5 }}>
+            <Typography component="span" color="error" sx={{ ml: theme.spacing(0.5) }}>
               *
             </Typography>
           )}
@@ -59,7 +61,7 @@ const FormField = ({
       {enhancedChild}
 
       {helperText && (
-        <FormHelperText error={error} sx={{ mt: 0.5 }}>
+        <FormHelperText error={error} sx={{ mt: theme.spacing(0.5) }}>
           {helperText}
         </FormHelperText>
       )}

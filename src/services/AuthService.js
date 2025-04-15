@@ -1,4 +1,5 @@
 import apiClient from './ApiConfig';
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 /**
  * Service for handling authentication operations
@@ -12,41 +13,36 @@ class AuthService {
    */
   async login(username, password) {
     try {
-      // First check if the server is reachable
       const response = await apiClient.post('/v1/authentication/authenticate', {
         username,
         password,
       });
 
       if (response.data && response.data.token) {
-        // Store the token
         localStorage.setItem('token', response.data.token);
-
-        // If response has roles as array of strings, convert them to objects for consistency
+        // Ensure roles are stored consistently as array of objects with name
+        let roles = [];
         if (response.data.roles && Array.isArray(response.data.roles)) {
-          const user = {
-            username: response.data.username,
-            roles: response.data.roles.map(role => ({ name: role })),
-          };
-          localStorage.setItem('user', JSON.stringify(user));
-        } else if (response.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.user));
+          roles = response.data.roles
+            .map(role => (typeof role === 'string' ? { name: role } : role))
+            .filter(role => role && role.name); // Ensure valid objects
+        } else if (response.data.user && Array.isArray(response.data.user.roles)) {
+          roles = response.data.user.roles;
         }
+        const user = {
+          username: response.data.username,
+          // Add other relevant user details if available in response.data.user
+          ...(response.data.user || {}),
+          roles: roles, // Store consistent roles array
+        };
+        localStorage.setItem('user', JSON.stringify(user));
       }
 
       return response.data;
     } catch (error) {
-      // Log detailed error for debugging
-      console.error('Login error:', error);
-
-      // Handle specific network errors
-      if (error.message === 'Network Error') {
-        throw new Error(
-          'Unable to connect to the server. Please check if the server is running and try again.'
-        );
-      }
-
-      throw error;
+      console.error('Login API error:', error.response || error.message);
+      // Use utility to throw a more user-friendly error
+      throw new Error(getUserFriendlyErrorMessage(error, 'Login failed'));
     }
   }
 
@@ -117,47 +113,17 @@ class AuthService {
    * @returns {boolean} True if user has the role
    */
   hasRole(role) {
-    // First priority: Check roles directly from JWT token
-    const tokenData = this.decodeToken();
-    if (tokenData && tokenData.roles) {
-      // Spring Security prefixes roles with ROLE_
-      const hasRoleInToken = tokenData.roles.some(r => {
-        const roleString = String(r); // Ensure it's a string
-        return (
-          roleString === role ||
-          roleString === `ROLE_${role}` ||
-          (roleString.startsWith('ROLE_') && roleString.substring(5) === role)
-        );
-      });
-
-      if (hasRoleInToken) {
-        return true;
-      }
-    }
-
-    // Second priority: Check user from localStorage
+    // Rely primarily on user object from localStorage for consistency
     const user = this.getCurrentUser();
 
-    if (!user || !user.roles) {
+    if (!user || !Array.isArray(user.roles)) {
       return false;
     }
 
-    // Check roles in user object
-    const userRoles = user.roles;
-
-    // If roles are strings (direct array of role names)
-    if (Array.isArray(userRoles) && typeof userRoles[0] === 'string') {
-      const hasRole = userRoles.some(
-        r =>
-          r === role || r === `ROLE_${role}` || (r.startsWith('ROLE_') && r.substring(5) === role)
-      );
-
-      return hasRole;
-    }
-
-    // If roles are objects with name property
-    const hasRole = userRoles.some(r => {
-      const roleName = r.name;
+    // Check roles in user object (assuming consistent format: { name: 'ROLE_XYZ' } or { name: 'XYZ' })
+    const hasRoleInUser = user.roles.some(r => {
+      const roleName = r.name || r; // Handle both object and string format defensively
+      if (typeof roleName !== 'string') return false;
       return (
         roleName === role ||
         roleName === `ROLE_${role}` ||
@@ -165,7 +131,7 @@ class AuthService {
       );
     });
 
-    return hasRole;
+    return hasRoleInUser;
   }
 
   /**

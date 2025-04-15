@@ -1,4 +1,5 @@
 import apiClient from './ApiConfig';
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error utility
 
 /**
  * Service for managing product data
@@ -28,8 +29,8 @@ class ProductService {
 
       return response.data;
     } catch (error) {
-      console.error('Error fetching products:', error);
-      throw error;
+      console.error('Error fetching products:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products'));
     }
   }
 
@@ -46,8 +47,8 @@ class ProductService {
       });
       return this.transformProductData(response.data);
     } catch (error) {
-      console.error(`Error fetching product with ID ${id}:`, error);
-      throw error;
+      console.error(`Error fetching product with ID ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch product details'));
     }
   }
 
@@ -79,8 +80,8 @@ class ProductService {
       const response = await apiClient.post('/v1/product', dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
-      console.error('Error creating product:', error);
-      throw error;
+      console.error('Error creating product:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to create product'));
     }
   }
 
@@ -113,8 +114,8 @@ class ProductService {
       const response = await apiClient.put(`/v1/product/${id}`, dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
-      console.error(`Error updating product with ID ${id}:`, error);
-      throw error;
+      console.error(`Error updating product with ID ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to update product'));
     }
   }
 
@@ -128,8 +129,8 @@ class ProductService {
       await apiClient.delete(`/v1/product/${id}`);
       return true;
     } catch (error) {
-      console.error(`Error deleting product with ID ${id}:`, error);
-      throw error;
+      console.error(`Error deleting product with ID ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to delete product'));
     }
   }
 
@@ -143,15 +144,14 @@ class ProductService {
 
     // Get the latest price from priceHistories if available
     let price = 0;
-    let stockQuantity = product.currentStock || 0;
+    let stockQuantity = product.currentStock ?? 0; // Use nullish coalescing
 
-    if (product.priceHistories && product.priceHistories.length > 0) {
-      // Sort by timestamp descending to get latest price
-      const sortedPrices = [...product.priceHistories].sort(
-        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-      );
-      price = sortedPrices[0].price;
-    }
+    // Use optional chaining and nullish coalescing for safer access
+    const latestPriceEntry = [...(product.priceHistories || [])].sort(
+      (a, b) => new Date(b?.timestamp) - new Date(a?.timestamp)
+    )[0];
+
+    price = latestPriceEntry?.price ?? 0;
 
     return {
       id: product.id,
@@ -188,11 +188,11 @@ class ProductService {
    * @returns {Object} Object with categories as keys and arrays of products as values
    */
   groupByCategory(products) {
+    if (!Array.isArray(products)) return {}; // Handle non-array input
     const grouped = {};
     products.forEach(product => {
-      // Default to 'Uncategorized' if category or category.name is undefined
+      // Ensure product and category exist before accessing name
       const categoryName = product?.category?.name || 'Uncategorized';
-
       if (!grouped[categoryName]) {
         grouped[categoryName] = [];
       }
@@ -208,11 +208,12 @@ class ProductService {
   async getProductsByCategory(pageable = { page: 0, size: 100 }) {
     try {
       const response = await this.getProducts(pageable);
-      const products = response.content;
+      const products = response.content || []; // Ensure products is an array
       return this.groupByCategory(products);
     } catch (error) {
-      console.error('Error fetching products by category:', error);
-      throw error;
+      console.error('Error fetching products by category:', error.response || error.message);
+      // Reuse getProducts error message or create specific one
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products by category'));
     }
   }
 }

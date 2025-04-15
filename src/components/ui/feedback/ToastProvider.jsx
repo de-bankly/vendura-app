@@ -67,22 +67,25 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
     [generateId, maxToasts]
   );
 
-  // Hide a toast notification
+  // Function to remove toast from state after exit animation
+  const removeToast = useCallback(id => {
+    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
+  }, []);
+
+  // Hide a toast notification (triggers exit animation)
   const hideToast = useCallback(id => {
     setToasts(prevToasts =>
       prevToasts.map(toast => (toast.id === id ? { ...toast, open: false } : toast))
     );
-
-    // Remove the toast after animation completes
-    setTimeout(() => {
-      setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
-    }, 300);
   }, []);
 
-  // Handle toast close event
+  // Handle toast close event (triggered by Snackbar onClose)
   const handleClose = useCallback(
     id => (event, reason) => {
-      hideToast(id);
+      if (reason === 'clickaway') {
+        return;
+      }
+      hideToast(id); // Start hiding animation
     },
     [hideToast]
   );
@@ -119,6 +122,7 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
             anchorOrigin={toast.anchorOrigin}
             action={toast.action}
             variant={toast.variant}
+            TransitionProps={{ onExited: () => removeToast(toast.id) }}
             sx={{
               pointerEvents: 'auto',
               ...toast.sx,

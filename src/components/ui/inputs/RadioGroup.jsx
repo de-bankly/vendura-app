@@ -7,150 +7,147 @@ import {
   Radio,
   FormHelperText,
   alpha,
+  styled,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 
+// --- Styled Components --- //
+
+const StyledFormControl = styled(FormControl)({
+  width: '100%',
+});
+
+const StyledFormLabel = styled(FormLabel, {
+  shouldForwardProp: prop => prop !== 'ownerState',
+})(({ theme, ownerState }) => ({
+  fontWeight: 500,
+  fontSize:
+    ownerState?.size === 'small' ? theme.typography.pxToRem(14) : theme.typography.pxToRem(16),
+  color: theme.palette.text.primary,
+  marginBottom: theme.spacing(1),
+  '&.Mui-focused': {
+    color: ownerState?.error ? theme.palette.error.main : theme.palette.primary.main,
+  },
+  '&.Mui-disabled': {
+    // Let MUI handle disabled opacity for label
+  },
+}));
+
+const StyledMuiRadioGroup = styled(MuiRadioGroup)(({ theme, size }) => ({
+  // Apply size styles to radio icons within the group
+  '& .MuiSvgIcon-root': {
+    fontSize: size === 'small' ? theme.typography.pxToRem(16) : theme.typography.pxToRem(20),
+  },
+}));
+
+const StyledFormControlLabel = styled(FormControlLabel, {
+  shouldForwardProp: prop => prop !== 'row',
+})(({ theme, row, disabled }) => ({
+  marginLeft: 0,
+  marginRight: row ? theme.spacing(2) : 0,
+  marginBottom: row ? 0 : theme.spacing(1),
+  // Style the label text
+  '& .MuiFormControlLabel-label': {
+    fontWeight: 400,
+    transition: 'opacity 0.2s ease-in-out',
+    opacity: disabled ? 0.6 : 1, // Apply disabled opacity here
+    fontSize: 'inherit', // Inherit size from RadioGroup style
+  },
+}));
+
+const StyledRadio = styled(Radio)(({ theme, size }) => ({
+  padding: size === 'small' ? theme.spacing(0.5) : theme.spacing(1),
+  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover:not(.Mui-disabled)': {
+    backgroundColor: alpha(theme.palette.action.hover, 0.08),
+  },
+  '&.Mui-focused': {
+    boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+  },
+}));
+
+const StyledFormHelperText = styled(FormHelperText)(({ theme }) => ({
+  marginLeft: theme.spacing(0.25),
+  fontSize: theme.typography.pxToRem(12),
+  marginTop: theme.spacing(0.5),
+}));
+
 /**
- * Enhanced RadioGroup component with a modern, minimalist design optimized for POS and inventory
- * management systems. Features clean lines, subtle transitions, and consistent styling
- * across the application.
+ * Enhanced RadioGroup component using styled components.
  */
-const RadioGroup = ({
-  label,
-  value,
-  onChange,
-  options = [],
-  error = false,
-  helperText = '',
-  required = false,
-  disabled = false,
-  row = false,
-  color = 'primary',
-  size = 'medium',
-  name = '',
-  id = '',
-  sx = {},
-  ...props
-}) => {
-  // Generate a unique ID if not provided
-  const radioGroupId = id || name || `radio-group-${Math.random().toString(36).substring(2, 9)}`;
-
-  // Size-specific styles
-  const sizeStyles = {
-    small: {
-      '& .MuiSvgIcon-root': {
-        fontSize: '1rem',
-      },
-      '& .MuiFormControlLabel-label': {
-        fontSize: '0.875rem',
-      },
+const RadioGroup = React.forwardRef(
+  (
+    {
+      label,
+      value,
+      onChange,
+      options = [],
+      error = false,
+      helperText = '',
+      required = false,
+      disabled = false,
+      row = false,
+      color = 'primary',
+      size = 'medium',
+      name = '',
+      id = '',
+      sx = {}, // Keep sx for instance overrides on FormControl
+      ...props
     },
-    medium: {
-      '& .MuiSvgIcon-root': {
-        fontSize: '1.25rem',
-      },
-    },
-  };
+    ref
+  ) => {
+    const radioGroupId = id || name || `radio-group-${Math.random().toString(36).substring(2, 9)}`;
 
-  return (
-    <FormControl
-      error={error}
-      required={required}
-      disabled={disabled}
-      sx={{
-        width: '100%',
-        ...sx,
-      }}
-    >
-      {label && (
-        <FormLabel
-          id={`${radioGroupId}-label`}
-          sx={{
-            fontWeight: 500,
-            fontSize: size === 'small' ? '0.875rem' : '1rem',
-            color: 'text.primary',
-            '&.Mui-focused': {
-              color: theme => (error ? theme.palette.error.main : theme.palette.primary.main),
-            },
-            '&.Mui-disabled': {
-              opacity: 0.6,
-            },
-            marginBottom: '8px',
-          }}
-        >
-          {label}
-        </FormLabel>
-      )}
-
-      <MuiRadioGroup
-        aria-labelledby={`${radioGroupId}-label`}
-        name={name}
-        value={value}
-        onChange={onChange}
-        row={row}
-        sx={{
-          ...(sizeStyles[size] || {}),
-        }}
-        {...props}
+    return (
+      <StyledFormControl
+        ref={ref}
+        error={error}
+        required={required}
+        disabled={disabled}
+        ownerState={{ error, disabled, size }} // Pass state for FormLabel styling
+        sx={sx}
       >
-        {options.map(option => (
-          <FormControlLabel
-            key={option.value}
-            value={option.value}
-            control={
-              <Radio
-                color={color}
-                size={size}
-                disabled={option.disabled || disabled}
-                sx={{
-                  padding: size === 'small' ? '4px' : '8px',
-                  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                  '&:hover': {
-                    backgroundColor: theme =>
-                      !(option.disabled || disabled) && alpha(theme.palette.action.hover, 0.08),
-                  },
-                  '&.Mui-focused': {
-                    boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-                  },
-                }}
-              />
-            }
-            label={
-              <span
-                style={{
-                  fontWeight: 400,
-                  opacity: option.disabled || disabled ? 0.6 : 1,
-                  transition: 'opacity 0.2s ease-in-out',
-                }}
-              >
-                {option.label}
-              </span>
-            }
-            disabled={option.disabled || disabled}
-            sx={{
-              marginLeft: 0,
-              marginRight: row ? '16px' : 0,
-              marginBottom: row ? 0 : '8px',
-            }}
-          />
-        ))}
-      </MuiRadioGroup>
+        {label && (
+          <StyledFormLabel
+            id={`${radioGroupId}-label`}
+            ownerState={{ error, disabled, size }} // Pass state for styling
+          >
+            {label}
+          </StyledFormLabel>
+        )}
 
-      {helperText && (
-        <FormHelperText
-          sx={{
-            marginLeft: '2px',
-            fontSize: '0.75rem',
-            marginTop: '4px',
-          }}
+        <StyledMuiRadioGroup
+          aria-labelledby={`${radioGroupId}-label`}
+          name={name}
+          value={value}
+          onChange={onChange}
+          row={row}
+          size={size} // Pass size for icon styling
+          {...props}
         >
-          {helperText}
-        </FormHelperText>
-      )}
-    </FormControl>
-  );
-};
+          {options.map(option => (
+            <StyledFormControlLabel
+              key={option.value}
+              value={option.value}
+              row={row} // Pass row for margin styling
+              disabled={option.disabled || disabled} // Pass disabled for label styling
+              control={
+                <StyledRadio color={color} size={size} disabled={option.disabled || disabled} />
+              }
+              label={option.label} // Label text styled by StyledFormControlLabel
+            />
+          ))}
+        </StyledMuiRadioGroup>
 
+        {helperText && <StyledFormHelperText error={error}>{helperText}</StyledFormHelperText>}
+      </StyledFormControl>
+    );
+  }
+);
+
+RadioGroup.displayName = 'RadioGroup';
+
+// Keep PropTypes
 RadioGroup.propTypes = {
   /** The label content */
   label: PropTypes.node,

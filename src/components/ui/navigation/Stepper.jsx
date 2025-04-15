@@ -7,6 +7,7 @@ import {
   StepButton,
   Box,
   Typography,
+  useTheme,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 
@@ -28,6 +29,7 @@ const Stepper = ({
 }) => {
   // Determine if the stepper is clickable
   const isClickable = nonLinear && !!onStepClick;
+  const theme = useTheme();
 
   return (
     <Box sx={{ width: '100%', ...sx }}>
@@ -78,7 +80,7 @@ const Stepper = ({
 
       {/* Render content for horizontal stepper */}
       {orientation === 'horizontal' && activeStep < steps.length && steps[activeStep]?.content && (
-        <Box sx={{ mt: 2 }}>{steps[activeStep].content}</Box>
+        <Box sx={{ mt: theme.spacing(2) }}>{steps[activeStep].content}</Box>
       )}
     </Box>
   );

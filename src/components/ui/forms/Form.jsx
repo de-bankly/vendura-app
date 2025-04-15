@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 
 /**
  * Base Form component that provides a consistent structure for forms
@@ -15,13 +15,18 @@ const Form = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   // Handle form submission
-  const handleSubmit = event => {
-    event.preventDefault();
-    if (onSubmit) {
-      onSubmit(event);
-    }
-  };
+  const handleSubmit = useCallback(
+    event => {
+      event.preventDefault();
+      if (onSubmit) {
+        onSubmit(event);
+      }
+    },
+    [onSubmit]
+  );
 
   return (
     <Box
@@ -32,7 +37,7 @@ const Form = ({
       sx={{
         width: '100%',
         '& > *:not(:last-child)': {
-          marginBottom: spacing,
+          marginBottom: theme.spacing(spacing),
         },
         ...sx,
       }}

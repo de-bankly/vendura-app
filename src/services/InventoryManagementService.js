@@ -1,4 +1,5 @@
 import apiClient from './ApiConfig';
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 /**
  * Service for inventory management operations
@@ -13,13 +14,8 @@ class InventoryManagementService {
       const response = await apiClient.get('/v1/inventory/status');
       return response.data;
     } catch (error) {
-      console.error('Error fetching inventory status:', error);
-      // Return fallback data structure in case of error
-      return {
-        total: 0,
-        lowStock: 0,
-        outOfStock: 0,
-      };
+      console.error('Error fetching inventory status:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch inventory status'));
     }
   }
 
@@ -32,8 +28,8 @@ class InventoryManagementService {
       const response = await apiClient.get('/v1/inventory/low-stock');
       return response.data;
     } catch (error) {
-      console.error('Error fetching low stock products:', error);
-      throw error;
+      console.error('Error fetching low stock products:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch low stock products'));
     }
   }
 
@@ -48,12 +44,14 @@ class InventoryManagementService {
     try {
       const params = { quantity };
       if (reason) params.reason = reason;
-
       const response = await apiClient.post(`/v1/inventory/${productId}/adjust`, null, { params });
       return response.data;
     } catch (error) {
-      console.error(`Error adjusting stock for product ${productId}:`, error);
-      throw error;
+      console.error(
+        `Error adjusting stock for product ${productId}:`,
+        error.response || error.message
+      );
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to adjust stock'));
     }
   }
 
@@ -66,8 +64,8 @@ class InventoryManagementService {
       const response = await apiClient.post('/v1/inventory/reorder-check');
       return response.data;
     } catch (error) {
-      console.error('Error triggering reorder check:', error);
-      throw error;
+      console.error('Error triggering reorder check:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to trigger reorder check'));
     }
   }
 
@@ -80,8 +78,8 @@ class InventoryManagementService {
       const response = await apiClient.get('/v1/supplierorder/pending');
       return response.data;
     } catch (error) {
-      console.error('Error fetching pending supplier orders:', error);
-      throw error;
+      console.error('Error fetching pending supplier orders:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch pending orders'));
     }
   }
 
@@ -98,8 +96,11 @@ class InventoryManagementService {
       });
       return response.data;
     } catch (error) {
-      console.error(`Error fetching supplier orders with status ${status}:`, error);
-      throw error;
+      console.error(
+        `Error fetching supplier orders with status ${status}:`,
+        error.response || error.message
+      );
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch supplier orders'));
     }
   }
 
@@ -118,9 +119,9 @@ class InventoryManagementService {
     } catch (error) {
       console.error(
         `Error fetching ${isAutomatic ? 'automatic' : 'manual'} supplier orders:`,
-        error
+        error.response || error.message
       );
-      throw error;
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch supplier orders'));
     }
   }
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { CardHeader, CardContent, Divider, Typography, Box, useTheme } from '@mui/material';
+import { CardContent, Divider, Typography, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import Card from './Card';
+import CardHeader from './CardHeader';
 
 /**
  * Card component with a header section.
@@ -17,58 +18,32 @@ const CardWithHeader = ({
   divider = true,
   headerProps = {},
   contentProps = {},
-  titleTypographyProps = {},
-  subheaderTypographyProps = {},
   headerBgColor,
   ...cardProps
 }) => {
   const theme = useTheme();
 
+  const headerSx = {
+    ...(headerBgColor && { backgroundColor: headerBgColor }),
+    ...(headerProps.sx || {}),
+  };
+
+  const contentSx = {
+    ...(contentProps.sx || {}),
+  };
+
   return (
     <Card {...cardProps}>
       <CardHeader
-        title={
-          typeof title === 'string' ? (
-            <Typography
-              variant="h6"
-              fontWeight={600}
-              color="text.primary"
-              {...titleTypographyProps}
-            >
-              {title}
-            </Typography>
-          ) : (
-            title
-          )
-        }
-        subheader={
-          typeof subheader === 'string' ? (
-            <Typography variant="body2" color="text.secondary" {...subheaderTypographyProps}>
-              {subheader}
-            </Typography>
-          ) : (
-            subheader
-          )
-        }
+        title={title}
+        subheader={subheader}
         avatar={avatar}
         action={action}
-        sx={{
-          padding: '16px 24px',
-          backgroundColor: headerBgColor || 'transparent',
-          ...(headerProps.sx || {}),
-        }}
+        sx={headerSx}
         {...headerProps}
-        disableTypography
       />
       {divider && <Divider />}
-      <CardContent
-        sx={{
-          padding: '20px 24px',
-          '&:last-child': { paddingBottom: '20px' },
-          ...(contentProps.sx || {}),
-        }}
-        {...contentProps}
-      >
+      <CardContent sx={contentSx} {...contentProps}>
         {children}
       </CardContent>
     </Card>
@@ -92,10 +67,6 @@ CardWithHeader.propTypes = {
   headerProps: PropTypes.object,
   /** Props to pass to the CardContent component */
   contentProps: PropTypes.object,
-  /** Props to pass to the title Typography component */
-  titleTypographyProps: PropTypes.object,
-  /** Props to pass to the subheader Typography component */
-  subheaderTypographyProps: PropTypes.object,
   /** Background color for the header section */
   headerBgColor: PropTypes.string,
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   TextField,
   Button,
@@ -7,8 +7,8 @@ import {
   Alert,
   InputAdornment,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
-import { AuthService } from '../../services';
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -16,11 +16,13 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 /**
  * Login form component for user authentication
  */
-const LoginForm = ({ onLoginSuccess, onSubmit }) => {
+const LoginForm = ({ onSubmit }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
+  const errorAlertId = 'login-error-alert';
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -35,28 +37,30 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
     try {
       if (onSubmit) {
         await onSubmit(username, password);
-      } else {
-        const response = await AuthService.login(username, password);
-        if (onLoginSuccess) {
-          onLoginSuccess(response);
-        }
       }
     } catch (err) {
-      setLoading(false);
-
-      // Use the error utils to get a user-friendly message
       const errorMessage = getUserFriendlyErrorMessage(err);
       setError(errorMessage);
-
-      // Log the error for debugging
       console.error('Login error details:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ width: '100%' }}
+      aria-describedby={error ? errorAlertId : undefined}
+    >
       {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
+        <Alert
+          id={errorAlertId}
+          severity="error"
+          sx={{ mb: 3, borderRadius: theme.shape.borderRadius }}
+          role="alert"
+        >
           {error}
         </Alert>
       )}
@@ -72,7 +76,7 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         sx={{
           mb: 2,
           '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
+            borderRadius: theme.shape.borderRadius,
           },
         }}
         InputProps={{
@@ -95,7 +99,7 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         sx={{
           mb: 3,
           '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
+            borderRadius: theme.shape.borderRadius,
           },
         }}
         InputProps={{
@@ -114,10 +118,6 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         size="large"
         sx={{
           py: 1.5,
-          borderRadius: 1,
-          textTransform: 'none',
-          fontWeight: 600,
-          boxShadow: 'none',
         }}
         disabled={loading}
       >

@@ -1,21 +1,21 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
-  TextField,
   FormControl,
-  Chip,
   Box,
   CircularProgress,
-  Alert,
   Paper,
   Typography,
   InputAdornment,
-  IconButton,
-  Button,
+  Alert as MuiAlert,
+  Grid,
 } from '@mui/material';
 import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
-import { Select } from '../ui/inputs';
-import { Form, FormField, FormRow, FormActions, FormSection } from '../ui/forms';
+import { Select, TextField } from '../ui/inputs';
+import { Form, FormField, FormSection } from '../ui/forms';
+import { Button, IconButton } from '../ui/buttons';
+import { Chip } from '../ui/feedback';
+import { useTheme } from '@mui/material/styles';
 
 /**
  * UserForm component for creating and editing users
@@ -32,42 +32,47 @@ const UserForm = ({
   onCancel,
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
+  const theme = useTheme();
 
-  // Handle input changes
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    onChange({
-      ...formData,
-      [name]: value,
-    });
-  };
+  // Memoize handlers
+  const handleInputChange = useCallback(
+    e => {
+      const { name, value } = e.target;
+      onChange({
+        ...formData,
+        [name]: value,
+      });
+    },
+    [formData, onChange]
+  );
 
-  // Handle role selection
-  const handleRoleChange = e => {
-    onChange({
-      ...formData,
-      roles: e.target.value,
-    });
-  };
+  const handleRoleChange = useCallback(
+    e => {
+      onChange({
+        ...formData,
+        roles: e.target.value,
+      });
+    },
+    [formData, onChange]
+  );
 
-  // Toggle password visibility
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
 
   return (
     <Form onSubmit={onSubmit} aria-label={editMode ? 'Edit User Form' : 'Add User Form'}>
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <MuiAlert severity="error" sx={{ mb: 3 }}>
           {error}
-        </Alert>
+        </MuiAlert>
       )}
 
       <Paper
         elevation={0}
         sx={{
           p: 3,
-          borderRadius: 2,
+          borderRadius: theme.shape.borderRadius,
           border: theme => `1px solid ${theme.palette.divider}`,
           mb: 3,
         }}
@@ -98,27 +103,31 @@ const UserForm = ({
             />
           </FormField>
 
-          <FormRow>
-            <FormField label="First Name" helperText="User's first name">
-              <TextField
-                name="firstName"
-                type="text"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                fullWidth
-              />
-            </FormField>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <FormField label="First Name" helperText="User's first name">
+                <TextField
+                  name="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  fullWidth
+                />
+              </FormField>
+            </Grid>
 
-            <FormField label="Last Name" helperText="User's last name">
-              <TextField
-                name="lastName"
-                type="text"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                fullWidth
-              />
-            </FormField>
-          </FormRow>
+            <Grid item xs={12} md={6}>
+              <FormField label="Last Name" helperText="User's last name">
+                <TextField
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  fullWidth
+                />
+              </FormField>
+            </Grid>
+          </Grid>
 
           <FormField label="Email Address" required helperText="A valid email address for the user">
             <TextField
@@ -199,7 +208,15 @@ const UserForm = ({
         </FormSection>
       </Paper>
 
-      <FormActions>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: theme.spacing(2),
+          justifyContent: 'flex-end',
+          mt: theme.spacing(3),
+        }}
+      >
         <Button onClick={onCancel} color="inherit">
           Cancel
         </Button>
@@ -208,11 +225,12 @@ const UserForm = ({
           variant="contained"
           color="primary"
           disabled={loading}
+          loading={loading}
           aria-label={editMode ? 'Save Changes' : 'Create User'}
         >
-          {loading ? <CircularProgress size={24} /> : editMode ? 'Save Changes' : 'Create User'}
+          {editMode ? 'Save Changes' : 'Create User'}
         </Button>
-      </FormActions>
+      </Box>
     </Form>
   );
 };

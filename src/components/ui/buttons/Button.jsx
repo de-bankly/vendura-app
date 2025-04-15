@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button as MuiButton, CircularProgress, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import styled from '@emotion/styled';
 
 /**
  * Enhanced Button component that extends MUI Button with additional functionality
@@ -57,8 +58,21 @@ const Button = ({
     },
   };
 
+  const StyledButton = styled(MuiButton, {
+    shouldForwardProp: prop => prop !== 'loading' && prop !== 'rounded' && prop !== 'elevation',
+  })(({ theme, size, variant, rounded, elevation, loading }) => {
+    // Base styles from component - remove styles now handled by theme
+    const baseStyles = {
+      textTransform: 'none',
+      transition: 'all 0.2s ease-in-out',
+      borderRadius: theme.shape.borderRadius,
+      // ... rest of baseStyles
+    };
+    // ... rest of styled component logic
+  });
+
   return (
-    <MuiButton
+    <StyledButton
       variant={variant}
       color={color}
       size={size}
@@ -70,21 +84,19 @@ const Button = ({
       type={type}
       sx={{
         borderRadius: rounded ? '50px' : '8px',
-        fontWeight: 600,
         textTransform: 'none',
         boxShadow: variant === 'contained' && elevation ? theme.shadows[2] : 'none',
         '&:hover': {
           boxShadow: variant === 'contained' && elevation ? theme.shadows[4] : 'none',
           transform: elevation ? 'translateY(-2px)' : 'none',
         },
-        transition: 'all 0.2s ease-in-out',
         ...sizeStyles[size],
         ...sx,
       }}
       {...props}
     >
       {buttonContent}
-    </MuiButton>
+    </StyledButton>
   );
 };
 

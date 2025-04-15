@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme, alpha } from '@mui/material';
 import {
   Box,
@@ -8,20 +8,19 @@ import {
   CardContent,
   Button,
   Avatar,
-  Paper,
   Divider,
   Chip,
-} from '../components/ui';
+} from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { InventoryManagementService } from '../services';
+import QuickAccessCard from '../components/dashboard/QuickAccessCard';
 
 // Icons
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
@@ -75,6 +74,38 @@ const Home = () => {
     { id: 'TX-1237', customer: 'Anna Müller', amount: 199.5, time: '08:30', status: 'completed' },
   ];
 
+  // Data for Quick Access Cards
+  const quickAccessItems = [
+    {
+      title: 'Verkauf',
+      description: 'Kasse öffnen und Verkäufe tätigen',
+      icon: <PointOfSaleIcon />,
+      path: '/sales',
+      color: 'primary',
+    },
+    {
+      title: 'Inventar',
+      description: 'Produkte verwalten und bearbeiten',
+      icon: <InventoryIcon />,
+      path: '/inventory',
+      color: 'secondary',
+    },
+    {
+      title: 'Gutscheine',
+      description: 'Gutscheine erstellen und einlösen',
+      icon: <CardGiftcardIcon />,
+      path: '/giftcards',
+      color: 'success',
+    },
+    {
+      title: 'Angebote',
+      description: 'Rabatte und Angebote verwalten',
+      icon: <LocalOfferIcon />,
+      path: '/vouchers',
+      color: 'warning',
+    },
+  ];
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -82,19 +113,6 @@ const Home = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 12,
       },
     },
   };
@@ -118,154 +136,29 @@ const Home = () => {
       </motion.div>
 
       {/* Quick Access Cards */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="slide-up"
-      >
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Quick Access Cards - First Row */}
+          {/* Quick Access Cards - First Row - USE LOOP */}
           <Grid item xs={12} md={8}>
             <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} lg={3}>
-                <motion.div variants={itemVariants}>
-                  <Card className="hover-card" sx={{ height: '100%' }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                          mb: 2,
-                        }}
-                      >
-                        <PointOfSaleIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Verkauf
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Kasse öffnen und Verkäufe tätigen
-                      </Typography>
-                      <Button
-                        variant="text"
-                        color="primary"
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={() => navigate('/sales')}
-                        sx={{ p: 0 }}
-                      >
-                        Öffnen
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
-
-              <Grid item xs={12} sm={6} lg={3}>
-                <motion.div variants={itemVariants}>
-                  <Card className="hover-card" sx={{ height: '100%' }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                          color: 'secondary.main',
-                          mb: 2,
-                        }}
-                      >
-                        <InventoryIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Inventar
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Produkte verwalten und bearbeiten
-                      </Typography>
-                      <Button
-                        variant="text"
-                        color="secondary"
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={() => navigate('/inventory')}
-                        sx={{ p: 0 }}
-                      >
-                        Öffnen
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
-
-              <Grid item xs={12} sm={6} lg={3}>
-                <motion.div variants={itemVariants}>
-                  <Card className="hover-card" sx={{ height: '100%' }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.success.main, 0.1),
-                          color: 'success.main',
-                          mb: 2,
-                        }}
-                      >
-                        <CardGiftcardIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Gutscheine
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Gutscheine erstellen und einlösen
-                      </Typography>
-                      <Button
-                        variant="text"
-                        color="success"
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={() => navigate('/giftcards')}
-                        sx={{ p: 0 }}
-                      >
-                        Öffnen
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
-
-              <Grid item xs={12} sm={6} lg={3}>
-                <motion.div variants={itemVariants}>
-                  <Card className="hover-card" sx={{ height: '100%' }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.warning.main, 0.1),
-                          color: 'warning.main',
-                          mb: 2,
-                        }}
-                      >
-                        <LocalOfferIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Angebote
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Rabatte und Angebote verwalten
-                      </Typography>
-                      <Button
-                        variant="text"
-                        color="warning"
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={() => navigate('/vouchers')}
-                        sx={{ p: 0 }}
-                      >
-                        Öffnen
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
+              {quickAccessItems.map((item, index) => (
+                <Grid item xs={12} sm={6} lg={3} key={index}>
+                  <QuickAccessCard
+                    icon={item.icon}
+                    title={item.title}
+                    description={item.description}
+                    path={item.path}
+                    color={item.color}
+                  />
+                </Grid>
+              ))}
             </Grid>
           </Grid>
 
           {/* Sales Overview Card */}
           <Grid item xs={12} md={4}>
-            <motion.div variants={itemVariants}>
-              <Card className="hover-card" sx={{ height: '100%' }}>
+            <motion.div>
+              <Card sx={{ height: '100%' }}>
                 <CardContent sx={{ p: 3 }}>
                   <Box
                     sx={{
@@ -341,12 +234,11 @@ const Home = () => {
         initial="hidden"
         animate="visible"
         transition={{ delay: 0.3 }}
-        className="slide-up"
       >
         <Grid container spacing={3}>
           {/* Recent Transactions */}
           <Grid item xs={12} md={8}>
-            <Card className="hover-card">
+            <Card>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                   Letzte Transaktionen
@@ -399,11 +291,7 @@ const Home = () => {
                 ))}
 
                 <Box sx={{ mt: 3, textAlign: 'center' }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigate('/sales/transactions')}
-                    endIcon={<ArrowForwardIcon />}
-                  >
+                  <Button variant="outlined" onClick={() => navigate('/sales/transactions')}>
                     Alle Transaktionen
                   </Button>
                 </Box>
@@ -413,7 +301,7 @@ const Home = () => {
 
           {/* Inventory Status */}
           <Grid item xs={12} md={4}>
-            <Card className="hover-card" sx={{ height: '100%' }}>
+            <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                   Inventarstatus
@@ -448,12 +336,7 @@ const Home = () => {
                   </Box>
                 </Box>
 
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => navigate('/inventory')}
-                  startIcon={<InventoryIcon />}
-                >
+                <Button fullWidth variant="outlined" onClick={() => navigate('/inventory')}>
                   Inventar prüfen
                 </Button>
               </CardContent>

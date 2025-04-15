@@ -3,23 +3,32 @@ import {
   Box,
   Grid,
   Typography,
-  Alert,
   CircularProgress,
-  Card,
-  CardContent,
-  Button,
   Paper,
-  Chip,
   Divider,
-} from '../components/ui';
+  Alert as MuiAlert,
+  CardContent,
+} from '@mui/material';
 import { Slide, Snackbar, useTheme, alpha, Container } from '@mui/material';
+// Import local components
+import { Button } from '../../components/ui/buttons';
+import { Chip } from '../../components/ui/feedback';
+import { Card } from '../../components/ui/cards';
+import { useToast } from '../../components/ui/feedback'; // Import useToast
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
-import { ProductService, CartService, GiftCardService } from '../services';
+import {
+  ProductService,
+  CartService,
+  GiftCardService,
+  // Assume TransactionService exists for payment completion
+  // TransactionService
+} from '../services';
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error helper
 import { motion } from 'framer-motion';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
@@ -32,6 +41,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
+Transition.displayName = 'Transition'; // Add display name
 
 // Animation variants
 const containerVariants = {
@@ -63,124 +73,139 @@ const itemVariants = {
  */
 const SalesScreen = () => {
   const theme = useTheme();
+  const { showToast } = useToast();
 
-  // State for products and loading
+  // --- State Declarations ---
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); // For initial product load
+  const [error, setError] = useState(null); // For product load error
   const [productsByCategory, setProductsByCategory] = useState({});
+  const [cartItems, setCartItems] = useState([]);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [cashReceived, setCashReceived] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false); // Loading state for payment submission
+  const [receiptReady, setReceiptReady] = useState(false);
+  const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
+  const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
+  const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
+  const [appliedVouchers, setAppliedVouchers] = useState([]);
 
-  // Load products from API
+  // --- Data Fetching ---
   useEffect(() => {
+    let isMounted = true; // Prevent state update on unmounted component
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const productData = await ProductService.getProducts({ page: 0, size: 100 });
-        setProducts(productData.content || []);
-        const groupedProducts = ProductService.groupByCategory(productData.content || []);
-        setProductsByCategory(groupedProducts);
-        setError(null);
+        setError(null); // Clear previous errors
+        const productData = await ProductService.getProducts({ page: 0, size: 100 }); // Consider pagination/infinite load
+        if (isMounted) {
+          const products = productData.content || [];
+          setProducts(products);
+          const groupedProducts = ProductService.groupByCategory(products);
+          setProductsByCategory(groupedProducts);
+        }
       } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Fehler beim Laden der Produkte. Bitte versuchen Sie es später erneut.');
+        if (isMounted) {
+          console.error('Error fetching products:', err);
+          // Use error message from service if available
+          setError(err.message || 'Fehler beim Laden der Produkte.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProducts();
+    return () => {
+      isMounted = false;
+    }; // Cleanup function
   }, []);
 
-  // State for cart items
-  const [cartItems, setCartItems] = useState([]);
-
-  // State for payment modal
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [cashReceived, setCashReceived] = useState('');
-
-  // State for success notification
-  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
-  const [receiptReady, setReceiptReady] = useState(false);
-
-  // State for voucher dialogs
-  const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
-  const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
-  const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
-
-  // State for applied vouchers
-  const [appliedVouchers, setAppliedVouchers] = useState([]);
-
-  // Add item to cart
-  const addToCart = useCallback(product => {
-    setCartItems(prevItems => CartService.addToCart(prevItems, product));
-  }, []);
-
-  // Remove item from cart
-  const removeFromCart = useCallback(productId => {
-    setCartItems(prevItems => CartService.removeFromCart(prevItems, productId));
-  }, []);
-
-  // Delete item from cart
-  const deleteFromCart = useCallback(productId => {
-    setCartItems(prevItems => CartService.deleteFromCart(prevItems, productId));
-  }, []);
-
-  // Clear cart
-  const clearCart = useCallback(() => {
-    setCartItems([]);
-    setAppliedVouchers([]);
-  }, []);
-
-  // Calculate subtotal (before vouchers)
+  // --- Memoized Calculations ---
   const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
-
-  // Calculate voucher discount
   const voucherDiscount = useMemo(
     () => CartService.calculateVoucherDiscount(appliedVouchers),
     [appliedVouchers]
   );
-
-  // Calculate total (after vouchers)
   const total = useMemo(
     () => CartService.calculateTotal(subtotal, voucherDiscount),
     [subtotal, voucherDiscount]
   );
-
-  // Handle payment modal open
-  const handlePaymentModalOpen = useCallback(() => {
-    setPaymentModalOpen(true);
-    setCashReceived(total.toFixed(2));
-  }, [total]);
-
-  // Handle payment modal close
-  const handlePaymentModalClose = useCallback(() => {
-    setPaymentModalOpen(false);
-  }, []);
-
-  // Handle payment method change
-  const handlePaymentMethodChange = useCallback(event => {
-    setPaymentMethod(event.target.value);
-  }, []);
-
-  // Handle cash received change
-  const handleCashReceivedChange = useCallback(event => {
-    setCashReceived(event.target.value);
-  }, []);
-
-  // Calculate change
   const change = useMemo(() => {
     const received = parseFloat(cashReceived) || 0;
     return Math.max(0, received - total).toFixed(2);
   }, [cashReceived, total]);
 
-  // Handle payment completion
-  const handlePaymentComplete = useCallback(() => {
-    setPaymentModalOpen(false);
-    setSuccessSnackbarOpen(true);
-    setReceiptReady(true);
+  // --- Callback Handlers ---
+  const addToCart = useCallback(product => {
+    setCartItems(prevItems => CartService.addToCart(prevItems, product));
+  }, []);
 
-    // In a real app, you would send the transaction to a backend
+  const removeFromCart = useCallback(productId => {
+    setCartItems(prevItems => CartService.removeFromCart(prevItems, productId));
+  }, []);
+
+  const deleteFromCart = useCallback(productId => {
+    setCartItems(prevItems => CartService.deleteFromCart(prevItems, productId));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    setAppliedVouchers([]);
+  }, []);
+
+  const handlePaymentModalOpen = useCallback(() => {
+    setPaymentModalOpen(true);
+    setCashReceived(total.toFixed(2));
+  }, [total]);
+
+  const handlePaymentModalClose = useCallback(() => {
+    setPaymentModalOpen(false);
+  }, []);
+
+  const handlePaymentMethodChange = useCallback(event => {
+    setPaymentMethod(event.target.value);
+  }, []);
+
+  const handleCashReceivedChange = useCallback(event => {
+    setCashReceived(event.target.value);
+  }, []);
+
+  const handlePaymentComplete = useCallback(async () => {
+    setPaymentLoading(true); // Indicate loading
+    try {
+      // TODO: Send transaction to backend API
+      const transactionData = {
+        cartItems,
+        subtotal,
+        appliedVouchers,
+        voucherDiscount,
+        total,
+        paymentMethod,
+        cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+        change: paymentMethod === 'cash' ? change : undefined,
+      };
+      console.log('Submitting Transaction:', transactionData);
+      // Example: await TransactionService.createTransaction(transactionData);
+
+      // --- If successful: ---
+      setPaymentModalOpen(false);
+      setReceiptReady(true);
+      showToast({ severity: 'success', message: 'Zahlung erfolgreich abgeschlossen!' });
+      // Don't clear cart automatically, let user press "New Transaction"
+    } catch (error) {
+      console.error('Payment failed:', error);
+      showToast({
+        severity: 'error',
+        message: getUserFriendlyErrorMessage(error, 'Zahlung fehlgeschlagen'),
+      });
+      // Keep payment modal open on error?
+    } finally {
+      setPaymentLoading(false); // Reset loading state
+    }
   }, [
     cartItems,
     subtotal,
@@ -190,100 +215,98 @@ const SalesScreen = () => {
     paymentMethod,
     cashReceived,
     change,
+    showToast,
   ]);
 
-  // Handle print receipt
   const handlePrintReceipt = useCallback(() => {
-    // In a real app, this would trigger receipt printing
-    alert('Rechnung wird gedruckt...');
-  }, [cartItems]);
+    alert('Rechnung wird gedruckt...'); // Placeholder
+  }, []);
 
-  // Handle snackbar close
-  const handleSnackbarClose = useCallback(() => {
+  const handleSnackbarClose = useCallback((event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
     setSuccessSnackbarOpen(false);
   }, []);
 
-  // Handle new transaction
   const handleNewTransaction = useCallback(() => {
     clearCart();
     setReceiptReady(false);
+    setPaymentMethod('cash');
+    setCashReceived('');
+    setError(null); // Clear any previous product load errors
+    // Potentially refetch products if needed
   }, [clearCart]);
 
-  // Handle redeem voucher dialog open
   const handleRedeemVoucherDialogOpen = useCallback(() => {
     setRedeemVoucherDialogOpen(true);
   }, []);
 
-  // Handle redeem voucher dialog close
   const handleRedeemVoucherDialogClose = useCallback(() => {
     setRedeemVoucherDialogOpen(false);
   }, []);
 
-  // Handle voucher management dialog open
   const handleVoucherManagementDialogOpen = useCallback(() => {
     setVoucherManagementDialogOpen(true);
   }, []);
 
-  // Handle voucher management dialog close
   const handleVoucherManagementDialogClose = useCallback(() => {
     setVoucherManagementDialogOpen(false);
   }, []);
 
-  // Handle purchase voucher dialog open
   const handlePurchaseVoucherDialogOpen = useCallback(() => {
     setPurchaseVoucherDialogOpen(true);
   }, []);
 
-  // Handle purchase voucher dialog close
   const handlePurchaseVoucherDialogClose = useCallback(() => {
     setPurchaseVoucherDialogOpen(false);
   }, []);
 
-  // Handle voucher redeemed
-  const handleVoucherRedeemed = useCallback(async voucherId => {
-    try {
-      // Get gift card data and balance from API
-      const giftCard = await GiftCardService.getGiftCardById(voucherId);
-      const giftCardBalance = await GiftCardService.getGiftCardBalance(voucherId);
+  const handleVoucherRedeemed = useCallback(
+    async voucherId => {
+      try {
+        const giftCard = await GiftCardService.getGiftCardById(voucherId);
+        const giftCardBalance = await GiftCardService.getGiftCardBalance(voucherId);
+        const voucher = {
+          ...giftCard,
+          balance: giftCardBalance.remainingBalance,
+        };
+        setAppliedVouchers(prev => [...prev, voucher]);
+        showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
+        handleRedeemVoucherDialogClose();
+      } catch (err) {
+        console.error('Error redeeming gift card:', err);
+        showToast({
+          severity: 'error',
+          message: getUserFriendlyErrorMessage(err, 'Fehler beim Einlösen des Gutscheins'),
+        });
+      }
+    },
+    [showToast, handleRedeemVoucherDialogClose]
+  );
 
-      // Use balance from balance endpoint
-      const voucher = {
-        ...giftCard,
-        balance: giftCardBalance.remainingBalance,
-      };
-
-      setAppliedVouchers(prev => [...prev, voucher]);
-    } catch (err) {
-      console.error('Error redeeming gift card:', err);
-      // Show error message to user
-      alert('Fehler beim Einlösen des Gutscheins. Bitte versuchen Sie es später erneut.');
-    }
-  }, []);
-
-  // Handle remove applied voucher
   const handleRemoveVoucher = useCallback(voucherId => {
     setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
   }, []);
 
+  // --- Render Logic ---
   return (
     <Box
       sx={{
-        height: '100%',
-        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${alpha(theme.palette.primary.light, 0.1)} 100%)`,
-        overflow: 'auto',
+        height: '100%', // Consider using calc(100vh - AppBarHeight) if needed
+        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${alpha(
+          theme.palette.primary.light,
+          0.1
+        )} 100%)`,
+        overflow: 'hidden', // Prevent outer scroll, inner components should scroll
         display: 'flex',
         flexDirection: 'column',
-        pt: 2,
+        pt: 2, // Add padding top
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Page Header */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="sales-container"
-        >
+        <motion.div initial="hidden" animate="visible" variants={containerVariants}>
           <motion.div variants={itemVariants}>
             <Box
               sx={{
@@ -301,7 +324,7 @@ const SalesScreen = () => {
                   color: theme.palette.primary.main,
                   bgcolor: alpha(theme.palette.primary.main, 0.1),
                   p: 1,
-                  borderRadius: 2,
+                  borderRadius: theme.shape.borderRadius,
                 }}
               />
               <Typography variant="h4" component="h1" fontWeight="bold" color="primary.main">
@@ -312,10 +335,11 @@ const SalesScreen = () => {
 
           {/* Sales Summary Cards */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={4}>
+            {/* Cart Summary Card */}
+            <Grid item xs={12} sm={6} md={4}>
               <motion.div variants={itemVariants}>
-                <Card className="hover-card" sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 3 }}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -324,45 +348,34 @@ const SalesScreen = () => {
                         mb: 2,
                       }}
                     >
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Warenkorb
-                      </Typography>
+                      <Typography variant="h6">Warenkorb</Typography>
                       <Chip
                         size="small"
                         icon={<ShoppingCartIcon fontSize="small" />}
                         label={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
                         color="primary"
-                        sx={{ fontWeight: 500 }}
                       />
                     </Box>
-
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                      {total.toLocaleString('de-DE', {
-                        style: 'currency',
-                        currency: 'EUR',
-                      })}
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700, mb: 1, wordBreak: 'break-word' }}
+                    >
+                      {total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                     </Typography>
-
-                    {cartItems.length > 0 && (
-                      <Typography variant="body2" color="text.secondary">
-                        {cartItems.length} Artikel im Warenkorb
-                      </Typography>
-                    )}
-
-                    {cartItems.length === 0 && (
-                      <Typography variant="body2" color="text.secondary">
-                        Keine Artikel im Warenkorb
-                      </Typography>
-                    )}
+                    <Typography variant="body2" color="text.secondary">
+                      {cartItems.length} Artikel
+                      {cartItems.length !== 1 ? '' : ''} {/* Adjust grammar if needed */}
+                    </Typography>
                   </CardContent>
                 </Card>
               </motion.div>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            {/* Product Summary Card */}
+            <Grid item xs={12} sm={6} md={4}>
               <motion.div variants={itemVariants}>
-                <Card className="hover-card" sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 3 }}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -371,34 +384,30 @@ const SalesScreen = () => {
                         mb: 2,
                       }}
                     >
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Produkte
-                      </Typography>
+                      <Typography variant="h6">Produkte</Typography>
                       <Chip
                         size="small"
                         icon={<InventoryIcon fontSize="small" />}
                         label={products.length}
                         color="success"
-                        sx={{ fontWeight: 500 }}
                       />
                     </Box>
-
                     <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
                       {Object.keys(productsByCategory).length}
                     </Typography>
-
                     <Typography variant="body2" color="text.secondary">
-                      Kategorien verfügbar
+                      Kategorien
                     </Typography>
                   </CardContent>
                 </Card>
               </motion.div>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            {/* Voucher Summary Card */}
+            <Grid item xs={12} sm={6} md={4}>
               <motion.div variants={itemVariants}>
-                <Card className="hover-card" sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 3 }}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -407,25 +416,23 @@ const SalesScreen = () => {
                         mb: 2,
                       }}
                     >
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Gutscheine
-                      </Typography>
+                      <Typography variant="h6">Gutscheine</Typography>
                       <Chip
                         size="small"
                         icon={<CardGiftcardIcon fontSize="small" />}
                         label={appliedVouchers.length}
                         color="info"
-                        sx={{ fontWeight: 500 }}
                       />
                     </Box>
-
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700, mb: 1, wordBreak: 'break-word' }}
+                    >
                       {voucherDiscount.toLocaleString('de-DE', {
                         style: 'currency',
                         currency: 'EUR',
                       })}
                     </Typography>
-
                     <Typography variant="body2" color="text.secondary">
                       Rabatt angewendet
                     </Typography>
@@ -434,87 +441,91 @@ const SalesScreen = () => {
               </motion.div>
             </Grid>
           </Grid>
+        </motion.div>
 
-          {/* Main Content */}
+        {/* Main Content Area */}
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', mb: 2 }}>
+          {' '}
+          {/* Allow this box to grow and hide overflow */}
           {loading ? (
             <Box
               sx={{
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                height: '400px',
+                height: '100%',
               }}
             >
               <CircularProgress />
             </Box>
           ) : error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <MuiAlert severity="error" sx={{ m: 2 }}>
               {error}
-            </Alert>
+            </MuiAlert>
           ) : (
-            <Box sx={{ mb: 4 }}>
-              <Grid container spacing={3}>
-                {/* Product Grid */}
-                <Grid item xs={12} md={8}>
-                  <motion.div variants={itemVariants}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        border: `1px solid ${theme.palette.divider}`,
-                        height: '70vh',
-                      }}
-                    >
-                      <ProductGrid
-                        productsByCategory={productsByCategory}
-                        onProductSelect={addToCart}
-                      />
-                    </Paper>
-                  </motion.div>
-                </Grid>
-
-                {/* Shopping Cart */}
-                <Grid item xs={12} md={4}>
-                  <motion.div variants={itemVariants}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        border: `1px solid ${theme.palette.divider}`,
-                        height: '70vh',
-                      }}
-                    >
-                      <ShoppingCart
-                        cartItems={cartItems}
-                        appliedVouchers={appliedVouchers}
-                        subtotal={subtotal}
-                        voucherDiscount={voucherDiscount}
-                        total={total}
-                        receiptReady={receiptReady}
-                        onAddItem={addToCart}
-                        onRemoveItem={removeFromCart}
-                        onDeleteItem={deleteFromCart}
-                        onClearCart={clearCart}
-                        onPayment={handlePaymentModalOpen}
-                        onPrintReceipt={handlePrintReceipt}
-                        onNewTransaction={handleNewTransaction}
-                        onRedeemVoucher={handleRedeemVoucherDialogOpen}
-                        onManageVouchers={handleVoucherManagementDialogOpen}
-                        onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-                        onRemoveVoucher={handleRemoveVoucher}
-                      />
-                    </Paper>
-                  </motion.div>
-                </Grid>
+            <Grid container spacing={3} sx={{ height: '100%' }}>
+              {/* Product Grid */}
+              <Grid item xs={12} md={7} lg={8} sx={{ height: '100%' }}>
+                <motion.div variants={itemVariants} style={{ height: '100%' }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: theme.shape.borderRadius,
+                      border: `1px solid ${theme.palette.divider}`,
+                      height: '100%', // Take full height of grid item
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <ProductGrid
+                      productsByCategory={productsByCategory}
+                      onProductSelect={addToCart}
+                    />
+                  </Paper>
+                </motion.div>
               </Grid>
-            </Box>
+
+              {/* Shopping Cart */}
+              <Grid item xs={12} md={5} lg={4} sx={{ height: '100%' }}>
+                <motion.div variants={itemVariants} style={{ height: '100%' }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: theme.shape.borderRadius,
+                      border: `1px solid ${theme.palette.divider}`,
+                      height: '100%', // Take full height of grid item
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <ShoppingCart
+                      cartItems={cartItems}
+                      appliedVouchers={appliedVouchers}
+                      subtotal={subtotal}
+                      voucherDiscount={voucherDiscount}
+                      total={total}
+                      receiptReady={receiptReady}
+                      onAddItem={addToCart}
+                      onRemoveItem={removeFromCart}
+                      onDeleteItem={deleteFromCart}
+                      onClearCart={clearCart}
+                      onPayment={handlePaymentModalOpen}
+                      onPrintReceipt={handlePrintReceipt}
+                      onNewTransaction={handleNewTransaction}
+                      onRedeemVoucher={handleRedeemVoucherDialogOpen}
+                      onManageVouchers={handleVoucherManagementDialogOpen}
+                      onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
+                      onRemoveVoucher={handleRemoveVoucher}
+                    />
+                  </Paper>
+                </motion.div>
+              </Grid>
+            </Grid>
           )}
-        </motion.div>
+        </Box>
       </Container>
 
-      {/* Payment Dialog */}
+      {/* Dialogs and Snackbar */}
       <PaymentDialog
         open={paymentModalOpen}
         onClose={handlePaymentModalClose}
@@ -528,26 +539,26 @@ const SalesScreen = () => {
         onCashReceivedChange={handleCashReceivedChange}
         change={change}
         TransitionComponent={Transition}
+        loading={paymentLoading} // Pass loading state
       />
 
-      {/* Success Snackbar */}
       <Snackbar
         open={successSnackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
+        <MuiAlert
           onClose={handleSnackbarClose}
           severity="success"
           variant="filled"
-          sx={{ width: '100%', boxShadow: 3 }}
+          elevation={6} // Add elevation for visibility
+          sx={{ width: '100%' }}
         >
           Zahlung erfolgreich abgeschlossen!
-        </Alert>
+        </MuiAlert>
       </Snackbar>
 
-      {/* Voucher Dialogs */}
       <RedeemVoucherDialog
         open={redeemVoucherDialogOpen}
         onClose={handleRedeemVoucherDialogClose}

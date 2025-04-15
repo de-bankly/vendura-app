@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -9,7 +9,6 @@ import {
   Container,
   Avatar,
   Tooltip,
-  Badge,
   Menu,
   MenuItem,
   Button,
@@ -22,20 +21,16 @@ import {
   useTheme,
   useMediaQuery,
   alpha,
-  Paper,
+  CircularProgress,
 } from '@mui/material';
 
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import ErrorIcon from '@mui/icons-material/Error';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import GroupIcon from '@mui/icons-material/Group';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
@@ -574,10 +569,28 @@ const TopNavLayout = () => {
           pt: { xs: 8, sm: 9 },
           pb: 3,
           overflow: 'hidden',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <Container maxWidth="xl" sx={{ height: '100%' }}>
-          <Outlet />
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 'calc(100vh - 120px)',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Container>
       </Box>
     </Box>

@@ -6,50 +6,22 @@ import {
   Box,
   Grid,
   Avatar,
-  Chip,
   Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
+import Chip from '../components/ui/feedback/Chip';
 import { Person as PersonIcon } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { UserService, RoleService } from '../services';
 
 /**
  * User profile page to display current user information
  */
 const ProfilePage = () => {
-  const { user, refreshUserProfile } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [profileData, setProfileData] = useState(null);
-  const [roles, setRoles] = useState([]);
+  const { user, loading: authLoading } = useAuth();
 
-  // Load user profile data
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        const userData = await UserService.getCurrentUserProfile();
-        setProfileData(userData);
-
-        // Fetch roles to ensure we have role names
-        const rolesResponse = await RoleService.getAllRoles(0, 100);
-        setRoles(rolesResponse.content || []);
-      } catch (err) {
-        setError('Failed to load profile: ' + (err.response?.data?.message || err.message));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  // Show loading state
-  if (loading && !profileData) {
+  // Show loading state based on auth context loading
+  if (authLoading) {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box
@@ -61,17 +33,25 @@ const ProfilePage = () => {
     );
   }
 
+  // Handle case where user is not loaded (e.g., not logged in, error during context load)
+  if (!user) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Could not load user profile. Please ensure you are logged in.
+        </Alert>
+      </Container>
+    );
+  }
+
+  // Use user directly from context as profileData
+  const profileData = user;
+
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         User Profile
       </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
 
       {profileData && (
         <Paper elevation={2} sx={{ p: 4 }}>
@@ -117,17 +97,14 @@ const ProfilePage = () => {
                 Roles
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {profileData.roles?.map(role => {
-                  // Check if role is an object with id and name or just an ID
-                  const roleId = typeof role === 'object' ? role.id : role;
-                  const roleName =
-                    typeof role === 'object' && role.name
-                      ? role.name
-                      : roles.find(r => r.id === roleId)?.name || roleId;
+                {profileData.roles?.map((role, index) => {
+                  // Simplify role name access assuming consistent format { name: '...' } from context/AuthService
+                  const roleName = role.name || `Role ${index + 1}`; // Fallback name
+                  const roleKey = role.id || roleName; // Use id if available, otherwise name
 
                   return (
                     <Chip
-                      key={roleId}
+                      key={roleKey}
                       label={roleName}
                       variant="outlined"
                       color="primary"
