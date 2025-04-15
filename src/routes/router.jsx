@@ -31,7 +31,6 @@ const RouterErrorBoundary = lazy(() =>
     default: module.RouterErrorBoundary,
   }))
 );
-const ErrorTest = lazy(() => import('../components/error/ErrorTest'));
 
 /**
  * Application router configuration
@@ -123,10 +122,6 @@ const reactBrowserRouter = createBrowserRouter([
       {
         path: 'unauthorized',
         element: <UnauthorizedPage />,
-      },
-      {
-        path: 'error-test',
-        element: <ErrorTest />,
       },
       {
         path: 'error-page',
