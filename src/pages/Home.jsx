@@ -6,7 +6,9 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import { useTheme, alpha ,
+import {
+  useTheme,
+  alpha,
   Box,
   Typography,
   Grid,
@@ -18,7 +20,7 @@ import { useTheme, alpha ,
   Chip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import QuickAccessCard from '../components/dashboard/QuickAccessCard';

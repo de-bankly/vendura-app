@@ -58,11 +58,13 @@ const COLORS = {
     dark: '#1D4ED8',
     contrastText: '#FFFFFF',
   },
-  tooltip: {
-    background: COLORS.grey[700],
-    text: COLORS.common.white,
-  },
   common: { black: '#000', white: '#fff' },
+};
+
+// Add tooltip colors after COLORS is defined
+COLORS.tooltip = {
+  background: COLORS.grey[700],
+  text: COLORS.common.white,
 };
 
 // Add common colors if not present
