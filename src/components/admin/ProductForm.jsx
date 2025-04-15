@@ -281,7 +281,6 @@ const ProductForm = ({
       ];
     }
 
-    console.log('Submitting product data:', submitData);
     onSubmit(submitData);
   };
 

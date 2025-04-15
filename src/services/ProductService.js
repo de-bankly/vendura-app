@@ -76,7 +76,6 @@ class ProductService {
         ];
       }
 
-      console.log('Sending product data to backend:', dataToSend);
       const response = await apiClient.post('/v1/product', dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {

@@ -26,10 +26,7 @@ const ErrorPage = () => {
   const shouldThrowError = searchParams.has('throwError');
 
   useEffect(() => {
-    // Log that the component is about to throw an error
-    if (shouldThrowError) {
-      console.log('ErrorPage is about to throw an error due to throwError parameter');
-    }
+    // Component will throw error if parameter is present
   }, [shouldThrowError]);
 
   // Animation variants

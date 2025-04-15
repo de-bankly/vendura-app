@@ -49,6 +49,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
+import { ProfileCard } from '../ui/cards';
 
 const TopNavLayout = () => {
   const navigate = useNavigate();
@@ -103,7 +104,6 @@ const TopNavLayout = () => {
       text: 'Einstellungen',
       icon: <SettingsIcon />,
       action: () => {
-        console.log('Settings clicked');
         handleUserMenuClose();
       },
     },
@@ -111,7 +111,6 @@ const TopNavLayout = () => {
       text: 'Hilfe',
       icon: <HelpOutlineIcon />,
       action: () => {
-        console.log('Help clicked');
         handleUserMenuClose();
       },
     },
@@ -483,8 +482,8 @@ const TopNavLayout = () => {
                   p: 0.5,
                 }}
               >
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                  {user?.displayName?.charAt(0) || 'U'}
+                <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                  {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || 'U'}
                 </Avatar>
               </IconButton>
             </Tooltip>
@@ -516,19 +515,7 @@ const TopNavLayout = () => {
               },
             }}
           >
-            <MenuItem sx={{ py: 1 }}>
-              <Avatar sx={{ mr: 2, width: 30, height: 30 }}>
-                {user?.displayName?.charAt(0) || 'U'}
-              </Avatar>
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {user?.displayName || 'User'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user?.email || 'user@example.com'}
-                </Typography>
-              </Box>
-            </MenuItem>
+            <ProfileCard user={user} />
 
             <Divider />
 

@@ -181,17 +181,6 @@ const SalesScreen = () => {
     setReceiptReady(true);
 
     // In a real app, you would send the transaction to a backend
-    // For now, we'll just log the transaction details
-    console.log('Transaction completed:', {
-      items: cartItems,
-      subtotal,
-      appliedVouchers,
-      voucherDiscount,
-      total,
-      paymentMethod,
-      cashReceived: parseFloat(cashReceived),
-      change: parseFloat(change),
-    });
   }, [
     cartItems,
     subtotal,
@@ -206,7 +195,6 @@ const SalesScreen = () => {
   // Handle print receipt
   const handlePrintReceipt = useCallback(() => {
     // In a real app, this would trigger receipt printing
-    console.log('Printing receipt for items:', cartItems);
     alert('Rechnung wird gedruckt...');
   }, [cartItems]);
 

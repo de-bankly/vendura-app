@@ -77,7 +77,29 @@ class UserService {
    */
   async updateUser(id, userData) {
     try {
-      const response = await apiClient.put(`/v1/user/${id}`, userData);
+      // Create a clean data object with only the fields the API expects
+      const cleanedData = {
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        active: userData.active,
+      };
+
+      // Only include roles if they're explicitly provided
+      // This prevents the API from removing roles when they're not specified
+      if (userData.roles !== undefined) {
+        cleanedData.roles = Array.isArray(userData.roles)
+          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
+          : [];
+      }
+
+      // Only include password if it's provided
+      if (userData.password) {
+        cleanedData.password = userData.password;
+      }
+
+      const response = await apiClient.put(`/v1/user/${id}`, cleanedData);
       return response.data;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);

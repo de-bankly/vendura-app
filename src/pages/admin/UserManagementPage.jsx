@@ -12,12 +12,6 @@ import {
   Button,
   Dialog,
   DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Chip,
   Box,
   Pagination,
@@ -28,7 +22,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Person as PersonIcon } from '@mui/icons-material';
 import { UserService, RoleService } from '../../services';
-import { Select } from '../../components/ui/inputs';
+import UserForm from '../../components/admin/UserForm';
 
 /**
  * User management page for administrators
@@ -43,6 +37,7 @@ const UserManagementPage = () => {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [originalRoles, setOriginalRoles] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -96,6 +91,7 @@ const UserManagementPage = () => {
   const handleOpenAddDialog = () => {
     setEditMode(false);
     setCurrentUser(null);
+    setOriginalRoles([]);
     setFormData({
       username: '',
       firstName: '',
@@ -112,6 +108,8 @@ const UserManagementPage = () => {
   const handleOpenEditDialog = user => {
     setEditMode(true);
     setCurrentUser(user);
+    const userRoles = user.roles?.map(role => role.id) || [];
+    setOriginalRoles(userRoles);
     setFormData({
       username: user.username || '',
       firstName: user.firstName || '',
@@ -119,7 +117,7 @@ const UserManagementPage = () => {
       email: user.email || '',
       password: '', // Don't pre-fill password
       active: user.active !== false,
-      roles: user.roles?.map(role => role.id) || [],
+      roles: userRoles,
     });
     setOpen(true);
   };
@@ -129,25 +127,17 @@ const UserManagementPage = () => {
     setOpen(false);
   };
 
-  // Handle form input changes
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  // Handle role selection
-  const handleRoleChange = e => {
-    setFormData({
-      ...formData,
-      roles: e.target.value,
-    });
+  // Handle form data changes
+  const handleFormChange = newFormData => {
+    setFormData(newFormData);
   };
 
   // Submit form
-  const handleSubmit = async () => {
+  const handleSubmit = async e => {
+    if (e) {
+      e.preventDefault();
+    }
+
     // Basic validation
     if (!formData.username || (formData.password === '' && !editMode)) {
       setError('Username and password are required');
@@ -161,10 +151,6 @@ const UserManagementPage = () => {
       // Format data for API
       const userData = {
         ...formData,
-        roles: formData.roles.map(roleId => {
-          const role = roles.find(r => r.id === roleId);
-          return { id: roleId, name: role?.name };
-        }),
       };
 
       if (editMode && currentUser) {
@@ -172,8 +158,21 @@ const UserManagementPage = () => {
         if (!userData.password) {
           delete userData.password;
         }
+
+        // Only include roles if they've been modified from the original
+        // This prevents accidentally removing all roles
+        const rolesChanged =
+          JSON.stringify(formData.roles.sort()) !== JSON.stringify(originalRoles.sort());
+        if (rolesChanged) {
+          userData.roles = formData.roles;
+        } else {
+          delete userData.roles;
+        }
+
         await UserService.updateUser(currentUser.id, userData);
       } else {
+        // For new users, always include roles even if empty
+        userData.roles = formData.roles;
         await UserService.createUser(userData);
       }
 
@@ -193,14 +192,16 @@ const UserManagementPage = () => {
         <Typography variant="h4" component="h1">
           User Management
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Add User
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddDialog}
+          >
+            Add User
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -244,14 +245,23 @@ const UserManagementPage = () => {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      {user.roles?.map(role => (
-                        <Chip
-                          key={role.id}
-                          label={role.name}
-                          size="small"
-                          sx={{ mr: 0.5, mb: 0.5 }}
-                        />
-                      ))}
+                      {user.roles?.map(role => {
+                        // Check if role is an object with id and name or just an ID
+                        const roleId = typeof role === 'object' ? role.id : role;
+                        const roleName =
+                          typeof role === 'object' && role.name
+                            ? role.name
+                            : roles.find(r => r.id === roleId)?.name || roleId;
+
+                        return (
+                          <Chip
+                            key={roleId}
+                            label={roleName}
+                            size="small"
+                            sx={{ mr: 0.5, mb: 0.5 }}
+                          />
+                        );
+                      })}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -286,100 +296,26 @@ const UserManagementPage = () => {
         )}
       </Paper>
 
-      {/* Add/Edit User Dialog */}
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMode ? 'Edit User' : 'Add New User'}</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+      {/* User Form Dialog */}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        sx={{ '& .MuiDialog-paper': { p: 3 } }}
+      >
+        <DialogTitle sx={{ px: 0, pt: 0 }}>{editMode ? 'Edit User' : 'Add New User'}</DialogTitle>
 
-          <TextField
-            autoFocus
-            margin="dense"
-            name="username"
-            label="Username"
-            type="text"
-            fullWidth
-            value={formData.username}
-            onChange={handleInputChange}
-            disabled={editMode} // Don't allow changing username in edit mode
-            sx={{ mb: 2 }}
-          />
-
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              margin="dense"
-              name="firstName"
-              label="First Name"
-              type="text"
-              fullWidth
-              value={formData.firstName}
-              onChange={handleInputChange}
-            />
-
-            <TextField
-              margin="dense"
-              name="lastName"
-              label="Last Name"
-              type="text"
-              fullWidth
-              value={formData.lastName}
-              onChange={handleInputChange}
-            />
-          </Box>
-
-          <TextField
-            margin="dense"
-            name="email"
-            label="Email"
-            type="email"
-            fullWidth
-            value={formData.email}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-
-          <TextField
-            margin="dense"
-            name="password"
-            label={editMode ? 'Password (leave empty to keep unchanged)' : 'Password'}
-            type="password"
-            fullWidth
-            value={formData.password}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Select
-              label="Roles"
-              multiple
-              value={formData.roles}
-              onChange={handleRoleChange}
-              options={roles.map(role => ({
-                value: role.id,
-                label: role.name,
-              }))}
-              renderTags={selected => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map(value => {
-                    const role = roles.find(r => r.id === value);
-                    return <Chip key={value} label={role?.name || value} size="small" />;
-                  })}
-                </Box>
-              )}
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Save'}
-          </Button>
-        </DialogActions>
+        <UserForm
+          formData={formData}
+          onChange={handleFormChange}
+          onSubmit={handleSubmit}
+          roles={roles}
+          editMode={editMode}
+          error={error}
+          loading={loading}
+          onCancel={handleClose}
+        />
       </Dialog>
     </Container>
   );

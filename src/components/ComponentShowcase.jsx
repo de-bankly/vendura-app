@@ -679,7 +679,7 @@ const ComponentShowcase = () => {
                 title="Users Table"
                 searchable
                 selectable
-                onRowSelect={selectedIds => console.log('Selected:', selectedIds)}
+                onRowSelect={selectedIds => {}}
               />
             </ExampleCard>
           </ComponentSection>
@@ -694,7 +694,7 @@ const ComponentShowcase = () => {
             >
               <CustomTabs
                 value={0}
-                onChange={(e, val) => console.log(val)}
+                onChange={(e, val) => {}}
                 tabs={[
                   { label: 'Tab 1', id: 'tab-1' },
                   { label: 'Tab 2', id: 'tab-2' },
@@ -720,7 +720,7 @@ const ComponentShowcase = () => {
               title="Pagination"
               description="Pagination controls for navigating through pages of content."
             >
-              <Pagination count={10} page={1} onChange={(e, page) => console.log(`Page ${page}`)} />
+              <Pagination count={10} page={1} onChange={(e, page) => {}} />
             </ExampleCard>
 
             <ExampleCard
