@@ -106,21 +106,6 @@ class UserService {
       throw error;
     }
   }
-
-  /**
-   * Initialize user data (admin only)
-   * This will populate missing fields on existing users
-   * @returns {Promise} Promise with success message
-   */
-  async initializeUserData() {
-    try {
-      const response = await apiClient.post('/v1/user/initialize-data');
-      return response.data;
-    } catch (error) {
-      console.error('Error initializing user data:', error);
-      throw error;
-    }
-  }
 }
 
 export default new UserService();
