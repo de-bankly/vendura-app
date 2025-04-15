@@ -4,3 +4,4 @@ export { default as CardWithActions } from './CardWithActions';
 export { default as CompleteCard } from './CompleteCard';
 export { default as CardContent } from './CardContent';
 export { default as CardHeader } from './CardHeader';
+export { default as ProfileCard } from './ProfileCard';
