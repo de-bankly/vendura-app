@@ -2,8 +2,7 @@ import { DialogActions, DialogContent, DialogContentText, DialogTitle } from '@m
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// Import local components
-import { Button } from '../../components/ui/buttons';
+import { Button } from '../buttons';
 
 import Dialog from './Dialog';
 
