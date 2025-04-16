@@ -10,19 +10,41 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import Chip from '../components/ui/feedback/Chip';
 import { useAuth } from '../contexts/AuthContext';
+import { RoleService } from '../services';
 
 /**
  * User profile page to display current user information
  */
 const ProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Show loading state based on auth context loading
-  if (authLoading) {
+  // Fetch available roles for mapping role IDs to names
+  const fetchRoles = useCallback(async () => {
+    try {
+      const response = await RoleService.getAllRoles(0, 100);
+      setRoles(response.content || []);
+    } catch (err) {
+      console.error('Failed to load roles:', err);
+      setError('Failed to load role information');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load roles on mount
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  // Show loading state based on auth context loading or roles loading
+  if (authLoading || loading) {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box
@@ -53,6 +75,12 @@ const ProfilePage = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         User Profile
       </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {profileData && (
         <Paper elevation={2} sx={{ p: 4 }}>
@@ -99,19 +127,22 @@ const ProfilePage = () => {
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {profileData.roles?.map((role, index) => {
-                  // Simplify role name access assuming consistent format { name: '...' } from context/AuthService
-                  const roleName = role.name || `Role ${index + 1}`; // Fallback name
-                  const roleKey = role.id || roleName; // Use id if available, otherwise name
+                  // If role is a string (just the ID)
+                  if (typeof role === 'string') {
+                    const roleObj = roles.find(r => r.id === role);
+                    const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
+                    return (
+                      <Chip
+                        key={role || index}
+                        label={roleName}
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                      />
+                    );
+                  }
 
-                  return (
-                    <Chip
-                      key={roleKey}
-                      label={roleName}
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                    />
-                  );
+                  return null;
                 })}
                 {(!profileData.roles || profileData.roles.length === 0) && (
                   <Typography variant="body2" color="text.secondary">
