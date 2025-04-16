@@ -48,10 +48,6 @@ const reactBrowserRouter = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: 'showcase',
-        element: <ShowcasePage />,
-      },
-      {
         path: 'sales',
         element: <SalesScreen />,
       },
