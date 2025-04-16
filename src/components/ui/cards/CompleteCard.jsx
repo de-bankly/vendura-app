@@ -1,4 +1,4 @@
-import { CardContent, CardActions, Divider, Typography, useTheme } from '@mui/material';
+import { CardContent, CardActions, Divider, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 

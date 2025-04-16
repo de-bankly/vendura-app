@@ -22,7 +22,7 @@ import React, { useState, useEffect } from 'react';
 import { InventoryProductList, StockAdjustmentDialog } from '../components/inventory';
 import SupplierOrderForm from '../components/inventory/SupplierOrderForm';
 import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
-import { InventoryManagementService, ProductService, SupplierOrderService } from '../services';
+import { InventoryManagementService, SupplierOrderService } from '../services';
 
 const InventoryManagementPage = () => {
   const [activeTab, setActiveTab] = useState(0);

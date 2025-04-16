@@ -10,18 +10,14 @@ import {
   TextField,
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Paper,
   InputAdornment,
   FormControl,
-  InputLabel,
-  MenuItem,
   Divider,
 } from '@mui/material';
 import React, { useState } from 'react';
 
-import { issueVoucher } from '../../utils/voucherUtils';
 import { Select } from '../ui/inputs';
 
 /**

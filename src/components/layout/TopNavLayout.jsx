@@ -1,5 +1,3 @@
-
-// Icons
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -44,6 +42,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
+
+// Components
 import { ProfileCard } from '../ui/cards';
 
 const TopNavLayout = () => {

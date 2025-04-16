@@ -1,10 +1,4 @@
-import {
-  IconButton as MuiIconButton,
-  CircularProgress,
-  useTheme,
-  styled,
-  alpha,
-} from '@mui/material';
+import { IconButton as MuiIconButton, CircularProgress, styled, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 

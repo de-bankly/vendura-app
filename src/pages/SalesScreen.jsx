@@ -27,20 +27,14 @@ import {
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import {
-  ProductService,
-  CartService,
-  GiftCardService,
-  // Assume TransactionService exists for payment completion
-  // TransactionService
-} from '../services';
-import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error helper
+import { ProductService, CartService, GiftCardService } from '../services';
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
-Transition.displayName = 'Transition'; // Add display name
+Transition.displayName = 'Transition';
 
 // Animation variants
 const containerVariants = {

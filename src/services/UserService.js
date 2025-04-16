@@ -1,7 +1,6 @@
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 import apiClient from './ApiConfig';
-// Import error utility
 
 /**
  * Service for handling user operations

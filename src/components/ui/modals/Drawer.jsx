@@ -1,9 +1,9 @@
 import CloseIcon from '@mui/icons-material/Close';
-import { Drawer as MuiDrawer, Box, useTheme } from '@mui/material'; // Import useTheme, removed Mui IconButton
+import { Drawer as MuiDrawer, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { IconButton as LocalIconButton } from '../ui/buttons'; // Import local IconButton
+import { IconButton as LocalIconButton } from '../ui/buttons';
 
 /**
  * Enhanced Drawer component that extends MUI Drawer with consistent styling

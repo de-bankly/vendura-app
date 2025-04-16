@@ -1,5 +1,4 @@
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-import CategoryIcon from '@mui/icons-material/Category';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import {
@@ -7,24 +6,21 @@ import {
   Grid,
   Paper,
   Typography,
-  Chip as MuiChip, // Use MuiChip for tabs for now
-  Divider,
   useTheme,
   alpha,
   ButtonBase,
-  Tooltip as MuiTooltip, // Use MuiTooltip
-  Badge,
+  Tooltip as MuiTooltip,
   InputBase,
   Tab,
   Tabs,
-  IconButton as MuiIconButton, // Use MuiIconButton for search icon
+  IconButton as MuiIconButton,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
 
 // Import local components
-import { IconButton } from '../ui/buttons'; // Use local enhanced IconButton for add-to-cart
-
+import { IconButton } from '../ui/buttons';
+import Chip from '../ui/feedback/Chip';
 
 /**
  * ProductGrid component for displaying products by category
@@ -141,7 +137,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography variant="body2">Alle</Typography> {/* Use consistent variant */}
-                <MuiChip
+                <Chip
                   size="small"
                   label={Object.values(productsByCategory).flat().length}
                   sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
@@ -159,7 +155,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography variant="body2">{category.name}</Typography>{' '}
                   {/* Use consistent variant */}
-                  <MuiChip
+                  <Chip
                     size="small"
                     label={category.count}
                     sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}

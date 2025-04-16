@@ -54,11 +54,10 @@ const UserManagementPage = () => {
     {
       field: 'roles',
       headerName: 'Roles',
-      sortable: false, // Sorting complex objects is tricky client-side
+      sortable: false,
       renderCell: row => (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {row.roles?.map((role, index) => {
-            // If role is a string (just the ID)
             if (typeof role === 'string') {
               const roleObj = roles.find(r => r.id === role);
               const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;

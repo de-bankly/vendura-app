@@ -1,4 +1,4 @@
-import { Chip as MuiChip, useTheme, alpha, styled } from '@mui/material';
+import { Chip as MuiChip, alpha, styled } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 

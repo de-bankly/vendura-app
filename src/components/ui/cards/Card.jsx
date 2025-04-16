@@ -1,4 +1,4 @@
-import { Card as MuiCard, useTheme, styled } from '@mui/material';
+import { Card as MuiCard, styled } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 

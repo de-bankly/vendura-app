@@ -1,5 +1,3 @@
-// Import local components
-// Other Icons
 import AddIcon from '@mui/icons-material/Add';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
@@ -8,9 +6,7 @@ import LocalMallIcon from '@mui/icons-material/LocalMall';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import RemoveIcon from '@mui/icons-material/Remove';
-import SettingsIcon from '@mui/icons-material/Settings';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import SummarizeIcon from '@mui/icons-material/Summarize';
 import {
   Box,
   Paper,
@@ -24,7 +20,7 @@ import {
   Avatar,
   Grid,
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion'; // Import AnimatePresence for exit animations
+import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React from 'react';
 

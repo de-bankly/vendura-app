@@ -6,14 +6,12 @@ import {
   Typography,
   useTheme,
   Paper,
-  TextField as MuiTextField,
   alpha,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useRef } from 'react';
 
 import TextField from './TextField';
-
 
 /**
  * SearchableDropdown component that provides a dropdown menu with search functionality.

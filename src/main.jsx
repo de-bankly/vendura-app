@@ -7,12 +7,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 
-// Import our custom theme and global styles
 import './style/global/index.css';
 
-// Import router configuration
-
-// Import error boundary
 import ErrorBoundary from './components/error/ErrorBoundary';
 
 // Import AuthProvider

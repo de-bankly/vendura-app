@@ -26,8 +26,6 @@ import { useNavigate } from 'react-router-dom';
 import QuickAccessCard from '../components/dashboard/QuickAccessCard';
 import { InventoryManagementService } from '../services';
 
-// Icons
-
 const Home = () => {
   const navigate = useNavigate();
   const theme = useTheme();

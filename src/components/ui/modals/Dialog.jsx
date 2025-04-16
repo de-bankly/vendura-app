@@ -7,7 +7,6 @@ import {
   DialogActions,
   IconButton,
   Typography,
-  Box,
   useTheme,
 } from '@mui/material';
 import PropTypes from 'prop-types';

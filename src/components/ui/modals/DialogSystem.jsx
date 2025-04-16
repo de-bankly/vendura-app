@@ -6,7 +6,6 @@ import { Box, Typography, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-
 import { Button } from '../../components/ui/buttons';
 
 import Dialog from './Dialog';

@@ -9,7 +9,6 @@ const TopNavLayout = lazy(() => import('../components/layout/TopNavLayout'));
 
 // Pages (Lazy Load all pages)
 const Home = lazy(() => import('../pages/Home'));
-const ShowcasePage = lazy(() => import('../pages/ShowcasePage'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
 const SalesScreen = lazy(() => import('../pages/SalesScreen'));
@@ -22,8 +21,6 @@ const InventoryPage = lazy(() => import('../pages/InventoryPage'));
 const InventoryManagementPage = lazy(() => import('../pages/InventoryManagementPage'));
 const ProductManagementPage = lazy(() => import('../pages/admin/ProductManagementPage'));
 const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagementPage'));
-
-// Components
 
 // Error handling
 const RouterErrorBoundary = lazy(() =>

@@ -1,4 +1,3 @@
-import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Table as MuiTable,
@@ -11,13 +10,10 @@ import {
   Paper,
   Box,
   Checkbox,
-  TextField,
   InputAdornment,
   Typography,
   useTheme,
   useMediaQuery,
-  IconButton,
-  Tooltip,
   TablePagination,
 } from '@mui/material';
 import PropTypes from 'prop-types';
