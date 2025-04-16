@@ -181,7 +181,7 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: 4,
   },
   shadows: [
     'none',
@@ -274,7 +274,7 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: 12,
+          borderRadius: theme.shape.borderRadius * 1.5,
           boxShadow: theme.shadows[2],
           transition: 'transform 0.3s, box-shadow 0.3s',
           overflow: 'hidden',
@@ -312,7 +312,7 @@ const theme = createTheme({
           backgroundImage: 'none',
         },
         rounded: ({ theme }) => ({
-          borderRadius: 12,
+          borderRadius: theme.shape.borderRadius * 1.5,
         }),
       },
     },
@@ -396,7 +396,7 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 4,
           fontSize: '0.75rem',
           height: 24,
         },

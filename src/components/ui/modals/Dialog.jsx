@@ -58,7 +58,7 @@ const Dialog = ({
       aria-describedby="dialog-description"
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: theme.shape.borderRadius * 2,
+          borderRadius: theme.shape.borderRadius * 1.5,
           ...sx,
         },
       }}

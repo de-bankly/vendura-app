@@ -133,7 +133,7 @@ const ErrorPage = () => {
             elevation={0}
             sx={{
               p: 4,
-              borderRadius: 4,
+              borderRadius: theme.shape.borderRadius * 1.5,
               mb: 4,
               boxShadow: '0 10px 40px rgba(15, 23, 42, 0.08)',
               position: 'relative',
@@ -236,9 +236,9 @@ const ErrorPage = () => {
                 href={`${window.location.pathname}?throwError`}
                 startIcon={<ErrorOutlineIcon />}
                 sx={{
+                  borderRadius: theme.shape.borderRadius,
                   px: 3,
                   py: 1.2,
-                  borderRadius: 10,
                   fontWeight: 600,
                   boxShadow: '0 4px 14px rgba(245, 158, 11, 0.25)',
                   background: 'linear-gradient(135deg, #F59E0B, #B45309)',
@@ -261,9 +261,9 @@ const ErrorPage = () => {
               href="/error-test"
               startIcon={<BugReportIcon />}
               sx={{
+                borderRadius: theme.shape.borderRadius,
                 px: 3,
                 py: 1.2,
-                borderRadius: 10,
                 fontWeight: 600,
                 borderWidth: '1.5px',
                 transition: 'all 0.3s ease',

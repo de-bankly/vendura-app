@@ -83,7 +83,7 @@ const Button = ({
       onClick={onClick}
       type={type}
       sx={{
-        borderRadius: rounded ? '50px' : '8px',
+        borderRadius: rounded ? '50px' : theme.shape.borderRadius,
         textTransform: 'none',
         boxShadow: variant === 'contained' && elevation ? theme.shadows[2] : 'none',
         '&:hover': {

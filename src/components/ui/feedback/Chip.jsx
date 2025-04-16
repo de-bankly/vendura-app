@@ -15,7 +15,7 @@ const StyledMuiChip = styled(MuiChip, {
 
   return {
     fontWeight: 500,
-    borderRadius: theme.spacing(2), // Use theme spacing for 16px
+    borderRadius: theme.shape.borderRadius, // Use theme borderRadius instead of spacing
     transition: 'all 0.2s ease-in-out',
     // Apply shadow only for filled variant
     ...(variant === 'filled' && {

@@ -7,7 +7,7 @@ const StyledMuiCard = styled(MuiCard, {
   shouldForwardProp: prop => prop !== 'hoverEffect' && prop !== 'borderRadiusMultiplier',
 })(({ theme, elevation, variant, borderRadiusMultiplier = 1, hoverEffect }) => ({
   // Base styles
-  borderRadius: theme.shape.borderRadius * borderRadiusMultiplier, // Use theme shape and multiplier
+  borderRadius: theme.shape.borderRadius * 1.5 * borderRadiusMultiplier, // Use theme shape and multiplier with 1.5 base
   overflow: 'hidden',
   transition: 'all 0.2s ease-in-out',
   border: variant === 'outlined' ? `1px solid ${theme.palette.divider}` : 'none',

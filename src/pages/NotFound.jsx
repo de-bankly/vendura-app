@@ -78,7 +78,7 @@ const NotFound = () => {
           elevation={3}
           sx={{
             p: { xs: 3, md: 5 },
-            borderRadius: 4,
+            borderRadius: theme.shape.borderRadius * 1.5,
             boxShadow: '0 10px 40px rgba(15, 23, 42, 0.1)',
             position: 'relative',
             overflow: 'hidden',
@@ -326,7 +326,7 @@ const NotFound = () => {
                   startIcon={<ArrowBackIcon />}
                   onClick={() => navigate(-1)}
                   sx={{
-                    borderRadius: 10,
+                    borderRadius: theme.shape.borderRadius,
                     px: 3,
                     py: 1.2,
                     fontWeight: 600,
@@ -353,7 +353,7 @@ const NotFound = () => {
                   startIcon={<HomeIcon />}
                   onClick={() => navigate('/')}
                   sx={{
-                    borderRadius: 10,
+                    borderRadius: theme.shape.borderRadius,
                     px: 3,
                     py: 1.2,
                     fontWeight: 600,

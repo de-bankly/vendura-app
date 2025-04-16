@@ -55,7 +55,7 @@ const PaymentDialog = ({
       PaperProps={{
         elevation: 5,
         sx: {
-          borderRadius: 2,
+          borderRadius: theme.shape.borderRadius * 1.5,
           overflow: 'hidden',
         },
       }}
@@ -115,7 +115,7 @@ const PaymentDialog = ({
               variant="outlined"
               sx={{
                 mb: 1.5,
-                borderRadius: 1.5,
+                borderRadius: theme.shape.borderRadius,
                 borderColor:
                   paymentMethod === 'cash' ? theme.palette.primary.main : theme.palette.divider,
                 transition: 'all 0.2s',
@@ -153,7 +153,7 @@ const PaymentDialog = ({
               variant="outlined"
               sx={{
                 mb: 1.5,
-                borderRadius: 1.5,
+                borderRadius: theme.shape.borderRadius,
                 borderColor:
                   paymentMethod === 'card' ? theme.palette.primary.main : theme.palette.divider,
                 transition: 'all 0.2s',
@@ -190,7 +190,7 @@ const PaymentDialog = ({
             <Paper
               variant="outlined"
               sx={{
-                borderRadius: 1.5,
+                borderRadius: theme.shape.borderRadius,
                 borderColor:
                   paymentMethod === 'bank' ? theme.palette.primary.main : theme.palette.divider,
                 transition: 'all 0.2s',
@@ -257,7 +257,7 @@ const PaymentDialog = ({
                 sx={{
                   p: 2,
                   bgcolor: theme.palette.success.light + '20',
-                  borderRadius: 1.5,
+                  borderRadius: theme.shape.borderRadius,
                   borderColor: theme.palette.success.light,
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -294,7 +294,7 @@ const PaymentDialog = ({
                   p: 4,
                   border: '2px dashed',
                   borderColor: theme.palette.info.light,
-                  borderRadius: 2,
+                  borderRadius: theme.shape.borderRadius,
                   bgcolor: theme.palette.info.light + '10',
                 }}
               >
@@ -322,7 +322,7 @@ const PaymentDialog = ({
                 sx={{
                   p: 2.5,
                   bgcolor: theme.palette.warning.light + '10',
-                  borderRadius: 1.5,
+                  borderRadius: theme.shape.borderRadius,
                   borderColor: theme.palette.warning.light,
                 }}
               >
