@@ -8,7 +8,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
 
-
 /**
  * Login page component
  */

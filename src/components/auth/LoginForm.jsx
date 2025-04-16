@@ -14,7 +14,6 @@ import { useState } from 'react';
 
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
 
-
 /**
  * Login form component for user authentication
  */

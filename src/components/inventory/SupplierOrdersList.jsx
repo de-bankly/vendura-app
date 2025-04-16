@@ -28,7 +28,6 @@ import React, { useState } from 'react';
 
 import { SupplierOrderService } from '../../services';
 
-
 const SupplierOrdersList = ({ orders, onRefresh }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
