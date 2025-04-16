@@ -3,7 +3,7 @@ import { Modal as MuiModal, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { IconButton } from '../ui/buttons';
+import { IconButton } from '../buttons';
 
 /**
  * Enhanced Modal component that extends MUI Modal with consistent styling

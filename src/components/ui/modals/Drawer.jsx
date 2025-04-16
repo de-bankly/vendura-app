@@ -3,7 +3,7 @@ import { Drawer as MuiDrawer, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { IconButton as LocalIconButton } from '../ui/buttons';
+import { IconButton } from '../buttons';
 
 /**
  * Enhanced Drawer component that extends MUI Drawer with consistent styling
@@ -74,7 +74,7 @@ const Drawer = ({
         }}
       >
         {showCloseButton && variant === 'temporary' && (
-          <LocalIconButton // Use LocalIconButton
+          <IconButton
             aria-label="close"
             onClick={onClose} // Simple onClose is fine here for the button itself
             sx={{
@@ -90,7 +90,7 @@ const Drawer = ({
             size="small"
           >
             <CloseIcon fontSize="small" />
-          </LocalIconButton>
+          </IconButton>
         )}
         {/* Add some padding to content area if close button is shown, to prevent overlap */}
         <Box sx={{ p: showCloseButton && variant === 'temporary' ? theme.spacing(3, 5, 3, 3) : 0 }}>
