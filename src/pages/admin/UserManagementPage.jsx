@@ -12,9 +12,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import UserForm from '../../components/admin/UserForm';
 import { Button, IconButton } from '../../components/ui/buttons';
-import { Chip , Table } from '../../components/ui/feedback';
+import { Chip, Table } from '../../components/ui/feedback';
 import { UserService, RoleService } from '../../services';
-
 
 /**
  * User management page for administrators
@@ -59,17 +58,20 @@ const UserManagementPage = () => {
       renderCell: row => (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {row.roles?.map((role, index) => {
-            const roleName = role.name || `Role ${index + 1}`; // Assume name exists
-            const roleKey = role.id || roleName;
-            return (
-              <Chip
-                key={roleKey}
-                label={roleName}
-                variant="outlined"
-                color="primary"
-                size="small"
-              />
-            );
+            // If role is a string (just the ID)
+            if (typeof role === 'string') {
+              const roleObj = roles.find(r => r.id === role);
+              const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
+              return (
+                <Chip
+                  key={role || index}
+                  label={roleName}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                />
+              );
+            }
           })}
           {(!row.roles || row.roles.length === 0) && (
             <Typography variant="caption" color="text.secondary">
