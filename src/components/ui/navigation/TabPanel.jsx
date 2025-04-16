@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * TabPanel component to display content for each tab.
@@ -16,6 +16,7 @@ const TabPanel = ({
   ...props
 }) => {
   const isSelected = value === index;
+  const theme = useTheme();
 
   // If not selected and not keeping mounted, don't render
   if (!isSelected && !keepMounted) {
@@ -29,7 +30,7 @@ const TabPanel = ({
       id={`tabpanel-${index}`}
       aria-labelledby={`tab-${index}`}
       sx={{
-        p: padding,
+        p: theme.spacing(padding),
         ...sx,
       }}
       {...props}

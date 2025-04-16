@@ -2,23 +2,19 @@
 import { initializeFaro } from './utils/faro';
 initializeFaro();
 
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
 
-// Import our custom theme and global styles
-import theme from './style/theme';
 import './style/global/index.css';
 
-// Import router configuration
-import router from './routes/router';
-
-// Import error boundary
 import ErrorBoundary from './components/error/ErrorBoundary';
 
 // Import AuthProvider
 import { AuthProvider } from './contexts/AuthContext';
+import router from './routes/router';
+import theme from './style/theme';
 
 // Import configuration utility
 import { applyRuntimeConfig } from './utils/config';

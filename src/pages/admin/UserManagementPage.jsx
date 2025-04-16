@@ -1,28 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 import {
   Container,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
+  Box,
+  Tooltip,
   Dialog,
   DialogTitle,
-  Chip,
-  Box,
-  Pagination,
-  Alert,
-  IconButton,
-  Tooltip,
-  CircularProgress,
+  Alert as MuiAlert,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Person as PersonIcon } from '@mui/icons-material';
-import { UserService, RoleService } from '../../services';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import UserForm from '../../components/admin/UserForm';
+import { Button, IconButton } from '../../components/ui/buttons';
+import { Chip, Table } from '../../components/ui/feedback';
+import { UserService, RoleService } from '../../services';
 
 /**
  * User management page for administrators
@@ -50,18 +41,85 @@ const UserManagementPage = () => {
     roles: [],
   });
 
-  // Load users and roles
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles();
-  }, [page]);
+  // Define columns for the local Table component
+  const columns = [
+    { field: 'username', headerName: 'Username', sortable: true },
+    {
+      field: 'name',
+      headerName: 'Name',
+      sortable: true,
+      renderCell: row => `${row.firstName || ''} ${row.lastName || ''}`,
+    },
+    { field: 'email', headerName: 'Email', sortable: true },
+    {
+      field: 'roles',
+      headerName: 'Roles',
+      sortable: false,
+      renderCell: row => (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {row.roles?.map((role, index) => {
+            if (typeof role === 'string') {
+              const roleObj = roles.find(r => r.id === role);
+              const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
+              return (
+                <Chip
+                  key={role || index}
+                  label={roleName}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                />
+              );
+            }
+          })}
+          {(!row.roles || row.roles.length === 0) && (
+            <Typography variant="caption" color="text.secondary">
+              -
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'active',
+      headerName: 'Status',
+      sortable: true,
+      renderCell: row => (
+        <Chip
+          label={row.active !== false ? 'Active' : 'Inactive'}
+          color={row.active !== false ? 'success' : 'error'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      renderCell: row => (
+        <Tooltip title="Edit User">
+          {/* Ensure local IconButton is used */}
+          <IconButton
+            size="small"
+            onClick={e => {
+              e.stopPropagation();
+              handleOpenEditDialog(row);
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
 
-  // Fetch users with pagination
-  const fetchUsers = async () => {
+  // Fetch users (needs to be wrapped in useCallback)
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
+      // Pass current page state to service
       const response = await UserService.getAllUsers(page, 10);
       setUsers(response.content || []);
       setTotalPages(response.totalPages || 0);
@@ -70,25 +128,31 @@ const UserManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   // Fetch available roles
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const response = await RoleService.getAllRoles(0, 100);
       setRoles(response.content || []);
     } catch (err) {
       console.error('Failed to load roles:', err);
     }
-  };
+  }, []);
+
+  // Load users and roles on mount and page change
+  useEffect(() => {
+    fetchUsers();
+    fetchRoles();
+  }, [fetchUsers, fetchRoles]);
 
   // Handle page change
-  const handlePageChange = (event, value) => {
+  const handlePageChange = useCallback((event, value) => {
     setPage(value - 1);
-  };
+  }, []);
 
   // Open dialog for new user
-  const handleOpenAddDialog = () => {
+  const handleOpenAddDialog = useCallback(() => {
     setEditMode(false);
     setCurrentUser(null);
     setOriginalRoles([]);
@@ -102,10 +166,10 @@ const UserManagementPage = () => {
       roles: [],
     });
     setOpen(true);
-  };
+  }, []);
 
   // Open dialog for editing user
-  const handleOpenEditDialog = user => {
+  const handleOpenEditDialog = useCallback(user => {
     setEditMode(true);
     setCurrentUser(user);
     const userRoles = user.roles?.map(role => role.id) || [];
@@ -120,71 +184,74 @@ const UserManagementPage = () => {
       roles: userRoles,
     });
     setOpen(true);
-  };
+  }, []);
 
   // Close dialog
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setOpen(false);
-  };
+  }, []);
 
   // Handle form data changes
-  const handleFormChange = newFormData => {
+  const handleFormChange = useCallback(newFormData => {
     setFormData(newFormData);
-  };
+  }, []);
 
   // Submit form
-  const handleSubmit = async e => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    // Basic validation
-    if (!formData.username || (formData.password === '' && !editMode)) {
-      setError('Username and password are required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      // Format data for API
-      const userData = {
-        ...formData,
-      };
-
-      if (editMode && currentUser) {
-        // Remove password if empty (not changing password)
-        if (!userData.password) {
-          delete userData.password;
-        }
-
-        // Only include roles if they've been modified from the original
-        // This prevents accidentally removing all roles
-        const rolesChanged =
-          JSON.stringify(formData.roles.sort()) !== JSON.stringify(originalRoles.sort());
-        if (rolesChanged) {
-          userData.roles = formData.roles;
-        } else {
-          delete userData.roles;
-        }
-
-        await UserService.updateUser(currentUser.id, userData);
-      } else {
-        // For new users, always include roles even if empty
-        userData.roles = formData.roles;
-        await UserService.createUser(userData);
+  const handleSubmit = useCallback(
+    async e => {
+      if (e) {
+        e.preventDefault();
       }
 
-      // Refresh users list
-      fetchUsers();
-      handleClose();
-    } catch (err) {
-      setError('Error saving user: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Basic validation
+      if (!formData.username || (formData.password === '' && !editMode)) {
+        setError('Username and password are required');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      try {
+        // Format data for API
+        const userData = {
+          ...formData,
+        };
+
+        if (editMode && currentUser) {
+          // Remove password if empty (not changing password)
+          if (!userData.password) {
+            delete userData.password;
+          }
+
+          // Only include roles if they've been modified from the original
+          // This prevents accidentally removing all roles
+          const rolesChanged =
+            JSON.stringify(formData.roles.sort()) !== JSON.stringify(originalRoles.sort());
+          if (rolesChanged) {
+            userData.roles = formData.roles;
+          } else {
+            delete userData.roles;
+          }
+
+          await UserService.updateUser(currentUser.id, userData);
+        } else {
+          // For new users, always include roles even if empty
+          userData.roles = formData.roles;
+          await UserService.createUser(userData);
+        }
+
+        // Refresh users list
+        fetchUsers();
+        handleClose();
+      } catch (err) {
+        setError('Error saving user: ' + (err.response?.data?.message || err.message));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [editMode, currentUser, formData, originalRoles, fetchUsers, handleClose]
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -205,96 +272,19 @@ const UserManagementPage = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <MuiAlert severity="error" sx={{ mb: 3 }}>
           {error}
-        </Alert>
+        </MuiAlert>
       )}
 
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Username</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Roles</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && !users.length ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <CircularProgress size={40} sx={{ my: 3 }} />
-                  </TableCell>
-                </TableRow>
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No users found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map(user => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>
-                      {user.firstName} {user.lastName}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      {user.roles?.map(role => {
-                        // Check if role is an object with id and name or just an ID
-                        const roleId = typeof role === 'object' ? role.id : role;
-                        const roleName =
-                          typeof role === 'object' && role.name
-                            ? role.name
-                            : roles.find(r => r.id === roleId)?.name || roleId;
-
-                        return (
-                          <Chip
-                            key={roleId}
-                            label={roleName}
-                            size="small"
-                            sx={{ mr: 0.5, mb: 0.5 }}
-                          />
-                        );
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.active !== false ? 'Active' : 'Inactive'}
-                        color={user.active !== false ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Edit User">
-                        <IconButton size="small" onClick={() => handleOpenEditDialog(user)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={page + 1}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
-        )}
-      </Paper>
+      <Table
+        columns={columns}
+        data={users}
+        selectable={false}
+        searchable={true}
+        loading={loading}
+        emptyStateMessage="No users found"
+      />
 
       {/* User Form Dialog */}
       <Dialog

@@ -1,3 +1,5 @@
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+
 import apiClient from './ApiConfig';
 
 /**
@@ -13,8 +15,8 @@ class UserService {
       const response = await apiClient.get('/v1/user/me');
       return response.data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      throw error;
+      console.error('Error fetching user profile:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch user profile'));
     }
   }
 
@@ -27,15 +29,12 @@ class UserService {
   async getAllUsers(page = 0, size = 10) {
     try {
       const response = await apiClient.get('/v1/user', {
-        params: {
-          page,
-          size,
-        },
+        params: { page, size },
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
+      console.error('Error fetching users:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch users'));
     }
   }
 
@@ -49,8 +48,8 @@ class UserService {
       const response = await apiClient.get(`/v1/user/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching user ${id}:`, error);
-      throw error;
+      console.error(`Error fetching user ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch user details'));
     }
   }
 
@@ -64,8 +63,8 @@ class UserService {
       const response = await apiClient.post('/v1/user', userData);
       return response.data;
     } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
+      console.error('Error creating user:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to create user'));
     }
   }
 
@@ -102,8 +101,8 @@ class UserService {
       const response = await apiClient.put(`/v1/user/${id}`, cleanedData);
       return response.data;
     } catch (error) {
-      console.error(`Error updating user ${id}:`, error);
-      throw error;
+      console.error(`Error updating user ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to update user'));
     }
   }
 }

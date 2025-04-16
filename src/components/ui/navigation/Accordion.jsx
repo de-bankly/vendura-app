@@ -1,136 +1,138 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion as MuiAccordion,
-  AccordionSummary,
-  AccordionDetails,
+  AccordionSummary as MuiAccordionSummary,
+  AccordionDetails as MuiAccordionDetails,
   Typography,
   Box,
   useTheme,
+  styled,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+
+// --- Styled Components --- //
+
+const StyledAccordion = styled(MuiAccordion, {
+  shouldForwardProp: prop => prop !== 'square',
+})(({ theme, square }) => ({
+  borderRadius: square ? 0 : theme.shape.borderRadius,
+  boxShadow: 'none',
+  '&:before': {
+    display: 'none',
+  },
+  '&.Mui-expanded': {
+    margin: 0,
+  },
+}));
+
+const StyledAccordionSummary = styled(MuiAccordionSummary)(({ theme }) => ({
+  minHeight: 56,
+  paddingLeft: theme.spacing(3),
+  paddingRight: theme.spacing(2),
+  '&.Mui-expanded': {
+    minHeight: 56,
+  },
+  '& .MuiAccordionSummary-content': {
+    margin: theme.spacing(1.5, 0),
+    '&.Mui-expanded': {
+      margin: theme.spacing(1.5, 0),
+    },
+  },
+}));
+
+const StyledAccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
+  padding: theme.spacing(1, 3, 3),
+}));
 
 /**
- * Accordion component for expandable content sections.
- * Can be used individually or as part of an accordion group.
+ * Enhanced Accordion component using styled components.
  */
-const Accordion = ({
-  title,
-  subtitle,
-  children,
-  expanded,
-  onChange,
-  defaultExpanded = false,
-  disabled = false,
-  disableGutters = false,
-  square = false,
-  elevation = 1,
-  icon = <ExpandMoreIcon />,
-  titleTypographyProps = {},
-  subtitleTypographyProps = {},
-  summaryProps = {},
-  detailsProps = {},
-  sx = {},
-  ...props
-}) => {
-  const theme = useTheme();
-  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+const Accordion = React.forwardRef(
+  (
+    {
+      title,
+      subtitle,
+      children,
+      expanded,
+      onChange,
+      defaultExpanded = false,
+      disabled = false,
+      disableGutters = false,
+      square = false,
+      elevation = 1,
+      icon = <ExpandMoreIcon />,
+      titleTypographyProps = {},
+      subtitleTypographyProps = {},
+      summaryProps = {},
+      detailsProps = {},
+      sx = {},
+      ...props
+    },
+    ref
+  ) => {
+    const theme = useTheme();
+    const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
 
-  // Use either controlled or uncontrolled expanded state
-  const isExpanded = expanded !== undefined ? expanded : internalExpanded;
+    const isExpanded = expanded !== undefined ? expanded : internalExpanded;
 
-  // Handle accordion change
-  const handleChange = (event, newExpanded) => {
-    if (expanded === undefined) {
-      setInternalExpanded(newExpanded);
-    }
+    const handleChange = (event, newExpanded) => {
+      if (expanded === undefined) {
+        setInternalExpanded(newExpanded);
+      }
+      if (onChange) {
+        onChange(event, newExpanded);
+      }
+    };
 
-    if (onChange) {
-      onChange(event, newExpanded);
-    }
-  };
-
-  return (
-    <MuiAccordion
-      expanded={isExpanded}
-      onChange={handleChange}
-      defaultExpanded={defaultExpanded}
-      disabled={disabled}
-      disableGutters={disableGutters}
-      square={square}
-      elevation={elevation}
-      sx={{
-        borderRadius: square ? 0 : 1,
-        '&:before': {
-          display: 'none',
-        },
-        '&.Mui-expanded': {
-          margin: 0,
-        },
-        ...sx,
-      }}
-      {...props}
-    >
-      <AccordionSummary
-        expandIcon={icon}
-        aria-controls="panel-content"
-        id="panel-header"
-        sx={{
-          minHeight: 56,
-          '&.Mui-expanded': {
-            minHeight: 56,
-          },
-          '& .MuiAccordionSummary-content': {
-            margin: '12px 0',
-            '&.Mui-expanded': {
-              margin: '12px 0',
-            },
-          },
-          ...summaryProps.sx,
-        }}
-        {...summaryProps}
+    return (
+      <StyledAccordion
+        ref={ref}
+        expanded={isExpanded}
+        onChange={handleChange}
+        disabled={disabled}
+        disableGutters={disableGutters}
+        square={square}
+        elevation={elevation}
+        sx={sx}
+        {...props}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography
-            variant="subtitle1"
-            component="div"
-            sx={{
-              fontWeight: 600,
-              ...titleTypographyProps.sx,
-            }}
-            {...titleTypographyProps}
-          >
-            {title}
-          </Typography>
-
-          {subtitle && (
+        <StyledAccordionSummary
+          expandIcon={icon}
+          aria-controls="panel-content"
+          id="panel-header"
+          {...summaryProps}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                mt: 0.5,
-                ...subtitleTypographyProps.sx,
-              }}
-              {...subtitleTypographyProps}
+              variant="subtitle1"
+              component="div"
+              sx={{ fontWeight: 600 }}
+              {...titleTypographyProps}
             >
-              {subtitle}
+              {title}
             </Typography>
-          )}
-        </Box>
-      </AccordionSummary>
 
-      <AccordionDetails
-        sx={{
-          padding: theme.spacing(1, 3, 3),
-          ...detailsProps.sx,
-        }}
-        {...detailsProps}
-      >
-        {children}
-      </AccordionDetails>
-    </MuiAccordion>
-  );
-};
+            {subtitle && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+                {...subtitleTypographyProps}
+              >
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+        </StyledAccordionSummary>
+
+        <StyledAccordionDetails {...detailsProps}>{children}</StyledAccordionDetails>
+      </StyledAccordion>
+    );
+  }
+);
+
+Accordion.displayName = 'Accordion';
 
 Accordion.propTypes = {
   /** The title of the accordion */

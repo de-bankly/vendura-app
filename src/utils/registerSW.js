@@ -5,6 +5,7 @@
  */
 
 import { registerSW } from 'virtual:pwa-register';
+
 import { isProduction } from './config';
 
 /**

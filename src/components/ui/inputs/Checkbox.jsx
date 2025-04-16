@@ -1,124 +1,122 @@
-import React from 'react';
 import {
+  FormControl,
   FormControlLabel,
   Checkbox as MuiCheckbox,
   FormHelperText,
-  FormControl,
   alpha,
+  styled,
 } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
+// --- Styled Components --- //
+
+const StyledFormControl = styled(FormControl, {
+  shouldForwardProp: prop => prop !== 'labelPlacement',
+})(({ theme, labelPlacement }) => ({
+  marginLeft: labelPlacement === 'start' ? 0 : theme.spacing(-1.5),
+  marginRight: labelPlacement === 'end' ? 0 : theme.spacing(-1.5),
+}));
+
+const StyledFormControlLabel = styled(FormControlLabel)({
+  marginLeft: 0,
+  marginRight: 0,
+  '& .MuiFormControlLabel-label': {
+    fontWeight: 400,
+    transition: 'opacity 0.2s ease-in-out',
+  },
+});
+
+const StyledMuiCheckbox = styled(
+  MuiCheckbox,
+  {}
+)(({ theme, size, error }) => ({
+  padding: size === 'small' ? theme.spacing(0.5) : theme.spacing(1),
+  borderRadius: theme.shape.borderRadius * 0.5,
+  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover:not(.Mui-disabled)': {
+    backgroundColor: alpha(theme.palette.action.hover, 0.08),
+  },
+  '&.Mui-focused': {
+    boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+  },
+  '& .MuiSvgIcon-root': {
+    fontSize: size === 'small' ? theme.typography.pxToRem(16) : theme.typography.pxToRem(20),
+  },
+}));
+
+const StyledFormHelperText = styled(FormHelperText, {
+  shouldForwardProp: prop => prop !== 'labelPlacement',
+})(({ theme, labelPlacement }) => ({
+  marginLeft: labelPlacement === 'end' ? theme.spacing(3.75) : theme.spacing(0.25),
+  fontSize: theme.typography.pxToRem(12),
+}));
 
 /**
- * Enhanced Checkbox component with a modern, minimalist design optimized for POS and inventory
- * management systems. Features clean lines, subtle transitions, and consistent styling
- * across the application.
+ * Enhanced Checkbox component using styled components.
  */
-const Checkbox = ({
-  label,
-  checked,
-  onChange,
-  error = false,
-  helperText = '',
-  required = false,
-  disabled = false,
-  color = 'primary',
-  size = 'medium',
-  indeterminate = false,
-  name = '',
-  id = '',
-  sx = {},
-  labelPlacement = 'end',
-  ...props
-}) => {
-  // Generate a unique ID if not provided
-  const checkboxId = id || name || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
-
-  // Size-specific styles
-  const sizeStyles = {
-    small: {
-      '& .MuiSvgIcon-root': {
-        fontSize: '1rem',
-      },
-      '& .MuiFormControlLabel-label': {
-        fontSize: '0.875rem',
-      },
+const Checkbox = React.forwardRef(
+  (
+    {
+      label,
+      checked,
+      onChange,
+      error = false,
+      helperText = '',
+      required = false,
+      disabled = false,
+      color = 'primary',
+      size = 'medium',
+      indeterminate = false,
+      name = '',
+      id = '',
+      sx = {},
+      labelPlacement = 'end',
+      ...props
     },
-    medium: {
-      '& .MuiSvgIcon-root': {
-        fontSize: '1.25rem',
-      },
-    },
-  };
+    ref
+  ) => {
+    const checkboxId = id || name || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
 
-  return (
-    <FormControl
-      error={error}
-      required={required}
-      disabled={disabled}
-      sx={{
-        marginLeft: labelPlacement === 'start' ? 0 : -1.5,
-        marginRight: labelPlacement === 'end' ? 0 : -1.5,
-      }}
-    >
-      <FormControlLabel
-        control={
-          <MuiCheckbox
-            checked={checked}
-            onChange={onChange}
-            color={color}
-            size={size}
-            indeterminate={indeterminate}
-            name={name}
-            id={checkboxId}
-            sx={{
-              padding: size === 'small' ? '4px' : '8px',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-              '&:hover': {
-                backgroundColor: theme => !disabled && alpha(theme.palette.action.hover, 0.08),
-              },
-              '&.Mui-checked': {
-                color: error ? 'error.main' : undefined,
-              },
-              '&.Mui-focused': {
-                boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-              },
-              ...(sizeStyles[size] || {}),
-              ...sx,
-            }}
-            {...props}
-          />
-        }
-        label={
-          <span
-            style={{
-              fontWeight: 400,
-              opacity: disabled ? 0.6 : 1,
-              transition: 'opacity 0.2s ease-in-out',
-            }}
-          >
-            {label}
-          </span>
-        }
+    return (
+      <StyledFormControl
+        ref={ref}
+        error={error}
+        required={required}
+        disabled={disabled}
         labelPlacement={labelPlacement}
-        sx={{
-          marginLeft: 0,
-          marginRight: 0,
-        }}
-      />
-      {helperText && (
-        <FormHelperText
-          sx={{
-            marginLeft: labelPlacement === 'end' ? '30px' : '2px',
-            fontSize: '0.75rem',
-          }}
-        >
-          {helperText}
-        </FormHelperText>
-      )}
-    </FormControl>
-  );
-};
+        sx={sx}
+      >
+        <StyledFormControlLabel
+          control={
+            <StyledMuiCheckbox
+              size={size}
+              error={error}
+              checked={checked}
+              onChange={onChange}
+              color={color}
+              indeterminate={indeterminate}
+              name={name}
+              id={checkboxId}
+              disabled={disabled}
+              {...props}
+            />
+          }
+          label={label}
+          labelPlacement={labelPlacement}
+          disabled={disabled}
+        />
+        {helperText && (
+          <StyledFormHelperText labelPlacement={labelPlacement} error={error}>
+            {helperText}
+          </StyledFormHelperText>
+        )}
+      </StyledFormControl>
+    );
+  }
+);
+
+Checkbox.displayName = 'Checkbox';
 
 Checkbox.propTypes = {
   /** The label content */

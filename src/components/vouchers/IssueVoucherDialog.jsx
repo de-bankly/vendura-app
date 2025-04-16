@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EuroIcon from '@mui/icons-material/Euro';
 import {
   Dialog,
   DialogTitle,
@@ -13,10 +16,8 @@ import {
   Paper,
   InputAdornment,
 } from '@mui/material';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import EuroIcon from '@mui/icons-material/Euro';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import React, { useState } from 'react';
+
 import { issueVoucher } from '../../utils/voucherUtils';
 
 /**

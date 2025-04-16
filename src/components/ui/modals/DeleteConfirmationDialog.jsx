@@ -1,13 +1,11 @@
-import React from 'react';
+import { DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import PropTypes from 'prop-types';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from '@mui/material';
+import React from 'react';
+
+// Import local components
+import { Button } from '../../components/ui/buttons';
+
+import Dialog from './Dialog';
 
 /**
  * DeleteConfirmationDialog - A reusable dialog for confirming deletion

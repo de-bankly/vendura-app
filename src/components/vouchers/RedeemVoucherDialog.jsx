@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EuroIcon from '@mui/icons-material/Euro';
 import {
   Dialog,
   DialogTitle,
@@ -14,9 +16,8 @@ import {
   Slider,
   InputAdornment,
 } from '@mui/material';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EuroIcon from '@mui/icons-material/Euro';
+import React, { useState } from 'react';
+
 import { validateVoucher, redeemVoucher } from '../../utils/voucherUtils';
 
 /**

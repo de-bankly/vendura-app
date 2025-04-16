@@ -1,7 +1,7 @@
-import React from 'react';
-import { Breadcrumbs as MuiBreadcrumbs, Link, Typography, Box } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Breadcrumbs as MuiBreadcrumbs, Link, Typography, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Breadcrumbs component that extends MUI Breadcrumbs with consistent styling
@@ -16,6 +16,8 @@ const Breadcrumbs = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   return (
     <Box sx={{ mb: 2, ...sx }}>
       <MuiBreadcrumbs
@@ -45,11 +47,13 @@ const Breadcrumbs = ({
                 key={index}
                 color="text.primary"
                 variant="body2"
-                fontWeight={600}
                 sx={{ display: 'flex', alignItems: 'center' }}
               >
                 {item.icon && (
-                  <Box component="span" sx={{ mr: 0.5, display: 'flex', alignItems: 'center' }}>
+                  <Box
+                    component="span"
+                    sx={{ mr: theme.spacing(0.5), display: 'flex', alignItems: 'center' }}
+                  >
                     {item.icon}
                   </Box>
                 )}
@@ -77,7 +81,10 @@ const Breadcrumbs = ({
               href={item.href}
             >
               {item.icon && (
-                <Box component="span" sx={{ mr: 0.5, display: 'flex', alignItems: 'center' }}>
+                <Box
+                  component="span"
+                  sx={{ mr: theme.spacing(0.5), display: 'flex', alignItems: 'center' }}
+                >
                   {item.icon}
                 </Box>
               )}

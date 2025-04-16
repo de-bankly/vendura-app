@@ -1,35 +1,33 @@
+import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
+
+import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
 
 // Layouts
-import TopNavLayout from '../components/layout/TopNavLayout';
+const TopNavLayout = lazy(() => import('../components/layout/TopNavLayout'));
 
-// Pages
-import Home from '../pages/Home';
-import ShowcasePage from '../pages/ShowcasePage';
-import NotFound from '../pages/NotFound';
-import ErrorPage from '../pages/ErrorPage';
-import SalesScreen from '../pages/SalesScreen';
-import {
-  LoginPage,
-  ProfilePage,
-  UnauthorizedPage,
-  UserManagementPage,
-  RoleManagementPage,
-  InventoryPage,
-  InventoryManagementPage,
-} from '../pages';
-
-// New Admin Pages
-import ProductManagementPage from '../pages/admin/ProductManagementPage';
-import GiftCardManagementPage from '../pages/admin/GiftCardManagementPage';
-
-// Components
-import { ProtectedRoute } from '../components/auth';
+// Pages (Lazy Load all pages)
+const Home = lazy(() => import('../pages/Home'));
+const NotFound = lazy(() => import('../pages/NotFound'));
+const ErrorPage = lazy(() => import('../pages/ErrorPage'));
+const SalesScreen = lazy(() => import('../pages/SalesScreen'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const UnauthorizedPage = lazy(() => import('../pages/UnauthorizedPage'));
+const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'));
+const RoleManagementPage = lazy(() => import('../pages/admin/RoleManagementPage'));
+const InventoryPage = lazy(() => import('../pages/InventoryPage'));
+const InventoryManagementPage = lazy(() => import('../pages/InventoryManagementPage'));
+const ProductManagementPage = lazy(() => import('../pages/admin/ProductManagementPage'));
+const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagementPage'));
 
 // Error handling
-import { RouterErrorBoundary } from '../components/error/ErrorBoundary';
-import ErrorTest from '../components/error/ErrorTest';
+const RouterErrorBoundary = lazy(() =>
+  import('../components/error/ErrorBoundary').then(module => ({
+    default: module.RouterErrorBoundary,
+  }))
+);
 
 /**
  * Application router configuration
@@ -48,10 +46,6 @@ const reactBrowserRouter = createBrowserRouter([
       {
         index: true,
         element: <Home />,
-      },
-      {
-        path: 'showcase',
-        element: <ShowcasePage />,
       },
       {
         path: 'sales',
@@ -121,10 +115,6 @@ const reactBrowserRouter = createBrowserRouter([
       {
         path: 'unauthorized',
         element: <UnauthorizedPage />,
-      },
-      {
-        path: 'error-test',
-        element: <ErrorTest />,
       },
       {
         path: 'error-page',

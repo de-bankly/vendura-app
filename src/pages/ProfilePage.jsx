@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { Person as PersonIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -6,50 +6,45 @@ import {
   Box,
   Grid,
   Avatar,
-  Chip,
   Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { Person as PersonIcon } from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import Chip from '../components/ui/feedback/Chip';
 import { useAuth } from '../contexts/AuthContext';
-import { UserService, RoleService } from '../services';
+import { RoleService } from '../services';
 
 /**
  * User profile page to display current user information
  */
 const ProfilePage = () => {
-  const { user, refreshUserProfile } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [profileData, setProfileData] = useState(null);
-  const [roles, setRoles] = useState([]);
 
-  // Load user profile data
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        const userData = await UserService.getCurrentUserProfile();
-        setProfileData(userData);
-
-        // Fetch roles to ensure we have role names
-        const rolesResponse = await RoleService.getAllRoles(0, 100);
-        setRoles(rolesResponse.content || []);
-      } catch (err) {
-        setError('Failed to load profile: ' + (err.response?.data?.message || err.message));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
+  // Fetch available roles for mapping role IDs to names
+  const fetchRoles = useCallback(async () => {
+    try {
+      const response = await RoleService.getAllRoles(0, 100);
+      setRoles(response.content || []);
+    } catch (err) {
+      console.error('Failed to load roles:', err);
+      setError('Failed to load role information');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Show loading state
-  if (loading && !profileData) {
+  // Load roles on mount
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  // Show loading state based on auth context loading or roles loading
+  if (authLoading || loading) {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box
@@ -60,6 +55,20 @@ const ProfilePage = () => {
       </Container>
     );
   }
+
+  // Handle case where user is not loaded (e.g., not logged in, error during context load)
+  if (!user) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Could not load user profile. Please ensure you are logged in.
+        </Alert>
+      </Container>
+    );
+  }
+
+  // Use user directly from context as profileData
+  const profileData = user;
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
@@ -117,23 +126,23 @@ const ProfilePage = () => {
                 Roles
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {profileData.roles?.map(role => {
-                  // Check if role is an object with id and name or just an ID
-                  const roleId = typeof role === 'object' ? role.id : role;
-                  const roleName =
-                    typeof role === 'object' && role.name
-                      ? role.name
-                      : roles.find(r => r.id === roleId)?.name || roleId;
+                {profileData.roles?.map((role, index) => {
+                  // If role is a string (just the ID)
+                  if (typeof role === 'string') {
+                    const roleObj = roles.find(r => r.id === role);
+                    const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
+                    return (
+                      <Chip
+                        key={role || index}
+                        label={roleName}
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                      />
+                    );
+                  }
 
-                  return (
-                    <Chip
-                      key={roleId}
-                      label={roleName}
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                    />
-                  );
+                  return null;
                 })}
                 {(!profileData.roles || profileData.roles.length === 0) && (
                   <Typography variant="body2" color="text.secondary">

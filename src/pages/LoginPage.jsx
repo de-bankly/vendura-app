@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { Container, Typography, Box, Paper, Avatar, alpha } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
+import React, { useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 import LoginForm from '../components/auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useTheme } from '@mui/material/styles';
 
 /**
  * Login page component
@@ -27,23 +28,26 @@ const LoginPage = () => {
   /**
    * Handle successful login
    */
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = useCallback(() => {
     const from = location.state?.from?.pathname || '/';
     navigate(from, { replace: true });
-  };
+  }, [navigate, location.state]);
 
   /**
    * Handle login form submission
    */
-  const handleLogin = async (username, password) => {
-    try {
-      await login(username, password);
-      handleLoginSuccess();
-    } catch (error) {
-      // Error handling is done in the LoginForm component
-      console.error('Login error:', error);
-    }
-  };
+  const handleLogin = useCallback(
+    async (username, password) => {
+      try {
+        await login(username, password);
+        handleLoginSuccess();
+      } catch (error) {
+        // Error handling is done in the LoginForm component
+        console.error('Login error:', error);
+      }
+    },
+    [login, handleLoginSuccess]
+  );
 
   return (
     <Container maxWidth="xs" sx={{ py: 8 }}>
@@ -56,10 +60,10 @@ const LoginPage = () => {
           elevation={0}
           sx={{
             p: 4,
-            borderRadius: 2,
+            borderRadius: theme.shape.borderRadius * 2,
             border: 1,
             borderColor: 'grey.200',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+            boxShadow: theme.shadows[3],
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

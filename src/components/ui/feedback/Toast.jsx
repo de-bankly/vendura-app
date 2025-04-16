@@ -1,11 +1,10 @@
-import React from 'react';
 import { Snackbar, Alert as MuiAlert } from '@mui/material';
 import PropTypes from 'prop-types';
-import Alert from './Alert';
+import React from 'react';
 
 /**
  * Toast component for displaying temporary notifications.
- * Uses MUI Snackbar with our custom Alert component.
+ * Uses MUI Snackbar and MUI Alert.
  */
 const Toast = ({
   open,
@@ -36,21 +35,21 @@ const Toast = ({
       autoHideDuration={autoHideDuration}
       onClose={handleClose}
       anchorOrigin={anchorOrigin}
+      TransitionProps={props.TransitionProps}
       {...props}
     >
-      <Alert
-        onClose={handleClose}
+      <MuiAlert
         severity={severity}
         variant={variant}
-        title={title}
         action={action}
         sx={{
           width: '100%',
           ...sx,
         }}
       >
+        {title && <strong>{title}: </strong>}
         {message}
-      </Alert>
+      </MuiAlert>
     </Snackbar>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Dialog as MuiDialog,
   DialogTitle,
@@ -7,10 +7,10 @@ import {
   DialogActions,
   IconButton,
   Typography,
-  Box,
+  useTheme,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Dialog component that extends MUI Dialog with consistent styling
@@ -35,6 +35,8 @@ const Dialog = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   // Handle backdrop click
   const handleBackdropClick = event => {
     if (!disableBackdropClick && onClose) {
@@ -55,7 +57,7 @@ const Dialog = ({
       aria-describedby="dialog-description"
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: 2,
+          borderRadius: theme.shape.borderRadius * 1.5,
           ...sx,
         },
       }}
@@ -65,8 +67,8 @@ const Dialog = ({
         <DialogTitle
           id="dialog-title"
           sx={{
-            pr: showCloseButton ? 6 : 3,
-            py: 2,
+            pr: theme.spacing(showCloseButton ? 6 : 3),
+            py: theme.spacing(2),
             ...titleProps.sx,
           }}
           {...titleProps}
@@ -80,8 +82,8 @@ const Dialog = ({
               onClick={onClose}
               sx={{
                 position: 'absolute',
-                right: 8,
-                top: 8,
+                right: theme.spacing(1),
+                top: theme.spacing(1),
                 color: 'text.secondary',
               }}
             >
@@ -93,13 +95,13 @@ const Dialog = ({
 
       <DialogContent
         sx={{
-          py: 2,
+          py: theme.spacing(2),
           ...contentProps.sx,
         }}
         {...contentProps}
       >
         {contentText && (
-          <DialogContentText id="dialog-description" sx={{ mb: 2 }}>
+          <DialogContentText id="dialog-description" sx={{ mb: theme.spacing(2) }}>
             {contentText}
           </DialogContentText>
         )}
@@ -109,8 +111,8 @@ const Dialog = ({
       {actions && (
         <DialogActions
           sx={{
-            px: 3,
-            py: 2,
+            px: theme.spacing(3),
+            py: theme.spacing(2),
             ...actionsProps.sx,
           }}
           {...actionsProps}

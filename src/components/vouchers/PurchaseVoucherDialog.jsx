@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import EuroIcon from '@mui/icons-material/Euro';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import {
   Dialog,
   DialogTitle,
@@ -8,19 +10,14 @@ import {
   TextField,
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Paper,
   InputAdornment,
   FormControl,
-  InputLabel,
-  MenuItem,
   Divider,
 } from '@mui/material';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import EuroIcon from '@mui/icons-material/Euro';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import { issueVoucher } from '../../utils/voucherUtils';
+import React, { useState } from 'react';
+
 import { Select } from '../ui/inputs';
 
 /**

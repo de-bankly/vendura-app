@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Chip,
   FormControl,
   Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -19,14 +15,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  CalendarToday as CalendarIcon,
-} from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
 import { SupplierService, ProductService } from '../../services';
 import { Select } from '../ui/inputs';
 

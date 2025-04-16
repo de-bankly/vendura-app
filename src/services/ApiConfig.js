@@ -41,7 +41,6 @@ apiClient.interceptors.response.use(
     // Check for network errors
     if (error.message === 'Network Error') {
       console.error('Network error detected. Server might be down or unreachable.');
-      // You could dispatch an action to show a global notification here
     }
 
     return Promise.reject(error);

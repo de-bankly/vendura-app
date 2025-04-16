@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -18,10 +18,11 @@ import {
   Alert,
   Tooltip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { ProductService } from '../../services';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { ProductForm } from '../../components/admin';
 import { DeleteConfirmationDialog } from '../../components/ui/modals';
+import { ProductService } from '../../services';
 
 /**
  * ProductManagementPage - Admin page to manage products

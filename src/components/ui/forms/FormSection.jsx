@@ -1,6 +1,6 @@
-import React from 'react';
+import { Box, Typography, Divider, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
-import { Box, Typography, Divider } from '@mui/material';
+import React from 'react';
 
 /**
  * FormSection component that provides a way to group related form fields
@@ -16,21 +16,23 @@ const FormSection = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
         width: '100%',
-        mb: 4,
+        mb: theme.spacing(4),
         ...sx,
       }}
       {...props}
     >
       {title && (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: description ? 1 : 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: theme.spacing(description ? 1 : 2) }}>
           {icon && (
             <Box
               sx={{
-                mr: 1.5,
+                mr: theme.spacing(1.5),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -46,17 +48,21 @@ const FormSection = ({
       )}
 
       {description && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: icon ? 5 : 0 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: theme.spacing(2), ml: theme.spacing(icon ? 5 : 0) }}
+        >
           {description}
         </Typography>
       )}
 
-      {divider && <Divider sx={{ mb: 3 }} />}
+      {divider && <Divider sx={{ mb: theme.spacing(3) }} />}
 
       <Box
         sx={{
           '& > *:not(:last-child)': {
-            marginBottom: spacing,
+            marginBottom: theme.spacing(spacing),
           },
         }}
       >

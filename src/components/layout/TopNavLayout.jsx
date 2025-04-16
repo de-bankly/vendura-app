@@ -1,5 +1,19 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import GroupIcon from '@mui/icons-material/Group';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import {
   AppBar,
   Box,
@@ -9,7 +23,6 @@ import {
   Container,
   Avatar,
   Tooltip,
-  Badge,
   Menu,
   MenuItem,
   Button,
@@ -22,33 +35,15 @@ import {
   useTheme,
   useMediaQuery,
   alpha,
-  Paper,
+  CircularProgress,
 } from '@mui/material';
-
-// Icons
-import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import SettingsIcon from '@mui/icons-material/Settings';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import ErrorIcon from '@mui/icons-material/Error';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import GroupIcon from '@mui/icons-material/Group';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import PersonIcon from '@mui/icons-material/Person';
-import LoginIcon from '@mui/icons-material/Login';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useState, Suspense } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
+
+// Components
 import { ProfileCard } from '../ui/cards';
 
 const TopNavLayout = () => {
@@ -574,10 +569,28 @@ const TopNavLayout = () => {
           pt: { xs: 8, sm: 9 },
           pb: 3,
           overflow: 'hidden',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <Container maxWidth="xl" sx={{ height: '100%' }}>
-          <Outlet />
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 'calc(100vh - 120px)',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Container>
       </Box>
     </Box>

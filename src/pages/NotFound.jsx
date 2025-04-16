@@ -1,3 +1,8 @@
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import HomeIcon from '@mui/icons-material/Home';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
 import {
   Box,
   Typography,
@@ -9,13 +14,8 @@ import {
   useTheme,
   alpha,
 } from '@mui/material';
-import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
-import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
-import HomeIcon from '@mui/icons-material/Home';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import { motion } from 'framer-motion';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 
 /**
  * Enhanced 404 Not Found page
@@ -78,7 +78,7 @@ const NotFound = () => {
           elevation={3}
           sx={{
             p: { xs: 3, md: 5 },
-            borderRadius: 4,
+            borderRadius: theme.shape.borderRadius * 1.5,
             boxShadow: '0 10px 40px rgba(15, 23, 42, 0.1)',
             position: 'relative',
             overflow: 'hidden',
@@ -326,7 +326,7 @@ const NotFound = () => {
                   startIcon={<ArrowBackIcon />}
                   onClick={() => navigate(-1)}
                   sx={{
-                    borderRadius: 10,
+                    borderRadius: theme.shape.borderRadius,
                     px: 3,
                     py: 1.2,
                     fontWeight: 600,
@@ -353,7 +353,7 @@ const NotFound = () => {
                   startIcon={<HomeIcon />}
                   onClick={() => navigate('/')}
                   sx={{
-                    borderRadius: 10,
+                    borderRadius: theme.shape.borderRadius,
                     px: 3,
                     py: 1.2,
                     fontWeight: 600,

@@ -1,6 +1,7 @@
-import React, { useState, Children, cloneElement, isValidElement } from 'react';
+import { Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
-import { Box } from '@mui/material';
+import React, { useState, Children, cloneElement, isValidElement } from 'react';
+
 import Accordion from './Accordion';
 
 /**
@@ -20,6 +21,8 @@ const AccordionGroup = ({
   const [expandedItems, setExpandedItems] = useState(
     Array.isArray(defaultExpanded) ? defaultExpanded : defaultExpanded ? [defaultExpanded] : []
   );
+
+  const theme = useTheme();
 
   // Handle accordion change
   const handleAccordionChange = index => (event, isExpanded) => {
@@ -56,7 +59,7 @@ const AccordionGroup = ({
       square: true,
       elevation: 0,
       sx: {
-        borderBottom: divider ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
+        borderBottom: divider ? `1px solid ${theme.palette.divider}` : 'none',
         '&:last-child': {
           borderBottom: 'none',
         },
@@ -68,8 +71,8 @@ const AccordionGroup = ({
   return (
     <Box
       sx={{
-        border: divider ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
-        borderRadius: 1,
+        border: divider ? `1px solid ${theme.palette.divider}` : 'none',
+        borderRadius: theme.shape.borderRadius,
         overflow: 'hidden',
         ...sx,
       }}

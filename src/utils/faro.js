@@ -1,6 +1,6 @@
-import { matchRoutes } from 'react-router-dom';
 import { getWebInstrumentations } from '@grafana/faro-web-sdk';
 import { TracingInstrumentation } from '@grafana/faro-web-tracing';
+import { matchRoutes } from 'react-router-dom';
 
 // Create a custom React integration since we don't have @grafana/faro-react
 const createReactRouterInstrumentation = matchRoutes => {

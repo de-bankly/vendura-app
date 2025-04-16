@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import { Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Chip,
   IconButton,
   Paper,
@@ -15,7 +13,9 @@ import {
   Typography,
   Tooltip,
 } from '@mui/material';
-import { Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+
 import ProductTransactionHistory from './ProductTransactionHistory';
 
 /**
