@@ -16,12 +16,11 @@ import {
   alpha,
   Container,
   Card,
-  Chip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
-import { useToast } from '../components/ui/feedback';
+import { useToast, Chip } from '../components/ui/feedback';
 import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import {
   RedeemVoucherDialog,
@@ -90,6 +89,7 @@ const SalesScreen = () => {
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
   const [appliedVouchers, setAppliedVouchers] = useState([]);
+  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -194,7 +194,7 @@ const SalesScreen = () => {
       // --- If successful: ---
       setPaymentModalOpen(false);
       setReceiptReady(true);
-      showToast({ severity: 'success', message: 'Zahlung erfolgreich abgeschlossen!' });
+      setSuccessSnackbarOpen(true);
       // Don't clear cart automatically, let user press "New Transaction"
     } catch (error) {
       console.error('Payment failed:', error);

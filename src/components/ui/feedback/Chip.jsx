@@ -5,9 +5,13 @@ import React from 'react';
 // Styled Chip Component
 const StyledMuiChip = styled(MuiChip, {
   // Filter props if necessary
-})(({ theme, ownerState }) => {
+  shouldForwardProp: prop => prop !== 'ownerState',
+})(({ theme, ownerState = {} }) => {
   // ownerState has color, variant, disabled, clickable etc.
   const { color = 'default', variant = 'filled' } = ownerState;
+
+  // Use default colors that are guaranteed to exist in the theme
+  const safeColorMain = theme.palette[color]?.main || theme.palette.grey[500];
 
   return {
     fontWeight: 500,
@@ -16,15 +20,9 @@ const StyledMuiChip = styled(MuiChip, {
     // Apply shadow only for filled variant
     ...(variant === 'filled' && {
       // Use a subtle shadow, adjust alpha and elevation level as needed
-      boxShadow: `0 2px 8px ${alpha(
-        theme.palette[color]?.main || theme.palette.grey[500], // Use grey[500] as fallback
-        0.2
-      )}`,
+      boxShadow: `0 2px 8px ${alpha(safeColorMain, 0.2)}`,
       '&:hover': {
-        boxShadow: `0 4px 12px ${alpha(
-          theme.palette[color]?.main || theme.palette.grey[500],
-          0.3
-        )}`,
+        boxShadow: `0 4px 12px ${alpha(safeColorMain, 0.3)}`,
         // Optional: Add a slight transform on hover if desired for filled chips
         // transform: 'translateY(-1px)',
       },
