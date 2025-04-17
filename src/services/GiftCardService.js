@@ -71,10 +71,17 @@ class GiftCardService {
    */
   async createGiftCard(giftCardData) {
     try {
+      // Ensure type is always set
+      if (!giftCardData.type) {
+        giftCardData.type = 'GIFT_CARD'; // Default to GIFT_CARD type if not specified
+      }
+      console.log('GiftCardService createGiftCard payload:', giftCardData);
       const response = await apiClient.post('/v1/giftcard', giftCardData);
       return response.data;
     } catch (error) {
       console.error('Error creating gift card:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       throw error;
     }
   }

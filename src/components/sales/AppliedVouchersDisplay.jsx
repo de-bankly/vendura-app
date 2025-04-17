@@ -165,7 +165,7 @@ const AppliedVouchersDisplay = ({
                     </Typography>
                     {voucher.remainingUsages !== undefined && (
                       <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                        Verbleibende Nutzungen: {voucher.remainingUsages - 1}
+                        Verbleibende Nutzungen: {voucher.remainingUsages}
                       </Typography>
                     )}
                   </Box>

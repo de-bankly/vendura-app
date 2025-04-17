@@ -52,7 +52,11 @@ class CartService {
    * @returns {number} Subtotal
    */
   calculateSubtotal(cartItems) {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return cartItems.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return sum + price * quantity;
+    }, 0);
   }
 
   /**
@@ -63,7 +67,7 @@ class CartService {
   calculateVoucherDiscount(vouchers) {
     return vouchers.reduce((sum, voucher) => {
       // Use the redeemed amount (value) for the discount
-      const discountAmount = voucher.value || 0;
+      const discountAmount = parseFloat(voucher.value) || 0;
       return sum + discountAmount;
     }, 0);
   }

@@ -188,10 +188,13 @@ const ShoppingCart = ({
                             {item.name}
                           </Typography>
                           <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
-                            {((item.price || 0) * item.quantity).toLocaleString('de-DE', {
-                              style: 'currency',
-                              currency: 'EUR',
-                            })}
+                            {((parseFloat(item.price) || 0) * item.quantity).toLocaleString(
+                              'de-DE',
+                              {
+                                style: 'currency',
+                                currency: 'EUR',
+                              }
+                            )}
                           </Typography>
                         </Box>
 
@@ -205,7 +208,7 @@ const ShoppingCart = ({
                           {/* Use local Chip */}
                           <Chip
                             size="small"
-                            label={`${(item.price ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} × ${item.quantity}`}
+                            label={`${(parseFloat(item.price) || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} × ${item.quantity}`}
                             sx={{
                               fontSize: theme.typography.pxToRem(12), // Use theme token
                               bgcolor: alpha(theme.palette.primary.main, 0.1), // Use alpha
@@ -298,7 +301,7 @@ const ShoppingCart = ({
                             </Box>
                             <Typography variant="body2" color="error.main" fontWeight="bold">
                               -
-                              {voucher.value?.toLocaleString('de-DE', {
+                              {(parseFloat(voucher.value) || 0).toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR',
                               })}
@@ -313,7 +316,7 @@ const ShoppingCart = ({
                           >
                             <Typography variant="caption" color="info.dark">
                               Restguthaben:{' '}
-                              {voucher.balance?.toLocaleString('de-DE', {
+                              {(parseFloat(voucher.balance) || 0).toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR',
                               })}
@@ -395,7 +398,10 @@ const ShoppingCart = ({
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="body1">Zwischensumme:</Typography>
             <Typography variant="body1">
-              {(subtotal || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+              {(parseFloat(subtotal) || 0).toLocaleString('de-DE', {
+                style: 'currency',
+                currency: 'EUR',
+              })}
             </Typography>
           </Box>
           {voucherDiscount > 0 && (
@@ -405,7 +411,7 @@ const ShoppingCart = ({
               </Typography>
               <Typography variant="body1" color="error.main" fontWeight="medium">
                 -
-                {(voucherDiscount || 0).toLocaleString('de-DE', {
+                {(parseFloat(voucherDiscount) || 0).toLocaleString('de-DE', {
                   style: 'currency',
                   currency: 'EUR',
                 })}
@@ -430,7 +436,10 @@ const ShoppingCart = ({
             Gesamtsumme:
           </Typography>
           <Typography variant="h6" fontWeight="bold" color="primary.main">
-            {(total || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            {(parseFloat(total) || 0).toLocaleString('de-DE', {
+              style: 'currency',
+              currency: 'EUR',
+            })}
           </Typography>
         </Box>
 

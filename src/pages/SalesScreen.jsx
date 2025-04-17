@@ -26,19 +26,13 @@ import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import { useToast, Chip } from '../components/ui/feedback';
-import {
-  ProductGrid,
-  ShoppingCart,
-  PaymentDialog,
-  VoucherInputField,
-  AppliedVouchersDisplay,
-} from '../components/sales';
+import { ProductGrid, ShoppingCart, PaymentDialog, VoucherInputField } from '../components/sales';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { ProductService, CartService, GiftCardService } from '../services';
+import { ProductService, CartService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
 
@@ -133,7 +127,7 @@ const SalesScreen = () => {
   }, []);
 
   // --- Memoized Calculations ---
-  const subtotal = useMemo(() => CartService.calculateTotal(cartItems), [cartItems]);
+  const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
 
   // Calculate voucher discount
   const calculateVoucherDiscount = useCallback((subtotal, vouchers) => {
@@ -146,7 +140,10 @@ const SalesScreen = () => {
     // For simplicity, we'll just use the first discount voucher
     // In a real implementation, you might want to stack discounts or use the highest one
     const discountVoucher = discountVouchers[0];
-    return subtotal * (discountVoucher.discountPercentage / 100);
+    const discountPercentage = parseFloat(discountVoucher.discountPercentage) || 0;
+
+    // Calculate the actual discount amount, ensuring it's a valid number
+    return subtotal * (discountPercentage / 100);
   }, []);
 
   // Calculate gift card payment
@@ -162,8 +159,9 @@ const SalesScreen = () => {
 
     for (const voucher of giftCardVouchers) {
       // Only add gift cards with a specified amount
-      if (voucher.amount > 0) {
-        totalGiftCardPayment += voucher.amount;
+      const voucherAmount = parseFloat(voucher.amount) || 0;
+      if (voucherAmount > 0) {
+        totalGiftCardPayment += voucherAmount;
       }
     }
 
@@ -417,7 +415,10 @@ const SalesScreen = () => {
                       variant="h4"
                       sx={{ fontWeight: 700, mb: 1, wordBreak: 'break-word' }}
                     >
-                      {total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                      {(parseFloat(total) || 0).toLocaleString('de-DE', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {cartItems.length} Artikel

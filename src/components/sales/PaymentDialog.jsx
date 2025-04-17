@@ -1,4 +1,3 @@
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
@@ -23,7 +22,6 @@ import {
   Button,
   useTheme,
   Divider,
-  Zoom,
   List,
   ListItem,
   ListItemIcon,
