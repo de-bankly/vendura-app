@@ -46,7 +46,7 @@ class TransactionService {
    */
   async createSaleTransaction(saleData) {
     try {
-      // Prepare payment data based on payment method and vouchers
+      // Create payment objects for the backend
       const payments = [];
 
       // Add gift card payments if any are applied
@@ -56,9 +56,11 @@ class TransactionService {
         giftCardVouchers.forEach(voucher => {
           if (voucher.amount > 0) {
             payments.push({
-              type: 'GIFT_CARD',
+              type: 'GIFTCARD',
               amount: voucher.amount,
               giftcardId: voucher.id,
+              timestamp: new Date(),
+              status: 'PENDING',
             });
           }
         });
@@ -71,6 +73,8 @@ class TransactionService {
           amount: saleData.total,
           handed: parseFloat(saleData.cashReceived),
           returned: saleData.change,
+          timestamp: new Date(),
+          status: 'PENDING',
         });
       } else if (saleData.paymentMethod === 'card') {
         payments.push({
@@ -80,32 +84,54 @@ class TransactionService {
           cardHolderName: saleData.cardDetails?.cardHolderName || '',
           expirationDate: saleData.cardDetails?.expirationDate || '',
           cvv: saleData.cardDetails?.cvv || '',
+          timestamp: new Date(),
+          status: 'PENDING',
         });
       }
 
-      // Format cart items for the backend
-      const items = saleData.cartItems.map(item => ({
-        product: { id: item.id },
+      // Create positions (items) for the backend
+      const positions = saleData.cartItems.map(item => ({
+        productDTO: {
+          id: item.id,
+        },
         quantity: item.quantity,
-        pricePerItem: item.price,
+        discountEuro: 0, // No direct discount on individual positions in this implementation
       }));
 
-      // Prepare the final request data
+      // Prepare the final request data matching SaleDTO format
       const requestData = {
-        items,
+        positions,
         payments,
-        total: saleData.subtotal, // The backend will calculate discounts based on applied vouchers
-        discount: saleData.voucherDiscount,
-        appliedDiscountCards: saleData.appliedVouchers
-          .filter(v => v.type === 'DISCOUNT_CARD')
-          .map(v => v.id),
+        total: saleData.subtotal,
+        date: new Date(),
+        depositReceipts: [], // Empty deposit receipts by default
       };
+
+      console.log('Sale request payload:', JSON.stringify(requestData, null, 2));
 
       const response = await apiClient.post('/v1/sale', requestData);
       return response.data;
     } catch (error) {
       console.error('Error creating sale transaction:', error);
-      throw error;
+
+      // Enhanced error handling with details
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+
+        // Throw a more detailed error
+        const errorMessage =
+          error.response.data?.error || error.response.data?.message || 'Unknown server error';
+        throw new Error(`Payment failed (${error.response.status}): ${errorMessage}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        throw new Error('No response received from server. Please check your connection.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw error;
+      }
     }
   }
 

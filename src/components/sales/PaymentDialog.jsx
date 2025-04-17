@@ -27,8 +27,54 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
+  FormHelperText,
 } from '@mui/material';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+/**
+ * Format card number with spaces (4 digits groups)
+ * @param {string} value - Card number to format
+ * @returns {string} Formatted card number
+ */
+const formatCardNumber = value => {
+  const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+  const matches = v.match(/\d{4,16}/g);
+  const match = (matches && matches[0]) || '';
+  const parts = [];
+
+  for (let i = 0, len = match.length; i < len; i += 4) {
+    parts.push(match.substring(i, i + 4));
+  }
+
+  if (parts.length) {
+    return parts.join(' ');
+  } else {
+    return value;
+  }
+};
+
+/**
+ * Format expiration date (MM/YY)
+ * @param {string} value - Expiration date to format
+ * @returns {string} Formatted expiration date
+ */
+const formatExpirationDate = value => {
+  const cleanValue = value.replace(/[^\d]/g, '');
+
+  if (cleanValue.length <= 2) {
+    return cleanValue;
+  }
+
+  let month = cleanValue.substring(0, 2);
+  const year = cleanValue.substring(2);
+
+  // Validate month (01-12)
+  if (parseInt(month) > 12) {
+    month = '12';
+  }
+
+  return `${month}/${year}`;
+};
 
 /**
  * PaymentDialog component for processing payments
@@ -46,15 +92,119 @@ const PaymentDialog = ({
   onPaymentMethodChange,
   cashReceived,
   onCashReceivedChange,
+  cardDetails,
+  onCardDetailsChange,
   change,
   TransitionComponent,
+  loading = false,
 }) => {
   const theme = useTheme();
+  const [cardErrors, setCardErrors] = useState({
+    cardNumber: '',
+    cardHolderName: '',
+    expirationDate: '',
+    cvv: '',
+  });
 
   // Calculate the amount still to be paid after applying gift cards
   const remainingTotal = total - giftCardPayment;
   const hasGiftCardPayment = giftCardPayment > 0;
   const giftCardVouchers = appliedVouchers.filter(v => v.type === 'GIFT_CARD');
+
+  // Validate card details when payment method is card
+  useEffect(() => {
+    if (paymentMethod !== 'card') {
+      setCardErrors({
+        cardNumber: '',
+        cardHolderName: '',
+        expirationDate: '',
+        cvv: '',
+      });
+      return;
+    }
+  }, [paymentMethod]);
+
+  // Handle formatted card number input
+  const handleCardNumberChange = e => {
+    const formattedValue = formatCardNumber(e.target.value);
+    onCardDetailsChange('cardNumber', formattedValue);
+
+    // Validate card number
+    const cleanValue = formattedValue.replace(/\s+/g, '');
+    if (cleanValue.length > 0 && cleanValue.length < 13) {
+      setCardErrors(prev => ({
+        ...prev,
+        cardNumber: 'Kartennummer muss mindestens 13 Ziffern enthalten',
+      }));
+    } else {
+      setCardErrors(prev => ({ ...prev, cardNumber: '' }));
+    }
+  };
+
+  // Handle formatted expiration date input
+  const handleExpirationDateChange = e => {
+    const formattedValue = formatExpirationDate(e.target.value);
+    onCardDetailsChange('expirationDate', formattedValue);
+
+    // Validate expiration date
+    if (formattedValue.length > 0 && formattedValue.length < 5) {
+      setCardErrors(prev => ({ ...prev, expirationDate: 'Bitte geben Sie Monat/Jahr ein' }));
+    } else {
+      setCardErrors(prev => ({ ...prev, expirationDate: '' }));
+    }
+  };
+
+  // Validate all card fields
+  const validateCardDetails = () => {
+    let hasErrors = false;
+    const newErrors = { ...cardErrors };
+
+    if (paymentMethod === 'card') {
+      // Card number validation
+      if (!cardDetails.cardNumber.trim()) {
+        newErrors.cardNumber = 'Kartennummer ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.cardNumber.replace(/\s+/g, '').length < 13) {
+        newErrors.cardNumber = 'Kartennummer muss mindestens 13 Ziffern enthalten';
+        hasErrors = true;
+      }
+
+      // Card holder validation
+      if (!cardDetails.cardHolderName.trim()) {
+        newErrors.cardHolderName = 'Name ist erforderlich';
+        hasErrors = true;
+      }
+
+      // Expiration date validation
+      if (!cardDetails.expirationDate.trim()) {
+        newErrors.expirationDate = 'Ablaufdatum ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.expirationDate.length < 5) {
+        newErrors.expirationDate = 'Ungültiges Ablaufdatum';
+        hasErrors = true;
+      }
+
+      // CVV validation
+      if (!cardDetails.cvv.trim()) {
+        newErrors.cvv = 'CVV ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.cvv.length < 3) {
+        newErrors.cvv = 'CVV muss 3 Ziffern enthalten';
+        hasErrors = true;
+      }
+    }
+
+    setCardErrors(newErrors);
+    return !hasErrors;
+  };
+
+  // Handle payment completion with validation
+  const handleCompletePayment = () => {
+    if (paymentMethod === 'card' && !validateCardDetails()) {
+      return;
+    }
+    onComplete();
+  };
 
   return (
     <Dialog
@@ -282,6 +432,58 @@ const PaymentDialog = ({
                     }
                     sx={{ m: 0, p: 2, width: '100%' }}
                   />
+                  {paymentMethod === 'card' && (
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <TextField
+                        fullWidth
+                        label="Kartennummer"
+                        variant="outlined"
+                        placeholder="1234 5678 9012 3456"
+                        inputProps={{ maxLength: 19 }}
+                        value={cardDetails.cardNumber}
+                        onChange={handleCardNumberChange}
+                        error={!!cardErrors.cardNumber}
+                        helperText={cardErrors.cardNumber}
+                        sx={{ mt: 2, mb: 2 }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Karteninhaber"
+                        variant="outlined"
+                        placeholder="Name des Karteninhabers"
+                        value={cardDetails.cardHolderName}
+                        onChange={e => onCardDetailsChange('cardHolderName', e.target.value)}
+                        error={!!cardErrors.cardHolderName}
+                        helperText={cardErrors.cardHolderName}
+                        sx={{ mb: 2 }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                        <TextField
+                          label="Ablaufdatum"
+                          variant="outlined"
+                          placeholder="MM/JJ"
+                          inputProps={{ maxLength: 5 }}
+                          value={cardDetails.expirationDate}
+                          onChange={handleExpirationDateChange}
+                          error={!!cardErrors.expirationDate}
+                          helperText={cardErrors.expirationDate}
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          label="CVC/CVV"
+                          variant="outlined"
+                          placeholder="123"
+                          type="password"
+                          inputProps={{ maxLength: 3 }}
+                          value={cardDetails.cvv}
+                          onChange={e => onCardDetailsChange('cvv', e.target.value)}
+                          error={!!cardErrors.cvv}
+                          helperText={cardErrors.cvv}
+                          sx={{ flex: 1 }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
                 </Paper>
               </RadioGroup>
             </FormControl>
@@ -369,14 +571,21 @@ const PaymentDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-        <Button onClick={onClose} color="inherit" variant="outlined" startIcon={<CloseIcon />}>
+        <Button
+          onClick={onClose}
+          color="inherit"
+          variant="outlined"
+          startIcon={<CloseIcon />}
+          disabled={loading}
+        >
           Abbrechen
         </Button>
         <Button
-          onClick={onComplete}
+          onClick={handleCompletePayment}
           variant="contained"
           color="primary"
           startIcon={<CheckCircleIcon />}
+          disabled={loading}
           sx={{
             px: 3,
             py: 1,
@@ -386,7 +595,7 @@ const PaymentDialog = ({
             },
           }}
         >
-          Zahlung abschließen
+          {loading ? 'Verarbeitung...' : 'Zahlung abschließen'}
         </Button>
       </DialogActions>
     </Dialog>

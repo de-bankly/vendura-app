@@ -83,6 +83,12 @@ const SalesScreen = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    cardHolderName: '',
+    expirationDate: '',
+    cvv: '',
+  });
   const [paymentLoading, setPaymentLoading] = useState(false); // Loading state for payment submission
   const [receiptReady, setReceiptReady] = useState(false);
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
@@ -210,6 +216,12 @@ const SalesScreen = () => {
     setAppliedVouchers([]);
     setVoucherDiscount(0);
     setGiftCardPayment(0);
+    setCardDetails({
+      cardNumber: '',
+      cardHolderName: '',
+      expirationDate: '',
+      cvv: '',
+    });
   }, []);
 
   const handlePaymentModalOpen = useCallback(() => {
@@ -227,6 +239,13 @@ const SalesScreen = () => {
 
   const handleCashReceivedChange = useCallback(event => {
     setCashReceived(event.target.value);
+  }, []);
+
+  const handleCardDetailsChange = useCallback((field, value) => {
+    setCardDetails(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   }, []);
 
   const handlePaymentComplete = useCallback(async () => {
@@ -247,10 +266,10 @@ const SalesScreen = () => {
         cardDetails:
           paymentMethod === 'card'
             ? {
-                cardNumber: '', // These would be populated from the UI in a real implementation
-                cardHolderName: '',
-                expirationDate: '',
-                cvv: '',
+                cardNumber: cardDetails.cardNumber,
+                cardHolderName: cardDetails.cardHolderName,
+                expirationDate: cardDetails.expirationDate,
+                cvv: cardDetails.cvv,
               }
             : undefined,
       };
@@ -272,6 +291,7 @@ const SalesScreen = () => {
         severity: 'error',
         message: getUserFriendlyErrorMessage(error, 'Zahlung fehlgeschlagen'),
       });
+      // Keep the payment dialog open so the user can try again
     } finally {
       setPaymentLoading(false); // Reset loading state
     }
@@ -285,6 +305,7 @@ const SalesScreen = () => {
     paymentMethod,
     cashReceived,
     change,
+    cardDetails,
     showToast,
   ]);
 
@@ -597,6 +618,8 @@ const SalesScreen = () => {
         onPaymentMethodChange={handlePaymentMethodChange}
         cashReceived={cashReceived}
         onCashReceivedChange={handleCashReceivedChange}
+        cardDetails={cardDetails}
+        onCardDetailsChange={handleCardDetailsChange}
         change={change}
         TransitionComponent={Transition}
         loading={paymentLoading} // Pass loading state
