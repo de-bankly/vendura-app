@@ -1,4 +1,9 @@
-import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
+} from '@mui/icons-material';
 import {
   Container,
   Typography,
@@ -38,6 +43,7 @@ const UserManagementPage = () => {
     email: '',
     password: '',
     active: true,
+    locked: false,
     roles: [],
   });
 
@@ -90,6 +96,26 @@ const UserManagementPage = () => {
           color={row.active !== false ? 'success' : 'error'}
           size="small"
         />
+      ),
+    },
+    {
+      field: 'locked',
+      headerName: 'Lock Status',
+      sortable: true,
+      renderCell: row => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {row.locked ? (
+            <>
+              <LockIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
+              <Chip label="Locked" color="error" size="small" />
+            </>
+          ) : (
+            <>
+              <LockOpenIcon color="success" fontSize="small" sx={{ mr: 0.5 }} />
+              <Chip label="Unlocked" color="success" size="small" />
+            </>
+          )}
+        </Box>
       ),
     },
     {
@@ -163,6 +189,7 @@ const UserManagementPage = () => {
       email: '',
       password: '',
       active: true,
+      locked: false,
       roles: [],
     });
     setOpen(true);
@@ -181,6 +208,7 @@ const UserManagementPage = () => {
       email: user.email || '',
       password: '', // Don't pre-fill password
       active: user.active !== false,
+      locked: user.locked === true,
       roles: userRoles,
     });
     setOpen(true);

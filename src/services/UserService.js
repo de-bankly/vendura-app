@@ -85,6 +85,11 @@ class UserService {
         active: userData.active,
       };
 
+      // Add locked status if provided
+      if (userData.locked !== undefined) {
+        cleanedData.locked = userData.locked;
+      }
+
       // Only include roles if they're explicitly provided
       // This prevents the API from removing roles when they're not specified
       if (userData.roles !== undefined) {

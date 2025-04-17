@@ -1,5 +1,5 @@
-import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
-import { Box, Paper, InputAdornment, Alert as MuiAlert, Grid } from '@mui/material';
+import { Visibility, VisibilityOff, Person, LockOpen, Lock } from '@mui/icons-material';
+import { Box, Paper, InputAdornment, Alert as MuiAlert, Grid, Switch } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
@@ -51,6 +51,17 @@ const UserForm = ({
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword(prev => !prev);
   }, []);
+
+  const handleSwitchChange = useCallback(
+    e => {
+      const { name, checked } = e.target;
+      onChange({
+        ...formData,
+        [name]: checked,
+      });
+    },
+    [formData, onChange]
+  );
 
   return (
     <Form onSubmit={onSubmit} aria-label={editMode ? 'Edit User Form' : 'Add User Form'}>
@@ -169,6 +180,55 @@ const UserForm = ({
             />
           </FormField>
 
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <FormField label="Active" helperText="Enable or disable this user account">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Switch
+                    name="active"
+                    checked={formData.active}
+                    onChange={handleSwitchChange}
+                    color="primary"
+                    inputProps={{
+                      'aria-label': 'Toggle active status',
+                    }}
+                  />
+                  {formData.active ? 'Active' : 'Inactive'}
+                </Box>
+              </FormField>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormField
+                label="Account Lock Status"
+                helperText="Control whether the user account is locked"
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Switch
+                    name="locked"
+                    checked={formData.locked === true}
+                    onChange={handleSwitchChange}
+                    color="primary"
+                    inputProps={{
+                      'aria-label': 'Toggle locked status',
+                    }}
+                  />
+                  {formData.locked ? (
+                    <>
+                      <Lock color="error" fontSize="small" sx={{ ml: 1, mr: 0.5 }} />
+                      Locked
+                    </>
+                  ) : (
+                    <>
+                      <LockOpen color="success" fontSize="small" sx={{ ml: 1, mr: 0.5 }} />
+                      Unlocked
+                    </>
+                  )}
+                </Box>
+              </FormField>
+            </Grid>
+          </Grid>
+
           <FormField
             label="Roles"
             helperText={
@@ -236,6 +296,7 @@ UserForm.propTypes = {
     email: PropTypes.string.isRequired,
     password: PropTypes.string,
     active: PropTypes.bool,
+    locked: PropTypes.bool,
     roles: PropTypes.array,
   }).isRequired,
   /** Function called when form data changes */
