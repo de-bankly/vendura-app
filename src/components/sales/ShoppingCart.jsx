@@ -188,7 +188,7 @@ const ShoppingCart = ({
                             {item.name}
                           </Typography>
                           <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
-                            {(item.price * item.quantity).toLocaleString('de-DE', {
+                            {((item.price || 0) * item.quantity).toLocaleString('de-DE', {
                               style: 'currency',
                               currency: 'EUR',
                             })}
@@ -298,7 +298,7 @@ const ShoppingCart = ({
                             </Box>
                             <Typography variant="body2" color="error.main" fontWeight="bold">
                               -
-                              {voucher.value.toLocaleString('de-DE', {
+                              {voucher.value?.toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR',
                               })}
@@ -313,7 +313,7 @@ const ShoppingCart = ({
                           >
                             <Typography variant="caption" color="info.dark">
                               Restguthaben:{' '}
-                              {voucher.balance.toLocaleString('de-DE', {
+                              {voucher.balance?.toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR',
                               })}
@@ -395,7 +395,7 @@ const ShoppingCart = ({
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="body1">Zwischensumme:</Typography>
             <Typography variant="body1">
-              {subtotal.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+              {(subtotal || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
             </Typography>
           </Box>
           {voucherDiscount > 0 && (
@@ -404,7 +404,11 @@ const ShoppingCart = ({
                 Gutschein-Rabatt:
               </Typography>
               <Typography variant="body1" color="error.main" fontWeight="medium">
-                -{voucherDiscount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                -
+                {(voucherDiscount || 0).toLocaleString('de-DE', {
+                  style: 'currency',
+                  currency: 'EUR',
+                })}
               </Typography>
             </Box>
           )}
@@ -426,7 +430,7 @@ const ShoppingCart = ({
             Gesamtsumme:
           </Typography>
           <Typography variant="h6" fontWeight="bold" color="primary.main">
-            {total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            {(total || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
           </Typography>
         </Box>
 

@@ -35,6 +35,21 @@ class GiftCardService {
   }
 
   /**
+   * Get gift card transactional information
+   * @param {String} id - The gift card ID
+   * @returns {Promise} Promise resolving to gift card transactional information
+   */
+  async getTransactionalInformation(id) {
+    try {
+      const response = await apiClient.get(`/v1/giftcard/${id}/transactional`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching transactional information for gift card with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get gift card balance
    * @param {String} id - The gift card ID
    * @returns {Promise} Promise resolving to gift card balance data
@@ -93,6 +108,49 @@ class GiftCardService {
       console.error(`Error deleting gift card with ID ${id}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Apply gift card payment
+   * @param {String} id - The gift card ID
+   * @param {Number} amount - The amount to apply
+   * @returns {Object} Payment information with updated total
+   */
+  applyGiftCardPayment(id, amount, currentTotal) {
+    // This method will be called locally within the frontend
+    return {
+      giftcardId: id,
+      amount,
+      remainingTotal: currentTotal - amount,
+    };
+  }
+
+  /**
+   * Apply discount card
+   * @param {String} id - The discount card ID
+   * @param {Number} discountPercentage - The discount percentage
+   * @param {Number} currentTotal - The current total
+   * @returns {Object} Discount information with updated total
+   */
+  applyDiscountCard(id, discountPercentage, currentTotal) {
+    const discountAmount = currentTotal * (discountPercentage / 100);
+    return {
+      giftcardId: id,
+      discountPercentage,
+      discountAmount,
+      remainingTotal: currentTotal - discountAmount,
+    };
+  }
+
+  /**
+   * Validate gift card format
+   * @param {String} id - The gift card ID to validate
+   * @returns {Boolean} Whether the gift card ID is in a valid format
+   */
+  validateGiftCardFormat(id) {
+    // Gift card IDs are numeric values of 16-19 digits as per backend implementation
+    const giftCardRegex = /^\d{16,19}$/;
+    return giftCardRegex.test(id);
   }
 }
 

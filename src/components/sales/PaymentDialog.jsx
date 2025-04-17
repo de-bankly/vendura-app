@@ -5,6 +5,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import EuroIcon from '@mui/icons-material/Euro';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import PaymentIcon from '@mui/icons-material/Payment';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +24,11 @@ import {
   useTheme,
   Divider,
   Zoom,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Chip,
 } from '@mui/material';
 import React from 'react';
 
@@ -36,6 +42,8 @@ const PaymentDialog = ({
   total,
   cartItemsCount,
   voucherDiscount,
+  appliedVouchers = [],
+  giftCardPayment = 0,
   paymentMethod,
   onPaymentMethodChange,
   cashReceived,
@@ -44,6 +52,11 @@ const PaymentDialog = ({
   TransitionComponent,
 }) => {
   const theme = useTheme();
+
+  // Calculate the amount still to be paid after applying gift cards
+  const remainingTotal = total - giftCardPayment;
+  const hasGiftCardPayment = giftCardPayment > 0;
+  const giftCardVouchers = appliedVouchers.filter(v => v.type === 'GIFT_CARD');
 
   return (
     <Dialog
@@ -105,244 +118,256 @@ const PaymentDialog = ({
           )}
         </Box>
 
-        <Typography variant="h6" gutterBottom fontWeight="medium" color="primary.main">
-          Zahlungsmethode
-        </Typography>
-
-        <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
-          <RadioGroup name="payment-method" value={paymentMethod} onChange={onPaymentMethodChange}>
-            <Paper
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'cash' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="cash"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <LocalAtmIcon sx={{ mr: 1.5, color: theme.palette.success.main }} />
-                    <Typography fontWeight={paymentMethod === 'cash' ? 'medium' : 'normal'}>
-                      Bargeld
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-
-            <Paper
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'card' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="card"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <CreditCardIcon sx={{ mr: 1.5, color: theme.palette.info.main }} />
-                    <Typography fontWeight={paymentMethod === 'card' ? 'medium' : 'normal'}>
-                      Kartenzahlung
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-
-            <Paper
-              variant="outlined"
-              sx={{
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'bank' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="bank"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <AccountBalanceIcon sx={{ mr: 1.5, color: theme.palette.warning.main }} />
-                    <Typography fontWeight={paymentMethod === 'bank' ? 'medium' : 'normal'}>
-                      Überweisung
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-          </RadioGroup>
-        </FormControl>
-
-        <Divider sx={{ my: 2 }} />
-
-        {paymentMethod === 'cash' && (
-          <Zoom in={paymentMethod === 'cash'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Bargeld
+        {/* Applied Gift Cards Section */}
+        {hasGiftCardPayment && (
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: 2,
+              bgcolor: theme.palette.success.light + '15',
+              border: `1px solid ${theme.palette.success.light}`,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <CardGiftcardIcon sx={{ mr: 1.5, color: theme.palette.success.main }} />
+              <Typography variant="subtitle1" fontWeight="medium" color="success.main">
+                Angewandte Geschenkkarten
               </Typography>
-
-              <TextField
-                label="Erhaltener Betrag"
-                variant="outlined"
-                fullWidth
-                value={cashReceived}
-                onChange={onCashReceivedChange}
-                type="number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EuroIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
-
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  bgcolor: theme.palette.success.light + '20',
-                  borderRadius: theme.shape.borderRadius,
-                  borderColor: theme.palette.success.light,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight="medium">
-                  Rückgeld:
-                </Typography>
-                <Typography variant="h6" color="success.main" fontWeight="bold">
-                  {change} €
-                </Typography>
-              </Paper>
             </Box>
-          </Zoom>
+
+            <List dense disablePadding>
+              {giftCardVouchers.map(voucher => (
+                <ListItem key={voucher.id} sx={{ px: 1, py: 0.5 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <CardGiftcardIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`Geschenkkarte: ${voucher.id.substring(0, 4)}...${voucher.id.substring(voucher.id.length - 4)}`}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="caption" display="block">
+                          Verwendet: {(voucher.amount || 0).toFixed(2)} €
+                        </Typography>
+                        {voucher.remainingBalance !== undefined && (
+                          <Typography component="span" variant="caption" display="block">
+                            Restguthaben nach Transaktion:{' '}
+                            {(voucher.remainingBalance - (voucher.amount || 0)).toFixed(2)} €
+                          </Typography>
+                        )}
+                      </>
+                    }
+                    primaryTypographyProps={{ variant: 'body2' }}
+                    secondaryTypographyProps={{ component: 'div' }}
+                  />
+                  <Chip
+                    label={`${(voucher.amount || 0).toFixed(2)} €`}
+                    size="small"
+                    color="primary"
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                Gesamtbetrag durch Geschenkkarten:
+              </Typography>
+              <Typography variant="body1" fontWeight="bold" color="primary.main">
+                {giftCardPayment.toFixed(2)} €
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mt: 0.5,
+              }}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                Verbleibender Betrag:
+              </Typography>
+              <Typography
+                variant="body1"
+                fontWeight="bold"
+                color={remainingTotal > 0 ? 'text.primary' : 'success.main'}
+              >
+                {remainingTotal.toFixed(2)} €
+              </Typography>
+            </Box>
+          </Box>
         )}
 
-        {paymentMethod === 'card' && (
-          <Zoom in={paymentMethod === 'card'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Kartenzahlung
-              </Typography>
-
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                Bitte führen Sie die Karte in das Lesegerät ein oder halten Sie sie an das Terminal.
-              </Typography>
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  p: 4,
-                  border: '2px dashed',
-                  borderColor: theme.palette.info.light,
-                  borderRadius: theme.shape.borderRadius,
-                  bgcolor: theme.palette.info.light + '10',
-                }}
+        {/* Payment Method Selection */}
+        {remainingTotal > 0 ? (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Zahlungsmethode für {remainingTotal.toFixed(2)} €
+            </Typography>
+            <FormControl component="fieldset" sx={{ width: '100%', mb: 3 }}>
+              <RadioGroup
+                aria-label="payment-method"
+                name="payment-method"
+                value={paymentMethod}
+                onChange={onPaymentMethodChange}
               >
-                <CreditCardIcon
-                  sx={{ fontSize: 80, color: theme.palette.info.main, opacity: 0.8 }}
-                />
+                <Paper variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+                  <FormControlLabel
+                    value="cash"
+                    control={<MuiRadio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <LocalAtmIcon sx={{ mr: 1 }} />
+                        <Typography variant="body1">Barzahlung</Typography>
+                      </Box>
+                    }
+                    sx={{
+                      m: 0,
+                      p: 2,
+                      width: '100%',
+                      borderBottom:
+                        paymentMethod === 'cash' ? 'none' : `1px solid ${theme.palette.divider}`,
+                    }}
+                  />
+
+                  {paymentMethod === 'cash' && (
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <TextField
+                        fullWidth
+                        label="Erhaltener Betrag"
+                        variant="outlined"
+                        value={cashReceived}
+                        onChange={onCashReceivedChange}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EuroIcon />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{ mt: 2 }}
+                      />
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          mt: 2,
+                        }}
+                      >
+                        <Typography variant="body1">Rückgeld:</Typography>
+                        <Typography variant="h6" color="primary" fontWeight="bold">
+                          {parseFloat(change).toFixed(2)} €
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+
+                <Paper variant="outlined">
+                  <FormControlLabel
+                    value="card"
+                    control={<MuiRadio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <CreditCardIcon sx={{ mr: 1 }} />
+                        <Typography variant="body1">Kartenzahlung</Typography>
+                      </Box>
+                    }
+                    sx={{ m: 0, p: 2, width: '100%' }}
+                  />
+                </Paper>
+              </RadioGroup>
+            </FormControl>
+          </>
+        ) : (
+          // If amount is fully covered by gift cards
+          <Box
+            sx={{
+              p: 2,
+              mb: 3,
+              textAlign: 'center',
+              borderRadius: theme.shape.borderRadius,
+              bgcolor: theme.palette.success.light + '20',
+            }}
+          >
+            <CheckCircleIcon color="success" sx={{ fontSize: 48, mb: 1 }} />
+            <Typography variant="h6" gutterBottom color="success.main">
+              Vollständig mit Geschenkkarten bezahlt
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Der gesamte Betrag wurde mit Geschenkkarten abgedeckt. Keine weitere Zahlung
+              erforderlich.
+            </Typography>
+          </Box>
+        )}
+
+        {/* Summary */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 1,
+            borderColor: theme.palette.primary.main,
+            bgcolor: theme.palette.primary.main + '05',
+          }}
+        >
+          <Typography variant="subtitle1" gutterBottom fontWeight="medium">
+            Zahlungszusammenfassung
+          </Typography>
+
+          <Box sx={{ '& > div': { py: 0.5 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body2" color="text.secondary">
+                Zwischensumme ({cartItemsCount} Artikel):
+              </Typography>
+              <Typography variant="body2">
+                {(total + voucherDiscount + giftCardPayment).toFixed(2)} €
+              </Typography>
+            </Box>
+
+            {voucherDiscount > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Rabatt:
+                </Typography>
+                <Typography variant="body2" color="error.main">
+                  -{voucherDiscount.toFixed(2)} €
+                </Typography>
               </Box>
-            </Box>
-          </Zoom>
-        )}
+            )}
 
-        {paymentMethod === 'bank' && (
-          <Zoom in={paymentMethod === 'bank'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Überweisung
+            {giftCardPayment > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Geschenkkartenzahlung:
+                </Typography>
+                <Typography variant="body2" color="primary.main">
+                  -{giftCardPayment.toFixed(2)} €
+                </Typography>
+              </Box>
+            )}
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body1" fontWeight="bold">
+                Zu zahlender Betrag:
               </Typography>
-
-              <Typography variant="body1" gutterBottom>
-                Bitte überweisen Sie den Betrag auf folgendes Konto:
+              <Typography variant="body1" fontWeight="bold">
+                {total.toFixed(2)} €
               </Typography>
-
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  bgcolor: theme.palette.warning.light + '10',
-                  borderRadius: theme.shape.borderRadius,
-                  borderColor: theme.palette.warning.light,
-                }}
-              >
-                <Typography variant="body2" gutterBottom>
-                  <strong>Kontoinhaber:</strong> Vendura GmbH
-                </Typography>
-                <Typography variant="body2" gutterBottom>
-                  <strong>IBAN:</strong> DE12 3456 7890 1234 5678 90
-                </Typography>
-                <Typography variant="body2" gutterBottom>
-                  <strong>BIC:</strong> DEUTDEDBXXX
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Verwendungszweck:</strong> Rechnung{' '}
-                  {new Date().toISOString().slice(0, 10)}-{Math.floor(Math.random() * 1000)}
-                </Typography>
-              </Paper>
             </Box>
-          </Zoom>
-        )}
+          </Box>
+        </Paper>
       </DialogContent>
 
       <DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>

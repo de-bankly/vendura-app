@@ -16,12 +16,23 @@ import {
   alpha,
   Container,
   Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import { useToast, Chip } from '../components/ui/feedback';
-import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
+import {
+  ProductGrid,
+  ShoppingCart,
+  PaymentDialog,
+  VoucherInputField,
+  AppliedVouchersDisplay,
+} from '../components/sales';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
@@ -29,6 +40,7 @@ import {
 } from '../components/vouchers';
 import { ProductService, CartService, GiftCardService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+import TransactionService from '../services/TransactionService';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -84,6 +96,8 @@ const SalesScreen = () => {
   const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [giftCardPayment, setGiftCardPayment] = useState(0);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -119,19 +133,66 @@ const SalesScreen = () => {
   }, []);
 
   // --- Memoized Calculations ---
-  const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
-  const voucherDiscount = useMemo(
-    () => CartService.calculateVoucherDiscount(appliedVouchers),
-    [appliedVouchers]
-  );
+  const subtotal = useMemo(() => CartService.calculateTotal(cartItems), [cartItems]);
+
+  // Calculate voucher discount
+  const calculateVoucherDiscount = useCallback((subtotal, vouchers) => {
+    if (!vouchers || vouchers.length === 0) return 0;
+
+    // Get discount vouchers
+    const discountVouchers = vouchers.filter(v => v.type === 'DISCOUNT_CARD');
+    if (discountVouchers.length === 0) return 0;
+
+    // For simplicity, we'll just use the first discount voucher
+    // In a real implementation, you might want to stack discounts or use the highest one
+    const discountVoucher = discountVouchers[0];
+    return subtotal * (discountVoucher.discountPercentage / 100);
+  }, []);
+
+  // Calculate gift card payment
+  const calculateGiftCardPayment = useCallback((afterDiscountTotal, vouchers) => {
+    if (!vouchers || vouchers.length === 0) return 0;
+
+    // Get gift card vouchers
+    const giftCardVouchers = vouchers.filter(v => v.type === 'GIFT_CARD');
+    if (giftCardVouchers.length === 0) return 0;
+
+    // We now sum up the pre-specified amounts for each gift card
+    let totalGiftCardPayment = 0;
+
+    for (const voucher of giftCardVouchers) {
+      // Only add gift cards with a specified amount
+      if (voucher.amount > 0) {
+        totalGiftCardPayment += voucher.amount;
+      }
+    }
+
+    // Make sure the total doesn't exceed the amount due
+    return Math.min(totalGiftCardPayment, afterDiscountTotal);
+  }, []);
+
+  useEffect(() => {
+    const calculatedDiscount = calculateVoucherDiscount(subtotal, appliedVouchers);
+    setVoucherDiscount(calculatedDiscount);
+
+    const afterDiscountTotal = subtotal - calculatedDiscount;
+    const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
+    setGiftCardPayment(calculatedGiftCardPayment);
+  }, [subtotal, appliedVouchers, calculateVoucherDiscount, calculateGiftCardPayment]);
+
   const total = useMemo(
-    () => CartService.calculateTotal(subtotal, voucherDiscount),
-    [subtotal, voucherDiscount]
+    () => Math.max(0, subtotal - voucherDiscount - giftCardPayment),
+    [subtotal, voucherDiscount, giftCardPayment]
   );
+
+  // Calculate change for cash payment
   const change = useMemo(() => {
-    const received = parseFloat(cashReceived) || 0;
-    return Math.max(0, received - total).toFixed(2);
-  }, [cashReceived, total]);
+    if (paymentMethod !== 'cash' || !cashReceived) {
+      return 0;
+    }
+    const cashValue = parseFloat(cashReceived);
+    return cashValue > total ? cashValue - total : 0;
+  }, [paymentMethod, cashReceived, total]);
 
   // --- Callback Handlers ---
   const addToCart = useCallback(product => {
@@ -149,6 +210,8 @@ const SalesScreen = () => {
   const clearCart = useCallback(() => {
     setCartItems([]);
     setAppliedVouchers([]);
+    setVoucherDiscount(0);
+    setGiftCardPayment(0);
   }, []);
 
   const handlePaymentModalOpen = useCallback(() => {
@@ -171,32 +234,46 @@ const SalesScreen = () => {
   const handlePaymentComplete = useCallback(async () => {
     setPaymentLoading(true); // Indicate loading
     try {
-      // TODO: Send transaction to backend API
+      // Prepare transaction data for the backend
       const transactionData = {
         cartItems,
         subtotal,
         appliedVouchers,
         voucherDiscount,
+        giftCardPayment,
         total,
         paymentMethod,
-        cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+        cashReceived: paymentMethod === 'cash' ? parseFloat(cashReceived) : undefined,
         change: paymentMethod === 'cash' ? change : undefined,
+        // If using card payment, we would include card details here
+        cardDetails:
+          paymentMethod === 'card'
+            ? {
+                cardNumber: '', // These would be populated from the UI in a real implementation
+                cardHolderName: '',
+                expirationDate: '',
+                cvv: '',
+              }
+            : undefined,
       };
-      console.log('Submitting Transaction:', transactionData);
-      // Example: await TransactionService.createTransaction(transactionData);
 
-      // --- If successful: ---
+      // Call the TransactionService to process the sale
+      const result = await TransactionService.createSaleTransaction(transactionData);
+      console.log('Transaction complete:', result);
+
+      // If successful, update UI and show success message
       setPaymentModalOpen(false);
       setReceiptReady(true);
       setSuccessSnackbarOpen(true);
-      // Don't clear cart automatically, let user press "New Transaction"
+
+      // Store the transaction result for receipt printing or future reference
+      // This could be used to display a receipt or order confirmation
     } catch (error) {
       console.error('Payment failed:', error);
       showToast({
         severity: 'error',
         message: getUserFriendlyErrorMessage(error, 'Zahlung fehlgeschlagen'),
       });
-      // Keep payment modal open on error?
     } finally {
       setPaymentLoading(false); // Reset loading state
     }
@@ -205,6 +282,7 @@ const SalesScreen = () => {
     subtotal,
     appliedVouchers,
     voucherDiscount,
+    giftCardPayment,
     total,
     paymentMethod,
     cashReceived,
@@ -256,27 +334,12 @@ const SalesScreen = () => {
     setPurchaseVoucherDialogOpen(false);
   }, []);
 
-  const handleVoucherRedeemed = useCallback(
-    async voucherId => {
-      try {
-        const giftCard = await GiftCardService.getGiftCardById(voucherId);
-        const giftCardBalance = await GiftCardService.getGiftCardBalance(voucherId);
-        const voucher = {
-          ...giftCard,
-          balance: giftCardBalance.remainingBalance,
-        };
-        setAppliedVouchers(prev => [...prev, voucher]);
-        showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
-        handleRedeemVoucherDialogClose();
-      } catch (err) {
-        console.error('Error redeeming gift card:', err);
-        showToast({
-          severity: 'error',
-          message: getUserFriendlyErrorMessage(err, 'Fehler beim Einlösen des Gutscheins'),
-        });
-      }
+  const handleVoucherApplied = useCallback(
+    voucherData => {
+      setAppliedVouchers(prev => [...prev, voucherData]);
+      showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
     },
-    [showToast, handleRedeemVoucherDialogClose]
+    [showToast]
   );
 
   const handleRemoveVoucher = useCallback(voucherId => {
@@ -527,6 +590,8 @@ const SalesScreen = () => {
         total={total}
         cartItemsCount={cartItems.length}
         voucherDiscount={voucherDiscount}
+        appliedVouchers={appliedVouchers}
+        giftCardPayment={giftCardPayment}
         paymentMethod={paymentMethod}
         onPaymentMethodChange={handlePaymentMethodChange}
         cashReceived={cashReceived}
@@ -556,7 +621,7 @@ const SalesScreen = () => {
       <RedeemVoucherDialog
         open={redeemVoucherDialogOpen}
         onClose={handleRedeemVoucherDialogClose}
-        onVoucherRedeemed={handleVoucherRedeemed}
+        onVoucherRedeemed={handleVoucherApplied}
         cartTotal={total}
       />
 
@@ -570,6 +635,26 @@ const SalesScreen = () => {
         onClose={handlePurchaseVoucherDialogClose}
         onAddToCart={addToCart}
       />
+
+      {/* Redeem Voucher Dialog */}
+      <Dialog
+        open={redeemVoucherDialogOpen}
+        onClose={handleRedeemVoucherDialogClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Gutschein einlösen</DialogTitle>
+        <DialogContent dividers>
+          <VoucherInputField
+            onVoucherApplied={handleVoucherApplied}
+            appliedVouchers={appliedVouchers}
+            currentTotal={subtotal - voucherDiscount}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleRedeemVoucherDialogClose}>Schließen</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
