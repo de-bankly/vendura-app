@@ -18,10 +18,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Alert,
   CircularProgress,
@@ -38,6 +34,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import GiftCardService from '../../services/GiftCardService';
+import Select from '../ui/inputs/Select';
 
 /**
  * VoucherManagement component for administrators to manage gift cards
@@ -138,10 +135,16 @@ const VoucherManagement = () => {
 
   const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    console.log('Input changed:', { name, value, event: e });
+
+    setFormData(prev => {
+      const newState = {
+        ...prev,
+        [name]: value,
+      };
+      console.log('Updated form state:', newState);
+      return newState;
+    });
 
     // Clear error for this field if exists
     if (formErrors[name]) {
@@ -170,6 +173,10 @@ const VoucherManagement = () => {
   const validateForm = () => {
     const errors = {};
 
+    if (!formData.type) {
+      errors.type = 'Bitte wählen Sie einen Gutschein-Typ aus';
+    }
+
     if (formData.type === 'GIFT_CARD') {
       if (!formData.initialBalance || formData.initialBalance <= 0) {
         errors.initialBalance = 'Bitte geben Sie einen gültigen Anfangsbetrag ein';
@@ -195,6 +202,8 @@ const VoucherManagement = () => {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    console.log('Form data before submission:', formData);
+
     setSubmitLoading(true);
     setSubmitError(null);
     setSubmitSuccess(false);
@@ -210,8 +219,17 @@ const VoucherManagement = () => {
         if (formData.type === 'DISCOUNT_CARD') {
           payload.discountPercentage = parseInt(formData.discountPercentage, 10);
           payload.maximumUsages = parseInt(formData.maximumUsages, 10);
+        } else if (formData.type === 'GIFT_CARD' && currentVoucher.type === 'DISCOUNT_CARD') {
+          // When changing from DISCOUNT_CARD to GIFT_CARD, explicitly set maximumUsages to 0
+          payload.maximumUsages = 0;
+          payload.discountPercentage = 0;
+        } else {
+          // Always include these fields to prevent null values
+          payload.maximumUsages = currentVoucher.maximumUsages || 0;
+          payload.discountPercentage = currentVoucher.discountPercentage || 0;
         }
 
+        console.log('Update payload:', payload);
         await GiftCardService.updateGiftCard(currentVoucher.id, payload);
       } else {
         // Create a new voucher
@@ -227,6 +245,7 @@ const VoucherManagement = () => {
           payload.maximumUsages = parseInt(formData.maximumUsages, 10);
         }
 
+        console.log('Create payload:', payload);
         await GiftCardService.createGiftCard(payload);
       }
 
@@ -424,20 +443,21 @@ const VoucherManagement = () => {
 
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <FormControl fullWidth disabled={editMode}>
-                <InputLabel id="voucher-type-label">Gutschein-Typ</InputLabel>
-                <Select
-                  labelId="voucher-type-label"
-                  label="Gutschein-Typ"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  disabled={editMode} // Type can't be changed after creation
-                >
-                  <MenuItem value="GIFT_CARD">Geschenkkarte (Guthaben)</MenuItem>
-                  <MenuItem value="DISCOUNT_CARD">Rabattkarte (Prozentual)</MenuItem>
-                </Select>
-              </FormControl>
+              <Select
+                label="Gutschein-Typ"
+                name="type"
+                id="voucher-type-select"
+                value={formData.type}
+                onChange={handleInputChange}
+                disabled={editMode}
+                error={!!formErrors.type}
+                helperText={formErrors.type}
+                placeholder="Wählen Sie einen Gutschein-Typ"
+                options={[
+                  { value: 'GIFT_CARD', label: 'Geschenkkarte (Guthaben)' },
+                  { value: 'DISCOUNT_CARD', label: 'Rabattkarte (Prozentual)' },
+                ]}
+              />
             </Grid>
 
             {formData.type === 'GIFT_CARD' && (
