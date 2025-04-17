@@ -69,6 +69,7 @@ const VoucherManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [voucherToDelete, setVoucherToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Load vouchers on component mount and when page/rowsPerPage changes
   useEffect(() => {
@@ -274,18 +275,24 @@ const VoucherManagement = () => {
   const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setVoucherToDelete(null);
+    setDeleteError(null);
   };
 
   const handleDeleteVoucher = async () => {
     if (!voucherToDelete) return;
 
     setDeleteLoading(true);
+    setDeleteError(null);
     try {
       await GiftCardService.deleteGiftCard(voucherToDelete.id);
       fetchVouchers();
       closeDeleteDialog();
     } catch (error) {
       console.error('Error deleting voucher:', error);
+      setDeleteError(
+        error.response?.data?.message ||
+          'Es ist ein Fehler beim Löschen des Gutscheins aufgetreten. Bitte versuchen Sie es später erneut.'
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -549,6 +556,11 @@ const VoucherManagement = () => {
       <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
         <DialogTitle>Gutschein löschen</DialogTitle>
         <DialogContent>
+          {deleteError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
           <Typography>
             Sind Sie sicher, dass Sie diesen Gutschein löschen möchten?
             {voucherToDelete?.type === 'GIFT_CARD' && voucherToDelete?.remainingBalance > 0 && (
