@@ -25,12 +25,6 @@ class SaleService {
       // Prepare payments with the correct calculated total
       const payments = [];
 
-      // Calculate total gift card payment amount
-      const giftCardTotal =
-        saleData.giftCards && saleData.giftCards.length > 0
-          ? saleData.giftCards.reduce((sum, card) => sum + (parseFloat(card.amount) || 0), 0)
-          : 0;
-
       // Add gift card payments if applicable
       if (saleData.giftCards && saleData.giftCards.length > 0) {
         saleData.giftCards.forEach(card => {
@@ -42,39 +36,51 @@ class SaleService {
         });
       }
 
-      // Only add cash/card payment if the gift card doesn't cover the full amount
-      const total = 9.0; // Fixed value for this specific case
-      const isFullyCoveredByGiftCard = Math.abs(giftCardTotal - total) < 0.01; // Allow small rounding differences
+      // Add discount card payments if applicable
+      if (saleData.discountCards && saleData.discountCards.length > 0) {
+        // Just use the first discount card for simplicity (as per existing business logic)
+        const discountCard = saleData.discountCards[0];
+        const discountAmount = parseFloat(
+          (Math.round(saleData.voucherDiscount * 100) / 100).toFixed(2)
+        );
 
-      if (!isFullyCoveredByGiftCard) {
-        const remainingAmount = Math.max(0, total - giftCardTotal);
+        payments.push({
+          type: 'GIFTCARD', // The backend treats discount cards as a type of gift card payment
+          amount: discountAmount,
+          giftcardId: discountCard.id,
+        });
+      }
 
-        if (saleData.paymentMethod === 'cash') {
-          payments.push({
-            type: 'CASH',
-            amount: parseFloat(remainingAmount.toFixed(2)),
-            handed: parseFloat((Math.round(saleData.cashReceived * 100) / 100).toFixed(2)),
-            returned: parseFloat((Math.round((saleData.change || 0) * 100) / 100).toFixed(2)),
-          });
-        } else if (saleData.paymentMethod === 'card') {
-          payments.push({
-            type: 'CARD',
-            amount: parseFloat(remainingAmount.toFixed(2)),
-            cardDetails: {
-              cardNumber: saleData.cardDetails?.cardNumber,
-              cardHolderName: saleData.cardDetails?.cardHolderName,
-              expirationDate: saleData.cardDetails?.expirationDate,
-              cvv: saleData.cardDetails?.cvv,
-            },
-          });
-        }
+      // We need to calculate the actual amount the customer pays without deducting the giftcard amounts
+      const finalTotal = parseFloat((Math.round(saleData.total * 100) / 100).toFixed(2));
+
+      if (saleData.paymentMethod === 'cash') {
+        payments.push({
+          type: 'CASH',
+          // Use the final total that the customer actually pays
+          amount: finalTotal,
+          handed: parseFloat((Math.round(saleData.cashReceived * 100) / 100).toFixed(2)),
+          returned: parseFloat((Math.round((saleData.change || 0) * 100) / 100).toFixed(2)),
+        });
+      } else if (saleData.paymentMethod === 'card') {
+        payments.push({
+          type: 'CARD',
+          // Use the final total that the customer actually pays
+          amount: finalTotal,
+          cardDetails: {
+            cardNumber: saleData.cardDetails?.cardNumber,
+            cardHolderName: saleData.cardDetails?.cardHolderName,
+            expirationDate: saleData.cardDetails?.expirationDate,
+            cvv: saleData.cardDetails?.cvv,
+          },
+        });
       }
 
       // Create final sale DTO with correct total
       const saleDTO = {
         positions,
         payments,
-        total: 9.0, // Use fixed correct total that matches backend calculation
+        total: saleData.subtotal, // Use the subtotal (before discounts) instead of final total
         depositReceipts: [],
       };
 
