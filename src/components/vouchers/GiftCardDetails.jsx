@@ -75,17 +75,10 @@ const GiftCardDetails = ({ giftCardId, onClose }) => {
     setError(null);
 
     try {
-      // Hole Basis-Daten
-      const giftCardData = await GiftCardService.getGiftCardById(giftCardId);
-
-      // Hole Transaktionsdaten für Restguthaben/Nutzungen
+      // Hole Transaktionsdaten direkt über den transactional endpoint
       const transactionalInfo = await GiftCardService.getTransactionalInformation(giftCardId);
 
-      setGiftCard({
-        ...giftCardData,
-        remainingBalance: transactionalInfo.remainingBalance,
-        remainingUsages: transactionalInfo.remainingUsages,
-      });
+      setGiftCard(transactionalInfo);
 
       // Lade initial Transaktionen
       fetchTransactions();

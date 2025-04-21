@@ -23,6 +23,43 @@ class GiftCardTransactionService {
   }
 
   /**
+   * Get transaction history for a specific gift card (alias for getTransactions)
+   * @param {String} giftCardId - The gift card ID
+   * @param {Object} pageable - Pagination parameters
+   * @returns {Promise} Promise resolving to paginated transaction data
+   */
+  async getTransactionsByGiftCardId(giftCardId, pageable = { page: 0, size: 20 }) {
+    return this.getTransactions(giftCardId, pageable);
+  }
+
+  /**
+   * Format transaction data for display
+   * @param {Object} transaction - Transaction data from API
+   * @returns {Object} Formatted transaction data
+   */
+  formatTransaction(transaction) {
+    return {
+      ...transaction,
+      formattedAmount: transaction.amount.toFixed(2) + ' €',
+      formattedDate: new Date(transaction.timestamp).toLocaleString(),
+    };
+  }
+
+  /**
+   * Recharge a gift card with specified amount
+   * @param {String} giftCardId - The gift card ID
+   * @param {Number} amount - The amount to add to the card
+   * @returns {Promise} Promise resolving to the created transaction
+   */
+  async rechargeGiftCard(giftCardId, amount) {
+    return this.createManualTransaction(
+      giftCardId,
+      amount,
+      `Manuelle Aufladung: ${amount.toFixed(2)} €`
+    );
+  }
+
+  /**
    * Create a manual transaction for a gift card (e.g., adding balance)
    * @param {String} giftCardId - The gift card ID
    * @param {Number} amount - The transaction amount (positive for credit, negative for debit)

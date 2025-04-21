@@ -24,31 +24,8 @@ class TransactionService {
       // Prepare payments data
       const payments = [];
 
-      // Add cash payment if applicable
-      if (transactionData.paymentMethod === 'cash') {
-        payments.push({
-          type: 'CASH',
-          amount: transactionData.total,
-          cashReceived: transactionData.cashReceived,
-          change: transactionData.change,
-        });
-      }
-
-      // Add card payment if applicable
-      if (transactionData.paymentMethod === 'card') {
-        payments.push({
-          type: 'CARD',
-          amount: transactionData.total,
-          cardDetails: {
-            cardNumber: transactionData.cardDetails?.cardNumber,
-            cardHolderName: transactionData.cardDetails?.cardHolderName,
-            expirationDate: transactionData.cardDetails?.expirationDate,
-            cvv: transactionData.cardDetails?.cvv,
-          },
-        });
-      }
-
       // Add gift card payments if applicable
+      let giftCardTotal = 0;
       if (transactionData.appliedVouchers && transactionData.appliedVouchers.length > 0) {
         // Filter for gift card type vouchers only
         const giftCardVouchers = transactionData.appliedVouchers.filter(
@@ -57,9 +34,11 @@ class TransactionService {
 
         // Add each gift card as a payment
         for (const voucher of giftCardVouchers) {
+          const voucherAmount = parseFloat(voucher.amount) || 0;
+          giftCardTotal += voucherAmount;
           payments.push({
             type: 'GIFTCARD',
-            amount: voucher.amount,
+            amount: voucherAmount,
             giftcardId: voucher.id,
           });
         }
@@ -72,10 +51,43 @@ class TransactionService {
         if (discountVouchers.length > 0) {
           // For simplicity, just use the first discount card
           const discountVoucher = discountVouchers[0];
+          const discountAmount = parseFloat(transactionData.voucherDiscount) || 0;
+          giftCardTotal += discountAmount;
           payments.push({
             type: 'GIFTCARD',
-            amount: transactionData.voucherDiscount,
+            amount: discountAmount,
             giftcardId: discountVoucher.id,
+          });
+        }
+      }
+
+      // Only add cash/card payment if the gift card doesn't cover the full amount
+      const isFullyCoveredByGiftCard = Math.abs(giftCardTotal - transactionData.total) < 0.01;
+
+      if (!isFullyCoveredByGiftCard) {
+        const remainingAmount = Math.max(0, transactionData.total - giftCardTotal);
+
+        // Add cash payment if applicable
+        if (transactionData.paymentMethod === 'cash') {
+          payments.push({
+            type: 'CASH',
+            amount: parseFloat(remainingAmount.toFixed(2)),
+            cashReceived: transactionData.cashReceived,
+            change: transactionData.change,
+          });
+        }
+
+        // Add card payment if applicable
+        if (transactionData.paymentMethod === 'card') {
+          payments.push({
+            type: 'CARD',
+            amount: parseFloat(remainingAmount.toFixed(2)),
+            cardDetails: {
+              cardNumber: transactionData.cardDetails?.cardNumber,
+              cardHolderName: transactionData.cardDetails?.cardHolderName,
+              expirationDate: transactionData.cardDetails?.expirationDate,
+              cvv: transactionData.cardDetails?.cvv,
+            },
           });
         }
       }
