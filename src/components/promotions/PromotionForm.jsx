@@ -5,11 +5,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  MenuItem,
-  Select,
   TextField,
   Typography,
 } from '@mui/material';
@@ -19,6 +14,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import deLocale from 'date-fns/locale/de';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
+import { Select } from '../ui/inputs';
 
 /**
  * PromotionForm component for creating and editing promotions
@@ -127,12 +123,12 @@ const PromotionForm = ({
         discount: parseFloat(formData.discount),
       };
 
-      // If editing, add the ID
+      // Pass ID separately for routing when in edit mode
       if (isEditMode && promotion) {
-        submissionData.id = promotion.id;
+        onSubmit(submissionData, promotion.id);
+      } else {
+        onSubmit(submissionData);
       }
-
-      onSubmit(submissionData);
     }
   };
 
@@ -154,26 +150,20 @@ const PromotionForm = ({
             Mit einer Aktion können Sie Rabatte für bestimmte Produkte anbieten.
           </Typography>
 
-          <FormControl fullWidth error={!!errors.productId} sx={{ mb: 3, mt: 1 }}>
-            <InputLabel id="product-select-label">Produkt</InputLabel>
-            <Select
-              labelId="product-select-label"
-              id="product-select"
-              name="productId"
-              value={formData.productId}
-              onChange={handleChange}
-              label="Produkt"
-              disabled={isEditMode} // Can't change product when editing
-            >
-              {products.map(product => (
-                <MenuItem key={product.id} value={product.id}>
-                  {product.name} -{' '}
-                  {product.price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.productId && <FormHelperText>{errors.productId}</FormHelperText>}
-          </FormControl>
+          <Select
+            label="Produkt"
+            name="productId"
+            value={formData.productId}
+            onChange={handleChange}
+            options={(products || []).map(product => ({
+              value: product.id,
+              label: `${product.name} - ${product.price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}`,
+            }))}
+            error={!!errors.productId}
+            helperText={errors.productId}
+            disabled={isEditMode}
+            sx={{ mb: 3, mt: 1 }}
+          />
 
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={deLocale}>
             <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -236,6 +226,7 @@ const PromotionForm = ({
 PromotionForm.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  // onSubmit receives submissionData as first param and optionally promotionId as second param
   onSubmit: PropTypes.func.isRequired,
   promotion: PropTypes.shape({
     id: PropTypes.string,

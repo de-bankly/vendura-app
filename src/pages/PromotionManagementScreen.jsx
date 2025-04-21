@@ -106,10 +106,11 @@ const PromotionManagementScreen = () => {
 
   // Handle form submission (create or update)
   const handleSubmit = useCallback(
-    async formData => {
+    async (formData, promotionId) => {
       try {
+        console.log('Handling promotion submit:', { isEditMode, promotionId, formData });
         if (isEditMode) {
-          await PromotionService.updatePromotion(formData.id, formData);
+          await PromotionService.updatePromotion(promotionId, formData);
           showToast({
             message: 'Aktion erfolgreich aktualisiert',
             severity: 'success',
