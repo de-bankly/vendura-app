@@ -50,21 +50,6 @@ class GiftCardService {
   }
 
   /**
-   * Get gift card balance
-   * @param {String} id - The gift card ID
-   * @returns {Promise} Promise resolving to gift card balance data
-   */
-  async getGiftCardBalance(id) {
-    try {
-      const response = await apiClient.get(`/v1/giftcard/${id}/balance`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching balance for gift card with ID ${id}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Create a new gift card
    * @param {Object} giftCardData - The gift card data to create
    * @returns {Promise} Promise resolving to the created gift card
@@ -75,6 +60,19 @@ class GiftCardService {
       if (!giftCardData.type) {
         giftCardData.type = 'GIFT_CARD'; // Default to GIFT_CARD type if not specified
       }
+
+      // Validate required fields based on type
+      if (giftCardData.type === 'GIFT_CARD' && !giftCardData.initialBalance) {
+        throw new Error('Initial balance is required for gift cards');
+      }
+
+      if (
+        giftCardData.type === 'DISCOUNT_CARD' &&
+        (!giftCardData.discountPercentage || !giftCardData.maximumUsages)
+      ) {
+        throw new Error('Discount percentage and maximum usages are required for discount cards');
+      }
+
       console.log('GiftCardService createGiftCard payload:', giftCardData);
       const response = await apiClient.post('/v1/giftcard', giftCardData);
       return response.data;
@@ -94,6 +92,14 @@ class GiftCardService {
    */
   async updateGiftCard(id, giftCardData) {
     try {
+      // Validate data based on type
+      if (
+        giftCardData.type === 'DISCOUNT_CARD' &&
+        (!giftCardData.discountPercentage || !giftCardData.maximumUsages)
+      ) {
+        throw new Error('Discount percentage and maximum usages are required for discount cards');
+      }
+
       const response = await apiClient.put(`/v1/giftcard/${id}`, giftCardData);
       return response.data;
     } catch (error) {
@@ -118,13 +124,45 @@ class GiftCardService {
   }
 
   /**
-   * Apply gift card payment
+   * Calculate remaining balance for a gift card
+   * @param {String} id - The gift card ID
+   * @returns {Promise} Promise resolving to the remaining balance
+   */
+  async calculateRemainingBalance(id) {
+    try {
+      const transactionalInfo = await this.getTransactionalInformation(id);
+      return transactionalInfo.remainingBalance || 0;
+    } catch (error) {
+      console.error(`Error calculating remaining balance for gift card with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check remaining usages for a discount card
+   * @param {String} id - The discount card ID
+   * @returns {Promise} Promise resolving to the remaining usages
+   */
+  async getRemainingUsages(id) {
+    try {
+      const transactionalInfo = await this.getTransactionalInformation(id);
+      return transactionalInfo.remainingUsages || 0;
+    } catch (error) {
+      console.error(`Error getting remaining usages for discount card with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Apply gift card payment (client-side calculation)
+   * This is a local utility method that doesn't perform actual backend transaction
+   * The actual transaction would happen during checkout
    * @param {String} id - The gift card ID
    * @param {Number} amount - The amount to apply
+   * @param {Number} currentTotal - Current cart total
    * @returns {Object} Payment information with updated total
    */
   applyGiftCardPayment(id, amount, currentTotal) {
-    // This method will be called locally within the frontend
     return {
       giftcardId: id,
       amount,
@@ -133,7 +171,9 @@ class GiftCardService {
   }
 
   /**
-   * Apply discount card
+   * Apply discount card (client-side calculation)
+   * This is a local utility method that doesn't perform actual backend transaction
+   * The actual transaction would happen during checkout
    * @param {String} id - The discount card ID
    * @param {Number} discountPercentage - The discount percentage
    * @param {Number} currentTotal - The current total

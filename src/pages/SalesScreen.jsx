@@ -32,7 +32,7 @@ import {
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { ProductService, CartService } from '../services';
+import { ProductService, CartService, SaleService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
 
@@ -251,17 +251,26 @@ const SalesScreen = () => {
   const handlePaymentComplete = useCallback(async () => {
     setPaymentLoading(true); // Indicate loading
     try {
+      // Round the total for payment processing
+      const roundedTotal = Math.round(total * 100) / 100;
+
       // Prepare transaction data for the backend
       const transactionData = {
-        cartItems,
-        subtotal,
-        appliedVouchers,
-        voucherDiscount,
-        giftCardPayment,
-        total,
+        items: cartItems.map(item => ({
+          ...item,
+          price: Math.round(item.price * 100) / 100,
+          discount: item.discount ? Math.round(item.discount * 100) / 100 : 0,
+        })),
+        subtotal: Math.round(subtotal * 100) / 100,
+        giftCards: appliedVouchers.filter(v => v.type === 'GIFT_CARD'),
+        discountCards: appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD'),
+        voucherDiscount: Math.round(voucherDiscount * 100) / 100,
+        giftCardPayment: Math.round(giftCardPayment * 100) / 100,
+        total: roundedTotal,
         paymentMethod,
-        cashReceived: paymentMethod === 'cash' ? parseFloat(cashReceived) : undefined,
-        change: paymentMethod === 'cash' ? change : undefined,
+        cashReceived:
+          paymentMethod === 'cash' ? Math.round(parseFloat(cashReceived) * 100) / 100 : undefined,
+        change: paymentMethod === 'cash' ? Math.round(change * 100) / 100 : undefined,
         // If using card payment, we would include card details here
         cardDetails:
           paymentMethod === 'card'
@@ -274,8 +283,8 @@ const SalesScreen = () => {
             : undefined,
       };
 
-      // Call the TransactionService to process the sale
-      const result = await TransactionService.createSaleTransaction(transactionData);
+      // Call the SaleService to process the sale
+      const result = await SaleService.createSale(transactionData);
       console.log('Transaction complete:', result);
 
       // If successful, update UI and show success message

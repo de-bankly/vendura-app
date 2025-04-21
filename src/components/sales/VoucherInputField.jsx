@@ -76,7 +76,7 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
 
     // Format validation
     if (!GiftCardService.validateGiftCardFormat(voucherCode)) {
-      setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 16-19 Ziffern');
+      setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 16 Ziffern');
       return;
     }
 
@@ -93,20 +93,16 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
       setVoucherInfo(voucherData);
 
       // Check if voucher is valid for use
-      if (
-        voucherData.type === 'GIFT_CARD' &&
-        (!voucherData.remainingBalance || voucherData.remainingBalance <= 0)
-      ) {
-        setError('Dieser Gutschein hat kein Guthaben mehr');
-        return;
-      }
-
-      if (
-        voucherData.type === 'DISCOUNT_CARD' &&
-        (!voucherData.remainingUsages || voucherData.remainingUsages <= 0)
-      ) {
-        setError('Dieser Rabattgutschein hat keine Verwendungen mehr übrig');
-        return;
+      if (voucherData.type === 'GIFT_CARD') {
+        if (!voucherData.remainingBalance || voucherData.remainingBalance <= 0) {
+          setError('Dieser Gutschein hat kein Guthaben mehr');
+          return;
+        }
+      } else if (voucherData.type === 'DISCOUNT_CARD') {
+        if (!voucherData.remainingUsages || voucherData.remainingUsages <= 0) {
+          setError('Dieser Rabattgutschein hat keine Verwendungen mehr übrig');
+          return;
+        }
       }
 
       // Check expiration
@@ -120,10 +116,12 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
         setAmountToUse(Math.min(voucherData.remainingBalance, currentTotal));
       }
     } catch (err) {
+      console.error('Voucher validation error:', err);
       setError(
         err.response?.status === 404
           ? 'Gutschein nicht gefunden'
-          : 'Es ist ein Fehler bei der Überprüfung des Gutscheins aufgetreten'
+          : err.response?.data?.message ||
+              'Es ist ein Fehler bei der Überprüfung des Gutscheins aufgetreten'
       );
     } finally {
       setLoading(false);
@@ -132,17 +130,30 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
 
   const applyVoucher = () => {
     if (voucherInfo) {
-      // For gift cards, only apply the selected amount
       if (voucherInfo.type === 'GIFT_CARD') {
+        // Only apply the gift card if there's a remaining balance
+        if (voucherInfo.remainingBalance <= 0) {
+          setError('Dieser Gutschein hat kein Guthaben mehr');
+          return;
+        }
+
+        // Ensure amount to use doesn't exceed remaining balance
+        const safeAmount = Math.min(amountToUse, voucherInfo.remainingBalance, currentTotal);
+
         onVoucherApplied({
           id: voucherInfo.id,
           type: voucherInfo.type,
           remainingBalance: voucherInfo.remainingBalance,
-          amount: amountToUse, // The amount being used from this gift card
+          amount: safeAmount,
           expirationDate: voucherInfo.expirationDate,
         });
-      } else {
-        // For discount cards, apply as usual
+      } else if (voucherInfo.type === 'DISCOUNT_CARD') {
+        // Only apply the discount card if there are remaining usages
+        if (voucherInfo.remainingUsages <= 0) {
+          setError('Dieser Rabattgutschein hat keine Verwendungen mehr übrig');
+          return;
+        }
+
         onVoucherApplied({
           id: voucherInfo.id,
           type: voucherInfo.type,
@@ -152,7 +163,7 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
         });
       }
 
-      // Reset
+      // Reset the form
       setVoucherCode('');
       setVoucherInfo(null);
       setAmountToUse(0);
@@ -176,8 +187,8 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
           value={voucherCode}
           onChange={handleInputChange}
           disabled={loading}
-          placeholder="16-19-stelligen Code eingeben"
-          helperText="Geben Sie Ihren Gutscheincode ein (16-19 Ziffern)"
+          placeholder="16-stelligen Code eingeben"
+          helperText="Geben Sie Ihren Gutscheincode ein (16 Ziffern)"
           InputProps={{
             startAdornment: <CardGiftcardIcon color="action" sx={{ mr: 1, opacity: 0.6 }} />,
           }}
@@ -331,7 +342,7 @@ const VoucherInputField = ({ onVoucherApplied, appliedVouchers = [], currentTota
                   <strong>Rabatt:</strong> {voucherInfo?.discountPercentage}%
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Verbleibende Nutzungen:</strong> {voucherInfo?.remainingUsages}
+                  <strong>Verbleibende Nutzungen:</strong> {voucherInfo?.remainingUsages || 0}
                 </Typography>
               </>
             )}
