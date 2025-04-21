@@ -1,10 +1,10 @@
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import EuroIcon from '@mui/icons-material/Euro';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import PaymentIcon from '@mui/icons-material/Payment';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import {
   Dialog,
   DialogTitle,
@@ -22,9 +22,59 @@ import {
   Button,
   useTheme,
   Divider,
-  Zoom,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Chip,
+  FormHelperText,
 } from '@mui/material';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+/**
+ * Format card number with spaces (4 digits groups)
+ * @param {string} value - Card number to format
+ * @returns {string} Formatted card number
+ */
+const formatCardNumber = value => {
+  const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+  const matches = v.match(/\d{4,16}/g);
+  const match = (matches && matches[0]) || '';
+  const parts = [];
+
+  for (let i = 0, len = match.length; i < len; i += 4) {
+    parts.push(match.substring(i, i + 4));
+  }
+
+  if (parts.length) {
+    return parts.join(' ');
+  } else {
+    return value;
+  }
+};
+
+/**
+ * Format expiration date (MM/YY)
+ * @param {string} value - Expiration date to format
+ * @returns {string} Formatted expiration date
+ */
+const formatExpirationDate = value => {
+  const cleanValue = value.replace(/[^\d]/g, '');
+
+  if (cleanValue.length <= 2) {
+    return cleanValue;
+  }
+
+  let month = cleanValue.substring(0, 2);
+  const year = cleanValue.substring(2);
+
+  // Validate month (01-12)
+  if (parseInt(month) > 12) {
+    month = '12';
+  }
+
+  return `${month}/${year}`;
+};
 
 /**
  * PaymentDialog component for processing payments
@@ -36,14 +86,125 @@ const PaymentDialog = ({
   total,
   cartItemsCount,
   voucherDiscount,
+  appliedVouchers = [],
+  giftCardPayment = 0,
   paymentMethod,
   onPaymentMethodChange,
   cashReceived,
   onCashReceivedChange,
+  cardDetails,
+  onCardDetailsChange,
   change,
   TransitionComponent,
+  loading = false,
 }) => {
   const theme = useTheme();
+  const [cardErrors, setCardErrors] = useState({
+    cardNumber: '',
+    cardHolderName: '',
+    expirationDate: '',
+    cvv: '',
+  });
+
+  // Calculate the amount still to be paid after applying gift cards
+  const remainingTotal = total - giftCardPayment;
+  const hasGiftCardPayment = giftCardPayment > 0;
+  const giftCardVouchers = appliedVouchers.filter(v => v.type === 'GIFT_CARD');
+
+  // Validate card details when payment method is card
+  useEffect(() => {
+    if (paymentMethod !== 'card') {
+      setCardErrors({
+        cardNumber: '',
+        cardHolderName: '',
+        expirationDate: '',
+        cvv: '',
+      });
+      return;
+    }
+  }, [paymentMethod]);
+
+  // Handle formatted card number input
+  const handleCardNumberChange = e => {
+    const formattedValue = formatCardNumber(e.target.value);
+    onCardDetailsChange('cardNumber', formattedValue);
+
+    // Validate card number
+    const cleanValue = formattedValue.replace(/\s+/g, '');
+    if (cleanValue.length > 0 && cleanValue.length < 13) {
+      setCardErrors(prev => ({
+        ...prev,
+        cardNumber: 'Kartennummer muss mindestens 13 Ziffern enthalten',
+      }));
+    } else {
+      setCardErrors(prev => ({ ...prev, cardNumber: '' }));
+    }
+  };
+
+  // Handle formatted expiration date input
+  const handleExpirationDateChange = e => {
+    const formattedValue = formatExpirationDate(e.target.value);
+    onCardDetailsChange('expirationDate', formattedValue);
+
+    // Validate expiration date
+    if (formattedValue.length > 0 && formattedValue.length < 5) {
+      setCardErrors(prev => ({ ...prev, expirationDate: 'Bitte geben Sie Monat/Jahr ein' }));
+    } else {
+      setCardErrors(prev => ({ ...prev, expirationDate: '' }));
+    }
+  };
+
+  // Validate all card fields
+  const validateCardDetails = () => {
+    let hasErrors = false;
+    const newErrors = { ...cardErrors };
+
+    if (paymentMethod === 'card') {
+      // Card number validation
+      if (!cardDetails.cardNumber.trim()) {
+        newErrors.cardNumber = 'Kartennummer ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.cardNumber.replace(/\s+/g, '').length < 13) {
+        newErrors.cardNumber = 'Kartennummer muss mindestens 13 Ziffern enthalten';
+        hasErrors = true;
+      }
+
+      // Card holder validation
+      if (!cardDetails.cardHolderName.trim()) {
+        newErrors.cardHolderName = 'Name ist erforderlich';
+        hasErrors = true;
+      }
+
+      // Expiration date validation
+      if (!cardDetails.expirationDate.trim()) {
+        newErrors.expirationDate = 'Ablaufdatum ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.expirationDate.length < 5) {
+        newErrors.expirationDate = 'Ungültiges Ablaufdatum';
+        hasErrors = true;
+      }
+
+      // CVV validation
+      if (!cardDetails.cvv.trim()) {
+        newErrors.cvv = 'CVV ist erforderlich';
+        hasErrors = true;
+      } else if (cardDetails.cvv.length < 3) {
+        newErrors.cvv = 'CVV muss 3 Ziffern enthalten';
+        hasErrors = true;
+      }
+    }
+
+    setCardErrors(newErrors);
+    return !hasErrors;
+  };
+
+  // Handle payment completion with validation
+  const handleCompletePayment = () => {
+    if (paymentMethod === 'card' && !validateCardDetails()) {
+      return;
+    }
+    onComplete();
+  };
 
   return (
     <Dialog
@@ -105,255 +266,326 @@ const PaymentDialog = ({
           )}
         </Box>
 
-        <Typography variant="h6" gutterBottom fontWeight="medium" color="primary.main">
-          Zahlungsmethode
-        </Typography>
-
-        <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
-          <RadioGroup name="payment-method" value={paymentMethod} onChange={onPaymentMethodChange}>
-            <Paper
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'cash' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="cash"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <LocalAtmIcon sx={{ mr: 1.5, color: theme.palette.success.main }} />
-                    <Typography fontWeight={paymentMethod === 'cash' ? 'medium' : 'normal'}>
-                      Bargeld
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-
-            <Paper
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'card' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="card"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <CreditCardIcon sx={{ mr: 1.5, color: theme.palette.info.main }} />
-                    <Typography fontWeight={paymentMethod === 'card' ? 'medium' : 'normal'}>
-                      Kartenzahlung
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-
-            <Paper
-              variant="outlined"
-              sx={{
-                borderRadius: theme.shape.borderRadius,
-                borderColor:
-                  paymentMethod === 'bank' ? theme.palette.primary.main : theme.palette.divider,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 1,
-                },
-              }}
-            >
-              <FormControlLabel
-                value="bank"
-                control={
-                  <MuiRadio
-                    sx={{
-                      color: theme.palette.primary.main,
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                    <AccountBalanceIcon sx={{ mr: 1.5, color: theme.palette.warning.main }} />
-                    <Typography fontWeight={paymentMethod === 'bank' ? 'medium' : 'normal'}>
-                      Überweisung
-                    </Typography>
-                  </Box>
-                }
-                sx={{ width: '100%', m: 0, p: 1 }}
-              />
-            </Paper>
-          </RadioGroup>
-        </FormControl>
-
-        <Divider sx={{ my: 2 }} />
-
-        {paymentMethod === 'cash' && (
-          <Zoom in={paymentMethod === 'cash'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Bargeld
+        {/* Applied Gift Cards Section */}
+        {hasGiftCardPayment && (
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: 2,
+              bgcolor: theme.palette.success.light + '15',
+              border: `1px solid ${theme.palette.success.light}`,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <CardGiftcardIcon sx={{ mr: 1.5, color: theme.palette.success.main }} />
+              <Typography variant="subtitle1" fontWeight="medium" color="success.main">
+                Angewandte Geschenkkarten
               </Typography>
-
-              <TextField
-                label="Erhaltener Betrag"
-                variant="outlined"
-                fullWidth
-                value={cashReceived}
-                onChange={onCashReceivedChange}
-                type="number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EuroIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
-
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  bgcolor: theme.palette.success.light + '20',
-                  borderRadius: theme.shape.borderRadius,
-                  borderColor: theme.palette.success.light,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight="medium">
-                  Rückgeld:
-                </Typography>
-                <Typography variant="h6" color="success.main" fontWeight="bold">
-                  {change} €
-                </Typography>
-              </Paper>
             </Box>
-          </Zoom>
+
+            <List dense disablePadding>
+              {giftCardVouchers.map(voucher => (
+                <ListItem key={voucher.id} sx={{ px: 1, py: 0.5 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <CardGiftcardIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`Geschenkkarte: ${voucher.id.substring(0, 4)}...${voucher.id.substring(voucher.id.length - 4)}`}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="caption" display="block">
+                          Verwendet: {(voucher.amount || 0).toFixed(2)} €
+                        </Typography>
+                        {voucher.remainingBalance !== undefined && (
+                          <Typography component="span" variant="caption" display="block">
+                            Restguthaben nach Transaktion:{' '}
+                            {(voucher.remainingBalance - (voucher.amount || 0)).toFixed(2)} €
+                          </Typography>
+                        )}
+                      </>
+                    }
+                    primaryTypographyProps={{ variant: 'body2' }}
+                    secondaryTypographyProps={{ component: 'div' }}
+                  />
+                  <Chip
+                    label={`${(voucher.amount || 0).toFixed(2)} €`}
+                    size="small"
+                    color="primary"
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                Gesamtbetrag durch Geschenkkarten:
+              </Typography>
+              <Typography variant="body1" fontWeight="bold" color="primary.main">
+                {giftCardPayment.toFixed(2)} €
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mt: 0.5,
+              }}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                Verbleibender Betrag:
+              </Typography>
+              <Typography
+                variant="body1"
+                fontWeight="bold"
+                color={remainingTotal > 0 ? 'text.primary' : 'success.main'}
+              >
+                {remainingTotal.toFixed(2)} €
+              </Typography>
+            </Box>
+          </Box>
         )}
 
-        {paymentMethod === 'card' && (
-          <Zoom in={paymentMethod === 'card'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Kartenzahlung
-              </Typography>
-
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                Bitte führen Sie die Karte in das Lesegerät ein oder halten Sie sie an das Terminal.
-              </Typography>
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  p: 4,
-                  border: '2px dashed',
-                  borderColor: theme.palette.info.light,
-                  borderRadius: theme.shape.borderRadius,
-                  bgcolor: theme.palette.info.light + '10',
-                }}
+        {/* Payment Method Selection */}
+        {remainingTotal > 0 ? (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Zahlungsmethode für {remainingTotal.toFixed(2)} €
+            </Typography>
+            <FormControl component="fieldset" sx={{ width: '100%', mb: 3 }}>
+              <RadioGroup
+                aria-label="payment-method"
+                name="payment-method"
+                value={paymentMethod}
+                onChange={onPaymentMethodChange}
               >
-                <CreditCardIcon
-                  sx={{ fontSize: 80, color: theme.palette.info.main, opacity: 0.8 }}
-                />
+                <Paper variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+                  <FormControlLabel
+                    value="cash"
+                    control={<MuiRadio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <LocalAtmIcon sx={{ mr: 1 }} />
+                        <Typography variant="body1">Barzahlung</Typography>
+                      </Box>
+                    }
+                    sx={{
+                      m: 0,
+                      p: 2,
+                      width: '100%',
+                      borderBottom:
+                        paymentMethod === 'cash' ? 'none' : `1px solid ${theme.palette.divider}`,
+                    }}
+                  />
+
+                  {paymentMethod === 'cash' && (
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <TextField
+                        fullWidth
+                        label="Erhaltener Betrag"
+                        variant="outlined"
+                        value={cashReceived}
+                        onChange={onCashReceivedChange}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EuroIcon />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{ mt: 2 }}
+                      />
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          mt: 2,
+                        }}
+                      >
+                        <Typography variant="body1">Rückgeld:</Typography>
+                        <Typography variant="h6" color="primary" fontWeight="bold">
+                          {parseFloat(change).toFixed(2)} €
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+
+                <Paper variant="outlined">
+                  <FormControlLabel
+                    value="card"
+                    control={<MuiRadio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <CreditCardIcon sx={{ mr: 1 }} />
+                        <Typography variant="body1">Kartenzahlung</Typography>
+                      </Box>
+                    }
+                    sx={{ m: 0, p: 2, width: '100%' }}
+                  />
+                  {paymentMethod === 'card' && (
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <TextField
+                        fullWidth
+                        label="Kartennummer"
+                        variant="outlined"
+                        placeholder="1234 5678 9012 3456"
+                        inputProps={{ maxLength: 19 }}
+                        value={cardDetails.cardNumber}
+                        onChange={handleCardNumberChange}
+                        error={!!cardErrors.cardNumber}
+                        helperText={cardErrors.cardNumber}
+                        sx={{ mt: 2, mb: 2 }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Karteninhaber"
+                        variant="outlined"
+                        placeholder="Name des Karteninhabers"
+                        value={cardDetails.cardHolderName}
+                        onChange={e => onCardDetailsChange('cardHolderName', e.target.value)}
+                        error={!!cardErrors.cardHolderName}
+                        helperText={cardErrors.cardHolderName}
+                        sx={{ mb: 2 }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                        <TextField
+                          label="Ablaufdatum"
+                          variant="outlined"
+                          placeholder="MM/JJ"
+                          inputProps={{ maxLength: 5 }}
+                          value={cardDetails.expirationDate}
+                          onChange={handleExpirationDateChange}
+                          error={!!cardErrors.expirationDate}
+                          helperText={cardErrors.expirationDate}
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          label="CVC/CVV"
+                          variant="outlined"
+                          placeholder="123"
+                          type="password"
+                          inputProps={{ maxLength: 3 }}
+                          value={cardDetails.cvv}
+                          onChange={e => onCardDetailsChange('cvv', e.target.value)}
+                          error={!!cardErrors.cvv}
+                          helperText={cardErrors.cvv}
+                          sx={{ flex: 1 }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+              </RadioGroup>
+            </FormControl>
+          </>
+        ) : (
+          // If amount is fully covered by gift cards
+          <Box
+            sx={{
+              p: 2,
+              mb: 3,
+              textAlign: 'center',
+              borderRadius: theme.shape.borderRadius,
+              bgcolor: theme.palette.success.light + '20',
+            }}
+          >
+            <CheckCircleIcon color="success" sx={{ fontSize: 48, mb: 1 }} />
+            <Typography variant="h6" gutterBottom color="success.main">
+              Vollständig mit Geschenkkarten bezahlt
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Der gesamte Betrag wurde mit Geschenkkarten abgedeckt. Keine weitere Zahlung
+              erforderlich.
+            </Typography>
+          </Box>
+        )}
+
+        {/* Summary */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 1,
+            borderColor: theme.palette.primary.main,
+            bgcolor: theme.palette.primary.main + '05',
+          }}
+        >
+          <Typography variant="subtitle1" gutterBottom fontWeight="medium">
+            Zahlungszusammenfassung
+          </Typography>
+
+          <Box sx={{ '& > div': { py: 0.5 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body2" color="text.secondary">
+                Zwischensumme ({cartItemsCount} Artikel):
+              </Typography>
+              <Typography variant="body2">
+                {(total + voucherDiscount + giftCardPayment).toFixed(2)} €
+              </Typography>
+            </Box>
+
+            {voucherDiscount > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Rabatt:
+                </Typography>
+                <Typography variant="body2" color="error.main">
+                  -{voucherDiscount.toFixed(2)} €
+                </Typography>
               </Box>
-            </Box>
-          </Zoom>
-        )}
+            )}
 
-        {paymentMethod === 'bank' && (
-          <Zoom in={paymentMethod === 'bank'} style={{ transitionDelay: '100ms' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="primary.main">
-                Überweisung
+            {giftCardPayment > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Geschenkkartenzahlung:
+                </Typography>
+                <Typography variant="body2" color="primary.main">
+                  -{giftCardPayment.toFixed(2)} €
+                </Typography>
+              </Box>
+            )}
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body1" fontWeight="bold">
+                Zu zahlender Betrag:
               </Typography>
-
-              <Typography variant="body1" gutterBottom>
-                Bitte überweisen Sie den Betrag auf folgendes Konto:
+              <Typography variant="body1" fontWeight="bold">
+                {total.toFixed(2)} €
               </Typography>
-
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  bgcolor: theme.palette.warning.light + '10',
-                  borderRadius: theme.shape.borderRadius,
-                  borderColor: theme.palette.warning.light,
-                }}
-              >
-                <Typography variant="body2" gutterBottom>
-                  <strong>Kontoinhaber:</strong> Vendura GmbH
-                </Typography>
-                <Typography variant="body2" gutterBottom>
-                  <strong>IBAN:</strong> DE12 3456 7890 1234 5678 90
-                </Typography>
-                <Typography variant="body2" gutterBottom>
-                  <strong>BIC:</strong> DEUTDEDBXXX
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Verwendungszweck:</strong> Rechnung{' '}
-                  {new Date().toISOString().slice(0, 10)}-{Math.floor(Math.random() * 1000)}
-                </Typography>
-              </Paper>
             </Box>
-          </Zoom>
-        )}
+          </Box>
+        </Paper>
       </DialogContent>
 
       <DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-        <Button onClick={onClose} color="inherit" variant="outlined" startIcon={<CloseIcon />}>
+        <Button
+          onClick={onClose}
+          color="inherit"
+          variant="outlined"
+          startIcon={<CloseIcon />}
+          disabled={loading}
+        >
           Abbrechen
         </Button>
         <Button
-          onClick={onComplete}
+          onClick={handleCompletePayment}
           variant="contained"
           color="primary"
           startIcon={<CheckCircleIcon />}
+          disabled={loading}
           sx={{
             px: 3,
             py: 1,
@@ -363,7 +595,7 @@ const PaymentDialog = ({
             },
           }}
         >
-          Zahlung abschließen
+          {loading ? 'Verarbeitung...' : 'Zahlung abschließen'}
         </Button>
       </DialogActions>
     </Dialog>

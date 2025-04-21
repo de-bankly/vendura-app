@@ -6,6 +6,8 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import './style/global/index.css';
 
@@ -36,9 +38,11 @@ const initializeApp = async () => {
       <ErrorBoundary>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <AuthProvider>
-            <RouterProvider router={router} />
-          </AuthProvider>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <AuthProvider>
+              <RouterProvider router={router} />
+            </AuthProvider>
+          </LocalizationProvider>
         </ThemeProvider>
       </ErrorBoundary>
     </StrictMode>

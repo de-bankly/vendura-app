@@ -16,19 +16,25 @@ import {
   alpha,
   Container,
   Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import { useToast, Chip } from '../components/ui/feedback';
-import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
+import { ProductGrid, ShoppingCart, PaymentDialog, VoucherInputField } from '../components/sales';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { ProductService, CartService, GiftCardService } from '../services';
+import { ProductService, CartService, SaleService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+import TransactionService from '../services/TransactionService';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -77,6 +83,12 @@ const SalesScreen = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    cardHolderName: '',
+    expirationDate: '',
+    cvv: '',
+  });
   const [paymentLoading, setPaymentLoading] = useState(false); // Loading state for payment submission
   const [receiptReady, setReceiptReady] = useState(false);
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
@@ -84,6 +96,8 @@ const SalesScreen = () => {
   const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [giftCardPayment, setGiftCardPayment] = useState(0);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -120,18 +134,72 @@ const SalesScreen = () => {
 
   // --- Memoized Calculations ---
   const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
-  const voucherDiscount = useMemo(
-    () => CartService.calculateVoucherDiscount(appliedVouchers),
-    [appliedVouchers]
-  );
+
+  // Calculate product discount
+  const productDiscount = useMemo(() => CartService.calculateTotalDiscount(cartItems), [cartItems]);
+
+  // Calculate voucher discount
+  const calculateVoucherDiscount = useCallback((subtotal, vouchers) => {
+    if (!vouchers || vouchers.length === 0) return 0;
+
+    // Get discount vouchers
+    const discountVouchers = vouchers.filter(v => v.type === 'DISCOUNT_CARD');
+    if (discountVouchers.length === 0) return 0;
+
+    // For simplicity, we'll just use the first discount voucher
+    // In a real implementation, you might want to stack discounts or use the highest one
+    const discountVoucher = discountVouchers[0];
+    const discountPercentage = parseFloat(discountVoucher.discountPercentage) || 0;
+
+    // Calculate the actual discount amount, ensuring it's a valid number
+    return subtotal * (discountPercentage / 100);
+  }, []);
+
+  // Calculate gift card payment
+  const calculateGiftCardPayment = useCallback((afterDiscountTotal, vouchers) => {
+    if (!vouchers || vouchers.length === 0) return 0;
+
+    // Get gift card vouchers
+    const giftCardVouchers = vouchers.filter(v => v.type === 'GIFT_CARD');
+    if (giftCardVouchers.length === 0) return 0;
+
+    // We now sum up the pre-specified amounts for each gift card
+    let totalGiftCardPayment = 0;
+
+    for (const voucher of giftCardVouchers) {
+      // Only add gift cards with a specified amount
+      const voucherAmount = parseFloat(voucher.amount) || 0;
+      if (voucherAmount > 0) {
+        totalGiftCardPayment += voucherAmount;
+      }
+    }
+
+    // Make sure the total doesn't exceed the amount due
+    return Math.min(totalGiftCardPayment, afterDiscountTotal);
+  }, []);
+
+  useEffect(() => {
+    const calculatedDiscount = calculateVoucherDiscount(subtotal, appliedVouchers);
+    setVoucherDiscount(calculatedDiscount);
+
+    const afterDiscountTotal = subtotal - calculatedDiscount;
+    const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
+    setGiftCardPayment(calculatedGiftCardPayment);
+  }, [subtotal, appliedVouchers, calculateVoucherDiscount, calculateGiftCardPayment]);
+
   const total = useMemo(
-    () => CartService.calculateTotal(subtotal, voucherDiscount),
-    [subtotal, voucherDiscount]
+    () => Math.max(0, subtotal - voucherDiscount - giftCardPayment),
+    [subtotal, voucherDiscount, giftCardPayment]
   );
+
+  // Calculate change for cash payment
   const change = useMemo(() => {
-    const received = parseFloat(cashReceived) || 0;
-    return Math.max(0, received - total).toFixed(2);
-  }, [cashReceived, total]);
+    if (paymentMethod !== 'cash' || !cashReceived) {
+      return 0;
+    }
+    const cashValue = parseFloat(cashReceived);
+    return cashValue > total ? cashValue - total : 0;
+  }, [paymentMethod, cashReceived, total]);
 
   // --- Callback Handlers ---
   const addToCart = useCallback(product => {
@@ -149,6 +217,14 @@ const SalesScreen = () => {
   const clearCart = useCallback(() => {
     setCartItems([]);
     setAppliedVouchers([]);
+    setVoucherDiscount(0);
+    setGiftCardPayment(0);
+    setCardDetails({
+      cardNumber: '',
+      cardHolderName: '',
+      expirationDate: '',
+      cvv: '',
+    });
   }, []);
 
   const handlePaymentModalOpen = useCallback(() => {
@@ -168,35 +244,76 @@ const SalesScreen = () => {
     setCashReceived(event.target.value);
   }, []);
 
+  const handleCardDetailsChange = useCallback((field, value) => {
+    setCardDetails(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
   const handlePaymentComplete = useCallback(async () => {
     setPaymentLoading(true); // Indicate loading
     try {
-      // TODO: Send transaction to backend API
-      const transactionData = {
-        cartItems,
-        subtotal,
-        appliedVouchers,
-        voucherDiscount,
-        total,
-        paymentMethod,
-        cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
-        change: paymentMethod === 'cash' ? change : undefined,
-      };
-      console.log('Submitting Transaction:', transactionData);
-      // Example: await TransactionService.createTransaction(transactionData);
+      // Round the total for payment processing
+      const roundedTotal = Math.round(total * 100) / 100;
 
-      // --- If successful: ---
+      // Prepare transaction data for the backend
+      const transactionData = {
+        items: cartItems.map(item => {
+          const itemData = {
+            id: item.id,
+            quantity: item.quantity,
+            price: Math.round(item.price * 100) / 100,
+          };
+
+          // Add discount information if product has a discount
+          if (item.hasDiscount && item.discountAmount) {
+            itemData.discountEuro = Math.round(item.discountAmount * 100) / 100;
+          }
+
+          return itemData;
+        }),
+        subtotal: Math.round(subtotal * 100) / 100,
+        totalProductDiscount: Math.round(productDiscount * 100) / 100,
+        giftCards: appliedVouchers.filter(v => v.type === 'GIFT_CARD'),
+        discountCards: appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD'),
+        voucherDiscount: Math.round(voucherDiscount * 100) / 100,
+        giftCardPayment: Math.round(giftCardPayment * 100) / 100,
+        total: roundedTotal,
+        paymentMethod,
+        cashReceived:
+          paymentMethod === 'cash' ? Math.round(parseFloat(cashReceived) * 100) / 100 : undefined,
+        change: paymentMethod === 'cash' ? Math.round(change * 100) / 100 : undefined,
+        // If using card payment, we would include card details here
+        cardDetails:
+          paymentMethod === 'card'
+            ? {
+                cardNumber: cardDetails.cardNumber,
+                cardHolderName: cardDetails.cardHolderName,
+                expirationDate: cardDetails.expirationDate,
+                cvv: cardDetails.cvv,
+              }
+            : undefined,
+      };
+
+      // Call the SaleService to process the sale
+      const result = await SaleService.createSale(transactionData);
+      console.log('Transaction complete:', result);
+
+      // If successful, update UI and show success message
       setPaymentModalOpen(false);
       setReceiptReady(true);
       setSuccessSnackbarOpen(true);
-      // Don't clear cart automatically, let user press "New Transaction"
+
+      // Store the transaction result for receipt printing or future reference
+      // This could be used to display a receipt or order confirmation
     } catch (error) {
       console.error('Payment failed:', error);
       showToast({
         severity: 'error',
         message: getUserFriendlyErrorMessage(error, 'Zahlung fehlgeschlagen'),
       });
-      // Keep payment modal open on error?
+      // Keep the payment dialog open so the user can try again
     } finally {
       setPaymentLoading(false); // Reset loading state
     }
@@ -205,11 +322,14 @@ const SalesScreen = () => {
     subtotal,
     appliedVouchers,
     voucherDiscount,
+    giftCardPayment,
     total,
     paymentMethod,
     cashReceived,
     change,
+    cardDetails,
     showToast,
+    productDiscount,
   ]);
 
   const handlePrintReceipt = useCallback(() => {
@@ -256,27 +376,12 @@ const SalesScreen = () => {
     setPurchaseVoucherDialogOpen(false);
   }, []);
 
-  const handleVoucherRedeemed = useCallback(
-    async voucherId => {
-      try {
-        const giftCard = await GiftCardService.getGiftCardById(voucherId);
-        const giftCardBalance = await GiftCardService.getGiftCardBalance(voucherId);
-        const voucher = {
-          ...giftCard,
-          balance: giftCardBalance.remainingBalance,
-        };
-        setAppliedVouchers(prev => [...prev, voucher]);
-        showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
-        handleRedeemVoucherDialogClose();
-      } catch (err) {
-        console.error('Error redeeming gift card:', err);
-        showToast({
-          severity: 'error',
-          message: getUserFriendlyErrorMessage(err, 'Fehler beim Einlösen des Gutscheins'),
-        });
-      }
+  const handleVoucherApplied = useCallback(
+    voucherData => {
+      setAppliedVouchers(prev => [...prev, voucherData]);
+      showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
     },
-    [showToast, handleRedeemVoucherDialogClose]
+    [showToast]
   );
 
   const handleRemoveVoucher = useCallback(voucherId => {
@@ -354,7 +459,10 @@ const SalesScreen = () => {
                       variant="h4"
                       sx={{ fontWeight: 700, mb: 1, wordBreak: 'break-word' }}
                     >
-                      {total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                      {(parseFloat(total) || 0).toLocaleString('de-DE', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {cartItems.length} Artikel
@@ -498,6 +606,7 @@ const SalesScreen = () => {
                       subtotal={subtotal}
                       voucherDiscount={voucherDiscount}
                       total={total}
+                      productDiscount={productDiscount}
                       receiptReady={receiptReady}
                       onAddItem={addToCart}
                       onRemoveItem={removeFromCart}
@@ -527,10 +636,14 @@ const SalesScreen = () => {
         total={total}
         cartItemsCount={cartItems.length}
         voucherDiscount={voucherDiscount}
+        appliedVouchers={appliedVouchers}
+        giftCardPayment={giftCardPayment}
         paymentMethod={paymentMethod}
         onPaymentMethodChange={handlePaymentMethodChange}
         cashReceived={cashReceived}
         onCashReceivedChange={handleCashReceivedChange}
+        cardDetails={cardDetails}
+        onCardDetailsChange={handleCardDetailsChange}
         change={change}
         TransitionComponent={Transition}
         loading={paymentLoading} // Pass loading state
@@ -556,7 +669,7 @@ const SalesScreen = () => {
       <RedeemVoucherDialog
         open={redeemVoucherDialogOpen}
         onClose={handleRedeemVoucherDialogClose}
-        onVoucherRedeemed={handleVoucherRedeemed}
+        onVoucherRedeemed={handleVoucherApplied}
         cartTotal={total}
       />
 
@@ -570,6 +683,26 @@ const SalesScreen = () => {
         onClose={handlePurchaseVoucherDialogClose}
         onAddToCart={addToCart}
       />
+
+      {/* Redeem Voucher Dialog */}
+      <Dialog
+        open={redeemVoucherDialogOpen}
+        onClose={handleRedeemVoucherDialogClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Gutschein einlösen</DialogTitle>
+        <DialogContent dividers>
+          <VoucherInputField
+            onVoucherApplied={handleVoucherApplied}
+            appliedVouchers={appliedVouchers}
+            currentTotal={subtotal - voucherDiscount}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleRedeemVoucherDialogClose}>Schließen</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

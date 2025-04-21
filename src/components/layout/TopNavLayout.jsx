@@ -14,6 +14,7 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import DiscountIcon from '@mui/icons-material/Discount';
 import {
   AppBar,
   Box,
@@ -72,6 +73,7 @@ const TopNavLayout = () => {
       { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
       { text: 'Inventar', path: '/inventory', icon: <InventoryIcon /> },
+      { text: 'Aktionen', path: '/promotions', icon: <DiscountIcon /> },
       { text: 'Gutscheine', path: '/giftcards', icon: <CardGiftcardIcon /> },
       { text: 'Angebote', path: '/vouchers', icon: <LocalOfferIcon /> },
     ],
@@ -81,6 +83,7 @@ const TopNavLayout = () => {
           { text: 'Rollen', path: '/admin/roles', icon: <VpnKeyIcon /> },
           { text: 'Produkte', path: '/admin/products', icon: <ViewModuleIcon /> },
           { text: 'Gutscheine', path: '/admin/giftcards', icon: <CardGiftcardIcon /> },
+          { text: 'Aktionen', path: '/admin/promotions', icon: <DiscountIcon /> },
         ]
       : [],
   };

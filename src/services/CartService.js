@@ -52,7 +52,51 @@ class CartService {
    * @returns {number} Subtotal
    */
   calculateSubtotal(cartItems) {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return cartItems.reduce((sum, item) => {
+      // Check if item has a discount, use discounted price if available
+      let price;
+      if (item.hasDiscount && item.discountedPrice !== undefined) {
+        price = parseFloat(item.discountedPrice) || 0;
+      } else {
+        price = parseFloat(item.price) || 0;
+      }
+
+      const quantity = parseInt(item.quantity) || 0;
+      return sum + price * quantity;
+    }, 0);
+  }
+
+  /**
+   * Get the effective price for an item (considering discounts)
+   * @param {Object} item Cart item
+   * @returns {number} Effective price
+   */
+  getItemEffectivePrice(item) {
+    if (item.hasDiscount && item.discountedPrice !== undefined) {
+      return parseFloat(item.discountedPrice) || 0;
+    }
+    return parseFloat(item.price) || 0;
+  }
+
+  /**
+   * Calculate total discount amount for cart items
+   * @param {Array} cartItems Cart items
+   * @returns {number} Total discount amount
+   */
+  calculateTotalDiscount(cartItems) {
+    return cartItems.reduce((sum, item) => {
+      if (
+        item.hasDiscount &&
+        item.originalPrice !== undefined &&
+        item.discountedPrice !== undefined
+      ) {
+        const discountPerItem =
+          (parseFloat(item.originalPrice) || 0) - (parseFloat(item.discountedPrice) || 0);
+        const quantity = parseInt(item.quantity) || 0;
+        return sum + discountPerItem * quantity;
+      }
+      return sum;
+    }, 0);
   }
 
   /**
@@ -63,7 +107,7 @@ class CartService {
   calculateVoucherDiscount(vouchers) {
     return vouchers.reduce((sum, voucher) => {
       // Use the redeemed amount (value) for the discount
-      const discountAmount = voucher.value || 0;
+      const discountAmount = parseFloat(voucher.value) || 0;
       return sum + discountAmount;
     }, 0);
   }
@@ -76,6 +120,27 @@ class CartService {
    */
   calculateTotal(subtotal, voucherDiscount) {
     return Math.max(0, subtotal - voucherDiscount);
+  }
+
+  /**
+   * Format cart items for sale submission (adds necessary discount info)
+   * @param {Array} cartItems Cart items
+   * @returns {Array} Formatted cart items for sale
+   */
+  formatCartItemsForSale(cartItems) {
+    return cartItems.map(item => {
+      const formattedItem = {
+        id: item.id,
+        quantity: item.quantity,
+      };
+
+      // Add discount information if available
+      if (item.hasDiscount && item.discountAmount) {
+        formattedItem.discountEuro = item.discountAmount;
+      }
+
+      return formattedItem;
+    });
   }
 }
 
