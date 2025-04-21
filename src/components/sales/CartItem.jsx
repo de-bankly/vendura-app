@@ -1,6 +1,7 @@
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RemoveIcon from '@mui/icons-material/Remove';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { Box, Paper, Typography, alpha, Avatar, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
@@ -13,6 +14,15 @@ import { formatCurrency } from '../../utils/formatters';
 
 const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
   const theme = useTheme();
+
+  // Determine if we should show discount information
+  const hasDiscount = item.hasDiscount && item.discountPercentage > 0;
+
+  // Calculate the effective price (with discount if applicable)
+  const effectivePrice = hasDiscount ? item.discountedPrice : item.price;
+
+  // Calculate total for this item
+  const itemTotal = effectivePrice * item.quantity;
 
   return (
     <motion.div initial="hidden" animate="visible" exit="exit" variants={listItemVariants} layout>
@@ -32,13 +42,15 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
         <Box sx={{ p: 2, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <Avatar
             sx={{
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              color: theme.palette.primary.dark,
+              bgcolor: hasDiscount
+                ? alpha(theme.palette.error.main, 0.1)
+                : alpha(theme.palette.primary.main, 0.1),
+              color: hasDiscount ? theme.palette.error.dark : theme.palette.primary.dark,
               width: 40,
               height: 40,
             }}
           >
-            {item.name.charAt(0)}
+            {hasDiscount ? <LocalOfferIcon fontSize="small" /> : item.name.charAt(0)}
           </Avatar>
 
           <Box sx={{ flexGrow: 1 }}>
@@ -46,8 +58,12 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
               <Typography variant="subtitle1" fontWeight="medium">
                 {item.name}
               </Typography>
-              <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
-                {formatCurrency(item.price * item.quantity)}
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                color={hasDiscount ? 'error.main' : 'primary.main'}
+              >
+                {formatCurrency(itemTotal)}
               </Typography>
             </Box>
 
@@ -58,15 +74,49 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
                 justifyContent: 'space-between',
               }}
             >
-              <Chip
-                size="small"
-                label={`${formatCurrency(item.price)} × ${item.quantity}`}
-                sx={{
-                  fontSize: theme.typography.pxToRem(12),
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.dark,
-                }}
-              />
+              {hasDiscount ? (
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      textDecoration: 'line-through',
+                      color: 'text.secondary',
+                      mr: 1,
+                    }}
+                  >
+                    {formatCurrency(item.originalPrice)}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={`${formatCurrency(effectivePrice)} × ${item.quantity}`}
+                    sx={{
+                      fontSize: theme.typography.pxToRem(12),
+                      bgcolor: alpha(theme.palette.error.main, 0.1),
+                      color: theme.palette.error.dark,
+                    }}
+                  />
+                  <Chip
+                    size="small"
+                    label={`${item.discountPercentage}% Rabatt`}
+                    sx={{
+                      ml: 1,
+                      fontSize: theme.typography.pxToRem(12),
+                      bgcolor: alpha(theme.palette.error.main, 0.1),
+                      color: theme.palette.error.dark,
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Chip
+                  size="small"
+                  label={`${formatCurrency(item.price)} × ${item.quantity}`}
+                  sx={{
+                    fontSize: theme.typography.pxToRem(12),
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.dark,
+                  }}
+                />
+              )}
 
               <Box sx={{ display: 'flex' }}>
                 <IconButton
@@ -109,6 +159,10 @@ CartItem.propTypes = {
     name: PropTypes.string.isRequired,
     price: PropTypes.number.isRequired,
     quantity: PropTypes.number.isRequired,
+    hasDiscount: PropTypes.bool,
+    originalPrice: PropTypes.number,
+    discountedPrice: PropTypes.number,
+    discountPercentage: PropTypes.number,
   }).isRequired,
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,

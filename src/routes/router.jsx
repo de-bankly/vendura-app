@@ -21,6 +21,7 @@ const InventoryPage = lazy(() => import('../pages/InventoryPage'));
 const InventoryManagementPage = lazy(() => import('../pages/InventoryManagementPage'));
 const ProductManagementPage = lazy(() => import('../pages/admin/ProductManagementPage'));
 const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagementPage'));
+const PromotionManagementScreen = lazy(() => import('../pages/PromotionManagementScreen'));
 
 // Error handling
 const RouterErrorBoundary = lazy(() =>
@@ -68,6 +69,14 @@ const reactBrowserRouter = createBrowserRouter([
         ),
       },
       {
+        path: 'promotions',
+        element: (
+          <ProtectedRoute>
+            <PromotionManagementScreen />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'profile',
         element: (
           <ProtectedRoute>
@@ -107,6 +116,14 @@ const reactBrowserRouter = createBrowserRouter([
             element: (
               <ProtectedRoute adminOnly>
                 <GiftCardManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'promotions',
+            element: (
+              <ProtectedRoute adminOnly>
+                <PromotionManagementScreen />
               </ProtectedRoute>
             ),
           },

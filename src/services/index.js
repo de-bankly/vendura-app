@@ -7,6 +7,7 @@ import GiftCardPaymentService from './GiftCardPaymentService';
 import InventoryManagementService from './InventoryManagementService';
 import ProductCategoryService from './ProductCategoryService';
 import ProductService from './ProductService';
+import PromotionService from './PromotionService';
 import RoleService from './RoleService';
 import SaleService from './SaleService';
 import SupplierOrderService from './SupplierOrderService';
@@ -24,6 +25,7 @@ export {
   InventoryManagementService,
   ProductCategoryService,
   ProductService,
+  PromotionService,
   RoleService,
   SaleService,
   SupplierOrderService,

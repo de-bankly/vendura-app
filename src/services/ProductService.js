@@ -1,6 +1,7 @@
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error utility
 
 import apiClient from './ApiConfig';
+import PromotionService from './PromotionService';
 
 /**
  * Service for managing product data
@@ -10,9 +11,14 @@ class ProductService {
    * Get all products with pagination
    * @param {Object} pageable - Pagination parameters
    * @param {Boolean} calculateStock - Whether to calculate current stock
+   * @param {Boolean} includeDiscounts - Whether to include discount information
    * @returns {Promise} Promise resolving to paginated product data
    */
-  async getProducts(pageable = { page: 0, size: 10 }, calculateStock = true) {
+  async getProducts(
+    pageable = { page: 0, size: 10 },
+    calculateStock = true,
+    includeDiscounts = true
+  ) {
     try {
       const response = await apiClient.get('/v1/product', {
         params: {
@@ -23,9 +29,43 @@ class ProductService {
 
       // Transform the data to match the frontend format
       if (response.data && response.data.content) {
-        response.data.content = response.data.content.map(product =>
+        // Transform products first without discounts
+        const transformedProducts = response.data.content.map(product =>
           this.transformProductData(product)
         );
+
+        // If includeDiscounts is true, fetch and apply promotions
+        if (includeDiscounts) {
+          // Get all promotions
+          const promotionsResponse = await PromotionService.getPromotions({ page: 0, size: 1000 });
+          const promotions = promotionsResponse.content || [];
+
+          // Filter active promotions
+          const activePromotions = promotions.filter(promo => promo.active);
+
+          // Apply promotions to products
+          response.data.content = await Promise.all(
+            transformedProducts.map(async product => {
+              // Find any promotion for this product
+              const productPromotion = activePromotions.find(p => p.productId === product.id);
+              if (productPromotion) {
+                const discountInfo = PromotionService.calculateDiscount(product, productPromotion);
+                return {
+                  ...product,
+                  hasDiscount: discountInfo.hasDiscount,
+                  originalPrice: discountInfo.originalPrice,
+                  discountAmount: discountInfo.discountAmount,
+                  discountedPrice: discountInfo.discountedPrice,
+                  discountPercentage: discountInfo.discountPercentage,
+                  promotion: productPromotion,
+                };
+              }
+              return product;
+            })
+          );
+        } else {
+          response.data.content = transformedProducts;
+        }
       }
 
       return response.data;
@@ -39,14 +79,49 @@ class ProductService {
    * Get a specific product by ID
    * @param {String} id - The product ID
    * @param {Boolean} calculateStock - Whether to calculate current stock
+   * @param {Boolean} includeDiscounts - Whether to include discount information
    * @returns {Promise} Promise resolving to product data
    */
-  async getProductById(id, calculateStock = false) {
+  async getProductById(id, calculateStock = false, includeDiscounts = true) {
     try {
       const response = await apiClient.get(`/v1/product/${id}`, {
         params: { calculateStock },
       });
-      return this.transformProductData(response.data);
+
+      const transformedProduct = this.transformProductData(response.data);
+
+      // If includeDiscounts is true, fetch and apply promotions
+      if (includeDiscounts) {
+        try {
+          const promotions = await PromotionService.getActivePromotionsForProduct(id);
+          if (promotions && promotions.length > 0) {
+            // Get the promotion with the highest discount (same logic as backend)
+            const highestPromotion = promotions.reduce(
+              (max, p) => (p.discount > max.discount ? p : max),
+              promotions[0]
+            );
+
+            const discountInfo = PromotionService.calculateDiscount(
+              transformedProduct,
+              highestPromotion
+            );
+            return {
+              ...transformedProduct,
+              hasDiscount: discountInfo.hasDiscount,
+              originalPrice: discountInfo.originalPrice,
+              discountAmount: discountInfo.discountAmount,
+              discountedPrice: discountInfo.discountedPrice,
+              discountPercentage: discountInfo.discountPercentage,
+              promotion: highestPromotion,
+            };
+          }
+        } catch (promotionError) {
+          console.error('Error fetching promotions for product:', promotionError);
+          // Continue with the product without discount information
+        }
+      }
+
+      return transformedProduct;
     } catch (error) {
       console.error(`Error fetching product with ID ${id}:`, error.response || error.message);
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch product details'));
@@ -204,11 +279,13 @@ class ProductService {
 
   /**
    * Get products grouped by category
+   * @param {Object} pageable - Pagination parameters
+   * @param {Boolean} includeDiscounts - Whether to include discount information
    * @returns {Promise} Promise resolving to products grouped by category
    */
-  async getProductsByCategory(pageable = { page: 0, size: 100 }) {
+  async getProductsByCategory(pageable = { page: 0, size: 100 }, includeDiscounts = true) {
     try {
-      const response = await this.getProducts(pageable);
+      const response = await this.getProducts(pageable, true, includeDiscounts);
       const products = response.content || []; // Ensure products is an array
       return this.groupByCategory(products);
     } catch (error) {

@@ -135,6 +135,9 @@ const SalesScreen = () => {
   // --- Memoized Calculations ---
   const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
 
+  // Calculate product discount
+  const productDiscount = useMemo(() => CartService.calculateTotalDiscount(cartItems), [cartItems]);
+
   // Calculate voucher discount
   const calculateVoucherDiscount = useCallback((subtotal, vouchers) => {
     if (!vouchers || vouchers.length === 0) return 0;
@@ -256,12 +259,22 @@ const SalesScreen = () => {
 
       // Prepare transaction data for the backend
       const transactionData = {
-        items: cartItems.map(item => ({
-          ...item,
-          price: Math.round(item.price * 100) / 100,
-          discount: item.discount ? Math.round(item.discount * 100) / 100 : 0,
-        })),
+        items: cartItems.map(item => {
+          const itemData = {
+            id: item.id,
+            quantity: item.quantity,
+            price: Math.round(item.price * 100) / 100,
+          };
+
+          // Add discount information if product has a discount
+          if (item.hasDiscount && item.discountAmount) {
+            itemData.discountEuro = Math.round(item.discountAmount * 100) / 100;
+          }
+
+          return itemData;
+        }),
         subtotal: Math.round(subtotal * 100) / 100,
+        totalProductDiscount: Math.round(productDiscount * 100) / 100,
         giftCards: appliedVouchers.filter(v => v.type === 'GIFT_CARD'),
         discountCards: appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD'),
         voucherDiscount: Math.round(voucherDiscount * 100) / 100,
@@ -316,6 +329,7 @@ const SalesScreen = () => {
     change,
     cardDetails,
     showToast,
+    productDiscount,
   ]);
 
   const handlePrintReceipt = useCallback(() => {
@@ -592,6 +606,7 @@ const SalesScreen = () => {
                       subtotal={subtotal}
                       voucherDiscount={voucherDiscount}
                       total={total}
+                      productDiscount={productDiscount}
                       receiptReady={receiptReady}
                       onAddItem={addToCart}
                       onRemoveItem={removeFromCart}

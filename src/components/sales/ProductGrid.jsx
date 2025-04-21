@@ -21,6 +21,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 // Import local components
 import { IconButton } from '../ui/buttons';
 import Chip from '../ui/feedback/Chip';
+import ProductCard from './ProductCard';
 
 /**
  * ProductGrid component for displaying products by category
@@ -190,96 +191,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
           <Grid container spacing={2}>
             {filteredProducts.map(product => (
               <Grid item xs={6} sm={4} md={3} lg={2} key={product.id}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    borderRadius: theme.shape.borderRadius, // Use theme token
-                    transition: theme.transitions.create([
-                      'transform',
-                      'box-shadow',
-                      'border-color',
-                    ]),
-                    border: `1px solid ${theme.palette.divider}`,
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[3],
-                      borderColor: theme.palette.primary.main,
-                      '& .add-to-cart': {
-                        opacity: 1,
-                      },
-                    },
-                  }}
-                >
-                  <ButtonBase
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      textAlign: 'left',
-                      p: 1.5, // Add padding here instead of inner Box
-                    }}
-                    onClick={() => onProductSelect(product)}
-                    aria-label={`Add ${product.name} to cart`}
-                  >
-                    <Box sx={{ mb: 1, width: '100%' }}>
-                      <Typography variant="subtitle2" component="h3" noWrap>
-                        {product.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {product.category?.name || 'Unkategorisiert'}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        mt: 'auto', // Push to bottom
-                        width: '100%',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-end',
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight="bold" color="primary.main">
-                        {(product.price ?? 0).toLocaleString('de-DE', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        })}
-                      </Typography>
-
-                      <MuiTooltip title="Zum Warenkorb hinzufügen" placement="top">
-                        {/* Use local enhanced IconButton */}
-                        <IconButton
-                          className="add-to-cart"
-                          color="primary"
-                          size="small"
-                          sx={{
-                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                            opacity: { xs: 1, md: 0.7 }, // Show on mobile, fade on desktop
-                            transition: theme.transitions.create(['opacity', 'background-color']),
-                            width: 28,
-                            height: 28,
-                            minWidth: 28, // Keep specific size
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.primary.main, 0.2),
-                            },
-                          }}
-                          onClick={e => {
-                            e.stopPropagation();
-                            onProductSelect(product);
-                          }}
-                          aria-label={`Add ${product.name} to cart`}
-                        >
-                          <AddShoppingCartIcon sx={{ fontSize: theme.typography.pxToRem(16) }} />
-                        </IconButton>
-                      </MuiTooltip>
-                    </Box>
-                  </ButtonBase>
-                </Paper>
+                <ProductCard product={product} onAddToCart={() => onProductSelect(product)} />
               </Grid>
             ))}
           </Grid>

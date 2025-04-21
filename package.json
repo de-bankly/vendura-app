@@ -41,7 +41,7 @@
     "@mui/material": "^6.4.5",
     "@mui/x-date-pickers": "^7.28.3",
     "axios": "^1.8.4",
-    "date-fns": "^4.1.0",
+    "date-fns": "^2.30.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.4.10",
     "react": "^19.0.0",
