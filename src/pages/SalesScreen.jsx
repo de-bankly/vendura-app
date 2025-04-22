@@ -501,10 +501,6 @@ const SalesScreen = () => {
     [showToast]
   );
 
-  const handleRemoveVoucher = useCallback(voucherId => {
-    setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
-  }, []);
-
   // Deposit handlers
   const handleRedeemDepositDialogOpen = useCallback(() => {
     setRedeemDepositDialogOpen(true);
@@ -837,7 +833,6 @@ const SalesScreen = () => {
                     onPurchaseVoucher={handlePurchaseVoucherDialog}
                   />
                 </Paper>
-                </motion.div>
               </Grid>
             </Grid>
           )}
