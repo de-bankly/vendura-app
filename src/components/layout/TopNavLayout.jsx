@@ -5,7 +5,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -72,10 +72,8 @@ const TopNavLayout = () => {
     main: [
       { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
+      { text: 'Pfandautomat', path: '/deposit', icon: <RecyclingIcon /> },
       { text: 'Inventar', path: '/inventory', icon: <InventoryIcon /> },
-      { text: 'Aktionen', path: '/promotions', icon: <DiscountIcon /> },
-      { text: 'Gutscheine', path: '/giftcards', icon: <CardGiftcardIcon /> },
-      { text: 'Angebote', path: '/vouchers', icon: <LocalOfferIcon /> },
     ],
     admin: isAdmin
       ? [

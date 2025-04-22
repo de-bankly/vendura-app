@@ -10,3 +10,6 @@ export { default as PaymentDialog } from './PaymentDialog';
 export { default as VoucherInputField } from './VoucherInputField';
 export { default as ProductGrid } from './ProductGrid';
 export { default as ProductCard } from './ProductCard';
+export { default as DepositActionButtons } from './DepositActionButtons';
+export { default as CategoryFilter } from './CategoryFilter';
+export { default as SearchBar } from './SearchBar';

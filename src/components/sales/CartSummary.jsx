@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
 
-const CartSummary = ({ subtotal, voucherDiscount, total, productDiscount = 0 }) => {
+const CartSummary = ({ subtotal, voucherDiscount, depositCredit, total, productDiscount = 0 }) => {
   const theme = useTheme();
 
   // Calculate the original total before any discounts
@@ -51,6 +51,17 @@ const CartSummary = ({ subtotal, voucherDiscount, total, productDiscount = 0 }) 
             </Typography>
           </Box>
         )}
+
+        {depositCredit > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="body1" color="error.main">
+              Pfand-Guthaben:
+            </Typography>
+            <Typography variant="body1" color="error.main" fontWeight="medium">
+              -{formatCurrency(depositCredit)}
+            </Typography>
+          </Box>
+        )}
       </Stack>
 
       {/* Total */}
@@ -79,8 +90,13 @@ const CartSummary = ({ subtotal, voucherDiscount, total, productDiscount = 0 }) 
 CartSummary.propTypes = {
   subtotal: PropTypes.number.isRequired,
   voucherDiscount: PropTypes.number.isRequired,
+  depositCredit: PropTypes.number,
   total: PropTypes.number.isRequired,
   productDiscount: PropTypes.number,
+};
+
+CartSummary.defaultProps = {
+  depositCredit: 0,
 };
 
 export default CartSummary;

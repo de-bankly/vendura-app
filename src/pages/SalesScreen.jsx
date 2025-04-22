@@ -16,23 +16,19 @@ import {
   alpha,
   Container,
   Card,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import { useToast, Chip } from '../components/ui/feedback';
-import { ProductGrid, ShoppingCart, PaymentDialog, VoucherInputField } from '../components/sales';
+import { ProductGrid, ShoppingCart, PaymentDialog } from '../components/sales';
 import {
   RedeemVoucherDialog,
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { ProductService, CartService, SaleService } from '../services';
+import { RedeemDepositDialog } from '../components/deposit';
+import { ProductService, CartService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
 
@@ -95,9 +91,11 @@ const SalesScreen = () => {
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
   const [appliedVouchers, setAppliedVouchers] = useState([]);
+  const [appliedDeposits, setAppliedDeposits] = useState([]);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
-  const [giftCardPayment, setGiftCardPayment] = useState(0);
+  const [depositCredit, setDepositCredit] = useState(0);
+  const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -108,7 +106,8 @@ const SalesScreen = () => {
         setError(null); // Clear previous errors
         const productData = await ProductService.getProducts({ page: 0, size: 100 }); // Consider pagination/infinite load
         if (isMounted) {
-          const products = productData.content || [];
+          // Filter products to only include those with stock quantity > 0
+          const products = (productData.content || []).filter(product => product.stockQuantity > 0);
           setProducts(products);
           const groupedProducts = ProductService.groupByCategory(products);
           setProductsByCategory(groupedProducts);
@@ -133,7 +132,11 @@ const SalesScreen = () => {
   }, []);
 
   // --- Memoized Calculations ---
-  const subtotal = useMemo(() => CartService.calculateSubtotal(cartItems), [cartItems]);
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+  }, [cartItems]);
 
   // Calculate product discount
   const productDiscount = useMemo(() => CartService.calculateTotalDiscount(cartItems), [cartItems]);
@@ -184,13 +187,13 @@ const SalesScreen = () => {
 
     const afterDiscountTotal = subtotal - calculatedDiscount;
     const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
-    setGiftCardPayment(calculatedGiftCardPayment);
+    setDepositCredit(calculatedGiftCardPayment);
   }, [subtotal, appliedVouchers, calculateVoucherDiscount, calculateGiftCardPayment]);
 
-  const total = useMemo(
-    () => Math.max(0, subtotal - voucherDiscount - giftCardPayment),
-    [subtotal, voucherDiscount, giftCardPayment]
-  );
+  const total = useMemo(() => {
+    let calculatedTotal = subtotal - voucherDiscount - depositCredit;
+    return calculatedTotal > 0 ? calculatedTotal : 0;
+  }, [subtotal, voucherDiscount, depositCredit]);
 
   // Calculate change for cash payment
   const change = useMemo(() => {
@@ -217,8 +220,9 @@ const SalesScreen = () => {
   const clearCart = useCallback(() => {
     setCartItems([]);
     setAppliedVouchers([]);
+    setAppliedDeposits([]);
     setVoucherDiscount(0);
-    setGiftCardPayment(0);
+    setDepositCredit(0);
     setCardDetails({
       cardNumber: '',
       cardHolderName: '',
@@ -251,7 +255,7 @@ const SalesScreen = () => {
     }));
   }, []);
 
-  const handlePaymentComplete = useCallback(async () => {
+  const handlePaymentSubmit = useCallback(async () => {
     setPaymentLoading(true); // Indicate loading
     try {
       // Round the total for payment processing
@@ -259,77 +263,68 @@ const SalesScreen = () => {
 
       // Prepare transaction data for the backend
       const transactionData = {
-        items: cartItems.map(item => {
-          const itemData = {
-            id: item.id,
-            quantity: item.quantity,
-            price: Math.round(item.price * 100) / 100,
-          };
-
-          // Add discount information if product has a discount
-          if (item.hasDiscount && item.discountAmount) {
-            itemData.discountEuro = Math.round(item.discountAmount * 100) / 100;
-          }
-
-          return itemData;
-        }),
-        subtotal: Math.round(subtotal * 100) / 100,
-        totalProductDiscount: Math.round(productDiscount * 100) / 100,
-        giftCards: appliedVouchers.filter(v => v.type === 'GIFT_CARD'),
-        discountCards: appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD'),
-        voucherDiscount: Math.round(voucherDiscount * 100) / 100,
-        giftCardPayment: Math.round(giftCardPayment * 100) / 100,
+        cartItems: cartItems.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: Math.round(item.price * 100) / 100,
+          discount: item.discount || 0,
+        })),
+        paymentMethod: paymentMethod,
         total: roundedTotal,
-        paymentMethod,
-        cashReceived:
-          paymentMethod === 'cash' ? Math.round(parseFloat(cashReceived) * 100) / 100 : undefined,
-        change: paymentMethod === 'cash' ? Math.round(change * 100) / 100 : undefined,
-        // If using card payment, we would include card details here
+        subtotal: Math.round(subtotal * 100) / 100,
+        appliedVouchers: appliedVouchers,
+        voucherDiscount: Math.round(voucherDiscount * 100) / 100,
+        depositReceipts: appliedDeposits,
+        depositCredit: Math.round(depositCredit * 100) / 100,
+        // Include additional payment details based on payment method
+        cashReceived: paymentMethod === 'cash' ? parseFloat(cashReceived) : 0,
+        change: paymentMethod === 'cash' ? parseFloat(cashReceived) - roundedTotal : 0,
         cardDetails:
           paymentMethod === 'card'
             ? {
-                cardNumber: cardDetails.cardNumber,
-                cardHolderName: cardDetails.cardHolderName,
-                expirationDate: cardDetails.expirationDate,
-                cvv: cardDetails.cvv,
+                ...cardDetails,
+                cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
               }
-            : undefined,
+            : null,
       };
 
-      // Call the SaleService to process the sale
-      const result = await SaleService.createSale(transactionData);
-      console.log('Transaction complete:', result);
+      // Submit transaction to backend
+      // Backend will handle deposit receipt redemption as part of the transaction
+      const response = await TransactionService.createSaleTransaction(transactionData);
 
-      // If successful, update UI and show success message
-      setPaymentModalOpen(false);
-      setReceiptReady(true);
-      setSuccessSnackbarOpen(true);
-
-      // Store the transaction result for receipt printing or future reference
-      // This could be used to display a receipt or order confirmation
-    } catch (error) {
-      console.error('Payment failed:', error);
+      // Show success message
       showToast({
-        severity: 'error',
-        message: getUserFriendlyErrorMessage(error, 'Zahlung fehlgeschlagen'),
+        message: 'Zahlung erfolgreich',
+        severity: 'success',
       });
-      // Keep the payment dialog open so the user can try again
+
+      // Update UI to show receipt
+      setReceiptReady(true);
+      setPaymentModalOpen(false);
+
+      // Set success snackbar to open
+      setSuccessSnackbarOpen(true);
+    } catch (error) {
+      console.error('Payment error:', error);
+      showToast({
+        message: getUserFriendlyErrorMessage(error, 'Zahlungsfehler'),
+        severity: 'error',
+      });
     } finally {
-      setPaymentLoading(false); // Reset loading state
+      setPaymentLoading(false);
     }
   }, [
     cartItems,
-    subtotal,
-    appliedVouchers,
-    voucherDiscount,
-    giftCardPayment,
     total,
+    subtotal,
     paymentMethod,
     cashReceived,
-    change,
     cardDetails,
     showToast,
-    productDiscount,
+    appliedVouchers,
+    voucherDiscount,
+    appliedDeposits,
+    depositCredit,
   ]);
 
   const handlePrintReceipt = useCallback(() => {
@@ -387,6 +382,50 @@ const SalesScreen = () => {
   const handleRemoveVoucher = useCallback(voucherId => {
     setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
   }, []);
+
+  // Deposit handlers
+  const handleRedeemDepositDialogOpen = useCallback(() => {
+    setRedeemDepositDialogOpen(true);
+  }, []);
+
+  const handleRedeemDepositDialogClose = useCallback(() => {
+    setRedeemDepositDialogOpen(false);
+  }, []);
+
+  const handleDepositRedeemed = useCallback(
+    depositReceipt => {
+      // Check if this deposit receipt has already been applied
+      const isAlreadyApplied = appliedDeposits.some(deposit => deposit.id === depositReceipt.id);
+
+      if (isAlreadyApplied) {
+        // Close the dialog
+        setRedeemDepositDialogOpen(false);
+
+        // Show error message
+        showToast({
+          message: 'Dieser Pfandbeleg wurde bereits angewendet',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Add the deposit receipt to applied deposits
+      setAppliedDeposits(prev => [...prev, depositReceipt]);
+
+      // Update the deposit credit amount
+      setDepositCredit(prev => prev + depositReceipt.value);
+
+      // Close the dialog
+      setRedeemDepositDialogOpen(false);
+
+      // Show success message
+      showToast({
+        message: `Pfandbeleg im Wert von ${depositReceipt.value.toFixed(2)} € zum Warenkorb hinzugefügt`,
+        severity: 'success',
+      });
+    },
+    [showToast, appliedDeposits]
+  );
 
   // --- Render Logic ---
   return (
@@ -605,6 +644,7 @@ const SalesScreen = () => {
                       appliedVouchers={appliedVouchers}
                       subtotal={subtotal}
                       voucherDiscount={voucherDiscount}
+                      depositCredit={depositCredit}
                       total={total}
                       productDiscount={productDiscount}
                       receiptReady={receiptReady}
@@ -615,10 +655,11 @@ const SalesScreen = () => {
                       onPayment={handlePaymentModalOpen}
                       onPrintReceipt={handlePrintReceipt}
                       onNewTransaction={handleNewTransaction}
+                      onRemoveVoucher={handleRemoveVoucher}
                       onRedeemVoucher={handleRedeemVoucherDialogOpen}
                       onManageVouchers={handleVoucherManagementDialogOpen}
                       onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-                      onRemoveVoucher={handleRemoveVoucher}
+                      onRedeemDeposit={handleRedeemDepositDialogOpen}
                     />
                   </Paper>
                 </motion.div>
@@ -632,17 +673,17 @@ const SalesScreen = () => {
       <PaymentDialog
         open={paymentModalOpen}
         onClose={handlePaymentModalClose}
-        onComplete={handlePaymentComplete}
+        onComplete={handlePaymentSubmit}
         total={total}
         cartItemsCount={cartItems.length}
         voucherDiscount={voucherDiscount}
+        depositCredit={depositCredit}
         appliedVouchers={appliedVouchers}
-        giftCardPayment={giftCardPayment}
         paymentMethod={paymentMethod}
-        onPaymentMethodChange={handlePaymentMethodChange}
         cashReceived={cashReceived}
-        onCashReceivedChange={handleCashReceivedChange}
         cardDetails={cardDetails}
+        onPaymentMethodChange={handlePaymentMethodChange}
+        onCashReceivedChange={handleCashReceivedChange}
         onCardDetailsChange={handleCardDetailsChange}
         change={change}
         TransitionComponent={Transition}
@@ -666,6 +707,7 @@ const SalesScreen = () => {
         </MuiAlert>
       </Snackbar>
 
+      {/* Redeem Voucher Dialog */}
       <RedeemVoucherDialog
         open={redeemVoucherDialogOpen}
         onClose={handleRedeemVoucherDialogClose}
@@ -673,36 +715,26 @@ const SalesScreen = () => {
         cartTotal={total}
       />
 
+      {/* Redeem Deposit Receipt Dialog */}
+      <RedeemDepositDialog
+        open={redeemDepositDialogOpen}
+        onClose={handleRedeemDepositDialogClose}
+        onDepositRedeemed={handleDepositRedeemed}
+        appliedDepositIds={appliedDeposits.map(deposit => deposit.id)}
+      />
+
+      {/* Voucher Management Dialog */}
       <VoucherManagementDialog
         open={voucherManagementDialogOpen}
         onClose={handleVoucherManagementDialogClose}
       />
 
+      {/* Purchase Voucher Dialog */}
       <PurchaseVoucherDialog
         open={purchaseVoucherDialogOpen}
         onClose={handlePurchaseVoucherDialogClose}
-        onAddToCart={addToCart}
+        onVoucherIssued={handleVoucherApplied}
       />
-
-      {/* Redeem Voucher Dialog */}
-      <Dialog
-        open={redeemVoucherDialogOpen}
-        onClose={handleRedeemVoucherDialogClose}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Gutschein einlösen</DialogTitle>
-        <DialogContent dividers>
-          <VoucherInputField
-            onVoucherApplied={handleVoucherApplied}
-            appliedVouchers={appliedVouchers}
-            currentTotal={subtotal - voucherDiscount}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleRedeemVoucherDialogClose}>Schließen</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

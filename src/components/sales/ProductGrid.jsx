@@ -1,4 +1,3 @@
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import {
@@ -8,8 +7,6 @@ import {
   Typography,
   useTheme,
   alpha,
-  ButtonBase,
-  Tooltip as MuiTooltip,
   InputBase,
   Tab,
   Tabs,
@@ -18,8 +15,6 @@ import {
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
 
-// Import local components
-import { IconButton } from '../ui/buttons';
 import Chip from '../ui/feedback/Chip';
 import ProductCard from './ProductCard';
 
