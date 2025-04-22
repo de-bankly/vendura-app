@@ -294,6 +294,66 @@ class ProductService {
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products by category'));
     }
   }
+
+  /**
+   * Get a product by barcode
+   * @param {String} barcode - The product barcode
+   * @param {Boolean} calculateStock - Whether to calculate current stock
+   * @param {Boolean} includeDiscounts - Whether to include discount information
+   * @returns {Promise} Promise resolving to product data or null if not found
+   */
+  async getProductByBarcode(barcode, calculateStock = true, includeDiscounts = true) {
+    try {
+      const response = await apiClient.get(`/v1/product/barcode/${barcode}`, {
+        params: { calculateStock },
+      });
+
+      if (!response.data) {
+        return null;
+      }
+
+      const transformedProduct = this.transformProductData(response.data);
+
+      // If includeDiscounts is true, fetch and apply promotions
+      if (includeDiscounts) {
+        try {
+          const promotions = await PromotionService.getActivePromotionsForProduct(transformedProduct.id);
+          if (promotions && promotions.length > 0) {
+            // Get the promotion with the highest discount
+            const highestPromotion = promotions.reduce(
+              (max, p) => (p.discount > max.discount ? p : max),
+              promotions[0]
+            );
+
+            const discountInfo = PromotionService.calculateDiscount(
+              transformedProduct,
+              highestPromotion
+            );
+            return {
+              ...transformedProduct,
+              hasDiscount: discountInfo.hasDiscount,
+              originalPrice: discountInfo.originalPrice,
+              discountAmount: discountInfo.discountAmount,
+              discountedPrice: discountInfo.discountedPrice,
+              discountPercentage: discountInfo.discountPercentage,
+              promotion: highestPromotion,
+            };
+          }
+        } catch (promotionError) {
+          console.error('Error fetching promotions for product:', promotionError);
+          // Continue with the product without discount information
+        }
+      }
+
+      return transformedProduct;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return null; // Product not found
+      }
+      console.error(`Error fetching product with barcode ${barcode}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch product by barcode'));
+    }
+  }
 }
 
 export default new ProductService();

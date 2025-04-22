@@ -2,6 +2,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import {
   Box,
   Grid,
@@ -21,6 +22,9 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  IconButton,
+  Tooltip,
+  Alert,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -32,9 +36,11 @@ import {
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
+import { BarcodeScanIndicator, ManualBarcodeInput } from '../components/scanner';
 import { ProductService, CartService, SaleService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
+import { useBarcodeScan } from '../contexts/BarcodeContext';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -73,6 +79,13 @@ const itemVariants = {
 const SalesScreen = () => {
   const theme = useTheme();
   const { showToast } = useToast();
+  const { 
+    scannedProduct, 
+    error: scanError, 
+    resetScan, 
+    enableScanner, 
+    isEnabled: isScannerEnabled 
+  } = useBarcodeScan();
 
   // --- State Declarations ---
   const [products, setProducts] = useState([]);
@@ -98,6 +111,7 @@ const SalesScreen = () => {
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [giftCardPayment, setGiftCardPayment] = useState(0);
+  const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -387,6 +401,64 @@ const SalesScreen = () => {
   const handleRemoveVoucher = useCallback(voucherId => {
     setAppliedVouchers(prev => prev.filter(v => v.id !== voucherId));
   }, []);
+
+  // --- Barcode Scanner Effects ---
+  useEffect(() => {
+    // Enable scanner when component mounts
+    enableScanner();
+    
+    // No need to disable the scanner when the component unmounts,
+    // as it might be used by other components
+  }, [enableScanner]);
+
+  // Handle scanned product
+  useEffect(() => {
+    if (scannedProduct) {
+      // Add scanned product to cart
+      const existingItem = cartItems.find(item => item.id === scannedProduct.id);
+      
+      if (existingItem) {
+        // Increment quantity if product already in cart
+        const updatedItems = cartItems.map(item => 
+          item.id === scannedProduct.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+        setCartItems(updatedItems);
+      } else {
+        // Add new item to cart
+        setCartItems([...cartItems, { ...scannedProduct, quantity: 1 }]);
+      }
+      
+      // Show success toast
+      showToast({
+        message: `${scannedProduct.name} wurde hinzugefügt`,
+        type: 'success'
+      });
+      
+      // Reset scan to prepare for next one
+      resetScan();
+    }
+  }, [scannedProduct, cartItems, resetScan, showToast]);
+
+  // Handle scan errors
+  useEffect(() => {
+    if (scanError) {
+      showToast({
+        message: scanError,
+        type: 'error'
+      });
+    }
+  }, [scanError, showToast]);
+
+  // --- Toggle Scanner Dialog ---
+  const handleOpenScannerDialog = () => {
+    setScannerDialogOpen(true);
+  };
+
+  const handleCloseScannerDialog = () => {
+    setScannerDialogOpen(false);
+  };
 
   // --- Render Logic ---
   return (
@@ -684,23 +756,37 @@ const SalesScreen = () => {
         onAddToCart={addToCart}
       />
 
-      {/* Redeem Voucher Dialog */}
+      {/* Scanner Dialog */}
       <Dialog
-        open={redeemVoucherDialogOpen}
-        onClose={handleRedeemVoucherDialogClose}
+        open={scannerDialogOpen}
+        onClose={handleCloseScannerDialog}
+        TransitionComponent={Transition}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Gutschein einlösen</DialogTitle>
-        <DialogContent dividers>
-          <VoucherInputField
-            onVoucherApplied={handleVoucherApplied}
-            appliedVouchers={appliedVouchers}
-            currentTotal={subtotal - voucherDiscount}
-          />
+        <DialogTitle>Barcode Scanner</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              Scannen Sie ein Produkt mit dem Barcodescanner oder geben Sie den Barcode manuell ein.
+            </Typography>
+            
+            <BarcodeScanIndicator />
+            <ManualBarcodeInput />
+            
+            {isScannerEnabled ? (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Scanner ist aktiv. Produkte werden automatisch zum Warenkorb hinzugefügt.
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                Scanner ist deaktiviert.
+              </Alert>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleRedeemVoucherDialogClose}>Schließen</Button>
+          <Button onClick={handleCloseScannerDialog}>Schließen</Button>
         </DialogActions>
       </Dialog>
     </Box>

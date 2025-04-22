@@ -1,4 +1,5 @@
 import AuthService from './AuthService';
+import BarcodeService from './BarcodeService';
 import BrandService from './BrandService';
 import CartService from './CartService';
 import GiftCardService from './GiftCardService';
@@ -17,6 +18,7 @@ import UserService from './UserService';
 
 export {
   AuthService,
+  BarcodeService,
   BrandService,
   CartService,
   GiftCardService,
