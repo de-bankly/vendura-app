@@ -14,7 +14,7 @@ class TransactionService {
     try {
       // Prepare position data (cart items)
       const positions = transactionData.cartItems.map(item => ({
-        product: { id: item.id },
+        productDTO: { id: item.id },
         quantity: item.quantity,
         unitPrice: item.price,
         total: item.price * item.quantity,
@@ -72,7 +72,7 @@ class TransactionService {
           payments.push({
             type: 'CASH',
             amount: parseFloat(remainingAmount.toFixed(2)),
-            cashReceived: transactionData.cashReceived,
+            handed: transactionData.cashReceived,
             change: transactionData.change,
           });
         }
