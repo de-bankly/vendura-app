@@ -65,7 +65,6 @@ const SalesScreen = () => {
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
-  const [purchaseVoucherDialogOpen, setPurchaseVoucherDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
   // --- Data Fetching ---
@@ -285,14 +284,6 @@ const SalesScreen = () => {
     setVoucherManagementDialogOpen(false);
   }, []);
 
-  const handlePurchaseVoucherDialog = useCallback(() => {
-    setPurchaseVoucherDialogOpen(true);
-  }, []);
-
-  const handlePurchaseVoucherDialogClose = useCallback(() => {
-    setPurchaseVoucherDialogOpen(false);
-  }, []);
-
   // Deposit handlers
   const handleRedeemDepositDialogOpen = useCallback(() => {
     setRedeemDepositDialogOpen(true);
@@ -366,7 +357,6 @@ const SalesScreen = () => {
             onRemoveVoucher={handleRemoveVoucher}
             onRedeemVoucher={handleRedeemVoucherDialog}
             onManageVouchers={handleVoucherManagementDialog}
-            onPurchaseVoucher={handlePurchaseVoucherDialog}
             onRedeemDeposit={handleRedeemDepositDialogOpen}
             onUndoCartState={handleUndoCartState}
             onRedoCartState={handleRedoCartState}
@@ -375,7 +365,6 @@ const SalesScreen = () => {
       </Container>
 
       <DialogManager
-        // Payment dialog props
         paymentModalOpen={paymentModalOpen}
         onPaymentModalClose={handlePaymentModalClose}
         onPaymentSubmit={handlePaymentSubmit}
@@ -393,22 +382,15 @@ const SalesScreen = () => {
         onCardDetailsChange={handleCardDetailsChange}
         change={change}
         paymentLoading={paymentLoading}
-        // Voucher dialog props
         redeemVoucherDialogOpen={redeemVoucherDialogOpen}
         onRedeemVoucherDialogClose={handleRedeemVoucherDialogClose}
         onVoucherRedeemed={handleApplyVoucher}
-        // Voucher management dialog props
         voucherManagementDialogOpen={voucherManagementDialogOpen}
         onVoucherManagementDialogClose={handleVoucherManagementDialogClose}
-        // Purchase voucher dialog props
-        purchaseVoucherDialogOpen={purchaseVoucherDialogOpen}
-        onPurchaseVoucherDialogClose={handlePurchaseVoucherDialogClose}
-        // Deposit dialog props
         redeemDepositDialogOpen={redeemDepositDialogOpen}
         onRedeemDepositDialogClose={handleRedeemDepositDialogClose}
         onDepositRedeemed={handleDepositRedeemed}
         appliedDepositIds={appliedDeposits.map(deposit => deposit.id)}
-        // Snackbar props
         successSnackbarOpen={successSnackbarOpen}
         onSnackbarClose={handleSnackbarClose}
       />

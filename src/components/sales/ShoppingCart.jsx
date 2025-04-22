@@ -11,6 +11,7 @@ import {
   IconButton,
   Paper,
   Divider,
+  Grid,
 } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import PropTypes from 'prop-types';
@@ -46,7 +47,6 @@ const ShoppingCart = ({
   onRemoveVoucher,
   onRedeemVoucher,
   onManageVouchers,
-  onPurchaseVoucher,
   onRedeemDeposit,
 }) => {
   const theme = useTheme();
@@ -201,21 +201,17 @@ const ShoppingCart = ({
         {/* Action Buttons Section */}
         <Box sx={{ mb: 3 }}>
           {!receiptReady && (
-            <>
-              {/* Voucher buttons */}
-              <Box sx={{ mb: 2 }}>
-                <VoucherActionButtons
-                  onPurchaseVoucher={onPurchaseVoucher}
-                  onRedeemVoucher={onRedeemVoucher}
-                  cartIsEmpty={cartIsEmpty}
-                />
-              </Box>
+            <Grid container spacing={2}>
+              {/* Voucher button */}
+              <Grid item xs={6}>
+                <VoucherActionButtons onRedeemVoucher={onRedeemVoucher} cartIsEmpty={cartIsEmpty} />
+              </Grid>
 
-              {/* Deposit buttons */}
-              <Box>
+              {/* Deposit button */}
+              <Grid item xs={6}>
                 <DepositActionButtons onRedeemDeposit={onRedeemDeposit} cartIsEmpty={cartIsEmpty} />
-              </Box>
-            </>
+              </Grid>
+            </Grid>
           )}
         </Box>
 
@@ -262,7 +258,6 @@ ShoppingCart.propTypes = {
   onRemoveVoucher: PropTypes.func.isRequired,
   onRedeemVoucher: PropTypes.func.isRequired,
   onManageVouchers: PropTypes.func.isRequired,
-  onPurchaseVoucher: PropTypes.func.isRequired,
   onRedeemDeposit: PropTypes.func.isRequired,
 };
 

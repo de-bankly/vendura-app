@@ -47,7 +47,6 @@ const SalesMainContent = ({
   onRemoveVoucher,
   onRedeemVoucher,
   onManageVouchers,
-  onPurchaseVoucher,
   onRedeemDeposit,
   onUndoCartState,
   onRedoCartState,
@@ -138,7 +137,6 @@ const SalesMainContent = ({
             onRemoveVoucher={onRemoveVoucher}
             onRedeemVoucher={onRedeemVoucher}
             onManageVouchers={onManageVouchers}
-            onPurchaseVoucher={onPurchaseVoucher}
             onRedeemDeposit={onRedeemDeposit}
           />
         </Paper>
