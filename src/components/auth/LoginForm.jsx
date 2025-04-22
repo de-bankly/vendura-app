@@ -124,12 +124,6 @@ const LoginForm = ({ onSubmit }) => {
       >
         {loading ? <CircularProgress size={24} color="inherit" /> : 'Anmelden'}
       </Button>
-
-      <Box sx={{ mt: 3, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Demo Zugangsdaten: admin / password
-        </Typography>
-      </Box>
     </Box>
   );
 };
