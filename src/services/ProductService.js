@@ -1,4 +1,4 @@
-import { getUserFriendlyErrorMessage } from '../utils/errorUtils'; // Import error utility
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 
 import apiClient from './ApiConfig';
 import PromotionService from './PromotionService';
