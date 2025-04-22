@@ -1,6 +1,6 @@
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReceiptIcon from '@mui/icons-material/Receipt';
-import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Dialog,
   DialogTitle,
@@ -167,7 +167,7 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
             }}
             aria-label="Schließen"
           >
-            <SearchIcon />
+            <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
