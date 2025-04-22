@@ -2,6 +2,31 @@
  * Service for managing shopping cart operations
  */
 class CartService {
+  constructor() {
+    // Lazy load the CartMementoService to avoid circular dependency issues
+    this._mementoService = null;
+    this._mementoServicePromise = null;
+  }
+
+  /**
+   * Get the memento service instance
+   * @returns {Promise<CartMementoService>} The memento service instance
+   * @private
+   */
+  async _getMementoService() {
+    if (!this._mementoService) {
+      if (!this._mementoServicePromise) {
+        // Use dynamic import instead of require
+        this._mementoServicePromise = import('./cart/CartMementoService').then(module => {
+          this._mementoService = module.default;
+          return this._mementoService;
+        });
+      }
+      await this._mementoServicePromise;
+    }
+    return this._mementoService;
+  }
+
   /**
    * Add a product to the cart
    * @param {Array} cartItems Current cart items
@@ -10,13 +35,19 @@ class CartService {
    */
   addToCart(cartItems, product) {
     const existingItem = cartItems.find(item => item.id === product.id);
+    let updatedCartItems;
+
     if (existingItem) {
-      return cartItems.map(item =>
+      updatedCartItems = cartItems.map(item =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       );
     } else {
-      return [...cartItems, { ...product, quantity: 1 }];
+      updatedCartItems = [...cartItems, { ...product, quantity: 1 }];
     }
+
+    // Update cart locally first
+    this._updateMementoServiceAsync(updatedCartItems);
+    return updatedCartItems;
   }
 
   /**
@@ -27,13 +58,19 @@ class CartService {
    */
   removeFromCart(cartItems, productId) {
     const existingItem = cartItems.find(item => item.id === productId);
+    let updatedCartItems;
+
     if (existingItem && existingItem.quantity > 1) {
-      return cartItems.map(item =>
+      updatedCartItems = cartItems.map(item =>
         item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
       );
     } else {
-      return cartItems.filter(item => item.id !== productId);
+      updatedCartItems = cartItems.filter(item => item.id !== productId);
     }
+
+    // Update cart locally first
+    this._updateMementoServiceAsync(updatedCartItems);
+    return updatedCartItems;
   }
 
   /**
@@ -43,7 +80,27 @@ class CartService {
    * @returns {Array} Updated cart items
    */
   deleteFromCart(cartItems, productId) {
-    return cartItems.filter(item => item.id !== productId);
+    const updatedCartItems = cartItems.filter(item => item.id !== productId);
+
+    // Update cart locally first
+    this._updateMementoServiceAsync(updatedCartItems);
+    return updatedCartItems;
+  }
+
+  /**
+   * Update memento service asynchronously without blocking
+   * @param {Array} cartItems Cart items to update
+   * @private
+   */
+  _updateMementoServiceAsync(cartItems) {
+    // Fire and forget - don't block UI operations
+    this._getMementoService()
+      .then(service => {
+        service.updateCartItems(cartItems);
+      })
+      .catch(err => {
+        console.error('Failed to update cart memento:', err);
+      });
   }
 
   /**
@@ -141,6 +198,93 @@ class CartService {
 
       return formattedItem;
     });
+  }
+
+  /**
+   * Save the current cart state
+   * @param {Array} cartItems Current cart items
+   * @param {Array} appliedVouchers Current applied vouchers
+   * @param {string} label Optional label for the saved state
+   * @returns {Promise<boolean>} Promise resolving to true if save was successful
+   */
+  async saveCartState(cartItems, appliedVouchers, label = null) {
+    try {
+      const mementoService = await this._getMementoService();
+      mementoService.updateCartItems(cartItems);
+      mementoService.updateAppliedVouchers(appliedVouchers || []);
+      return mementoService.saveState(label);
+    } catch (err) {
+      console.error('Failed to save cart state:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Undo to the previous cart state
+   * @returns {Object|null} Object containing the restored cart items and applied vouchers, or null if undo failed
+   */
+  undoCartState() {
+    return this._getMementoService().then(service => service.undo());
+  }
+
+  /**
+   * Redo to the next cart state
+   * @returns {Object|null} Object containing the restored cart items and applied vouchers, or null if redo failed
+   */
+  redoCartState() {
+    return this._getMementoService().then(service => service.redo());
+  }
+
+  /**
+   * Check if undo is available
+   * @returns {boolean} True if undo is available
+   */
+  canUndoCartState() {
+    // Default to false if service not yet loaded
+    if (!this._mementoService) return false;
+    return this._mementoService.canUndo();
+  }
+
+  /**
+   * Check if redo is available
+   * @returns {boolean} True if redo is available
+   */
+  canRedoCartState() {
+    // Default to false if service not yet loaded
+    if (!this._mementoService) return false;
+    return this._mementoService.canRedo();
+  }
+
+  /**
+   * Get all saved cart states
+   * @returns {Array} Array of saved cart states
+   */
+  getAllSavedCartStates() {
+    return this._getMementoService().then(service => service.getAllSavedStates());
+  }
+
+  /**
+   * Restore a specific saved cart state
+   * @param {number} index Index of the saved state to restore
+   * @returns {Object|null} Object containing the restored cart items and applied vouchers, or null if restore failed
+   */
+  restoreCartState(index) {
+    return this._getMementoService().then(service => service.restoreStateByIndex(index));
+  }
+
+  /**
+   * Clear all saved cart states
+   */
+  clearCartHistory() {
+    this._getMementoService().then(service => service.clearHistory());
+  }
+
+  /**
+   * Enable or disable auto-saving of cart states
+   * @param {boolean} enabled Whether auto-saving should be enabled
+   */
+  setCartAutoSaveEnabled(enabled) {
+    this._getMementoService().then(service => service.setAutoSaveEnabled(enabled));
   }
 }
 
