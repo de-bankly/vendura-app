@@ -415,6 +415,67 @@ const ProductCard = ({ product, onAddToCart }) => {
                   </Typography>
                 </Box>
               </Box>
+            ) : showBundleBadge ? (
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Hauptprodukt:
+                  </Typography>
+                  <Typography variant="caption" fontWeight="medium">
+                    {formatPrice(product.price)}
+                  </Typography>
+                </Box>
+                {/* Bundle items */}
+                {product.connectedProducts
+                  .filter(p => p?.category?.name !== 'Pfand')
+                  .map((bundleItem, index) => (
+                    <Box
+                      key={bundleItem.id || index}
+                      sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}
+                    >
+                      <Typography
+                        variant="caption"
+                        color="primary.main"
+                        sx={{
+                          maxWidth: '70%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {bundleItem.name}:
+                      </Typography>
+                      <Typography variant="caption" fontWeight="medium" color="primary.main">
+                        {formatPrice(bundleItem.price)}
+                      </Typography>
+                    </Box>
+                  ))}
+                {/* Show total if there's also pfand */}
+                {hasPfand && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="caption" color="success.main">
+                      Pfand:
+                    </Typography>
+                    <Typography variant="caption" fontWeight="medium" color="success.main">
+                      {formatPrice(pfandItem?.price || 0)}
+                    </Typography>
+                  </Box>
+                )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Gesamt:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold" color="primary.main">
+                    {formatPrice(
+                      parseFloat(product.price) +
+                        product.connectedProducts.reduce(
+                          (sum, item) => sum + parseFloat(item.price || 0),
+                          0
+                        )
+                    )}
+                  </Typography>
+                </Box>
+              </Box>
             ) : (
               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                 <Typography variant="body1" fontWeight="bold" color="primary.main">
