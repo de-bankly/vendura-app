@@ -17,7 +17,6 @@ import AppliedVouchersDisplay from './AppliedVouchersDisplay';
 import CartActionButtons from './CartActionButtons';
 
 // Import new components
-import SalesSummaryCards from './SalesSummaryCards';
 import SalesHeader from './SalesHeader';
 import CartHeader from './CartHeader';
 import SalesMainContent from './SalesMainContent';
@@ -47,7 +46,6 @@ export {
   GiftCardPaymentSection,
   AppliedVouchersDisplay,
   CartActionButtons,
-  SalesSummaryCards,
   SalesHeader,
   CartHeader,
   SalesMainContent,

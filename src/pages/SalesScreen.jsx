@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 
 // Import components and utilities
 import {
-  SalesSummaryCards,
   SalesHeader,
   SalesMainContent,
   DialogManager,
@@ -322,14 +321,6 @@ const SalesScreen = () => {
       <Container maxWidth="xl" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <motion.div initial="hidden" animate="visible" variants={containerVariants}>
           <SalesHeader />
-          <SalesSummaryCards
-            cartItems={cartItems}
-            total={total}
-            products={products}
-            productsByCategory={productsByCategory}
-            appliedVouchers={appliedVouchers}
-            voucherDiscount={voucherDiscount}
-          />
         </motion.div>
 
         <Box sx={{ flexGrow: 1, overflow: 'hidden', mb: 2 }}>
