@@ -303,7 +303,7 @@ class ProductService {
    * @param {Boolean} includeDiscounts - Whether to include discount information
    * @returns {Promise} Promise resolving to product data or null if not found
    */
-  async getProductByBarcode(barcode, calculateStock = true, includeDiscounts = true) {
+  async getProductByBarcode(barcode, calculateStock = false, includeDiscounts = true) {
     try {
       const response = await apiClient.get(`/v1/product/${barcode}`, {
         params: { calculateStock },

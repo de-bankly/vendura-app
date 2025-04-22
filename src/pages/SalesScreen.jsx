@@ -2,7 +2,6 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import {
   Box,
   Grid,
@@ -22,8 +21,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton,
-  Tooltip,
   Alert,
 } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -36,7 +33,6 @@ import {
   VoucherManagementDialog,
   PurchaseVoucherDialog,
 } from '../components/vouchers';
-import { BarcodeScanIndicator, ManualBarcodeInput } from '../components/scanner';
 import { ProductService, CartService, SaleService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
@@ -757,9 +753,6 @@ const SalesScreen = () => {
             <Typography variant="body1" gutterBottom>
               Scannen Sie ein Produkt mit dem Barcodescanner oder geben Sie den Barcode manuell ein.
             </Typography>
-            
-            <BarcodeScanIndicator />
-            <ManualBarcodeInput />
             
             {isScannerEnabled ? (
               <Alert severity="info" sx={{ mt: 2 }}>
