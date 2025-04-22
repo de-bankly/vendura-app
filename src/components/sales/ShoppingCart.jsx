@@ -11,6 +11,7 @@ import AppliedVoucher from './AppliedVoucher';
 import CartSummary from './CartSummary';
 import VoucherActionButtons from './VoucherActionButtons';
 import CartActionButtons from './CartActionButtons';
+import { DepositActionButtons } from './';
 
 /**
  * ShoppingCart component for displaying and managing cart items
@@ -20,6 +21,7 @@ const ShoppingCart = ({
   appliedVouchers,
   subtotal,
   voucherDiscount,
+  depositCredit,
   total,
   receiptReady,
   onAddItem,
@@ -31,7 +33,9 @@ const ShoppingCart = ({
   onNewTransaction,
   onRemoveVoucher,
   onRedeemVoucher,
+  onManageVouchers,
   onPurchaseVoucher,
+  onRedeemDeposit,
 }) => {
   const theme = useTheme();
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -148,7 +152,7 @@ const ShoppingCart = ({
       >
         {/* Voucher buttons */}
         {!receiptReady && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 2 }}>
             <VoucherActionButtons
               onPurchaseVoucher={onPurchaseVoucher}
               onRedeemVoucher={onRedeemVoucher}
@@ -157,8 +161,20 @@ const ShoppingCart = ({
           </Box>
         )}
 
+        {/* Deposit buttons */}
+        {!receiptReady && (
+          <Box sx={{ mb: 3 }}>
+            <DepositActionButtons onRedeemDeposit={onRedeemDeposit} cartIsEmpty={cartIsEmpty} />
+          </Box>
+        )}
+
         {/* Cart summary */}
-        <CartSummary subtotal={subtotal} voucherDiscount={voucherDiscount} total={total} />
+        <CartSummary
+          subtotal={subtotal}
+          voucherDiscount={voucherDiscount}
+          depositCredit={depositCredit}
+          total={total}
+        />
 
         {/* Action Buttons */}
         <CartActionButtons
@@ -178,6 +194,7 @@ ShoppingCart.propTypes = {
   appliedVouchers: PropTypes.array.isRequired,
   subtotal: PropTypes.number.isRequired,
   voucherDiscount: PropTypes.number.isRequired,
+  depositCredit: PropTypes.number,
   total: PropTypes.number.isRequired,
   receiptReady: PropTypes.bool.isRequired,
   onAddItem: PropTypes.func.isRequired,
@@ -191,6 +208,11 @@ ShoppingCart.propTypes = {
   onRedeemVoucher: PropTypes.func.isRequired,
   onManageVouchers: PropTypes.func.isRequired,
   onPurchaseVoucher: PropTypes.func.isRequired,
+  onRedeemDeposit: PropTypes.func.isRequired,
+};
+
+ShoppingCart.defaultProps = {
+  depositCredit: 0,
 };
 
 export default ShoppingCart;

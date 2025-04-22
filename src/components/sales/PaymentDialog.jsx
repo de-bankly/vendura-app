@@ -27,9 +27,9 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
-  FormHelperText,
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Format card number with spaces (4 digits groups)
@@ -97,6 +97,7 @@ const PaymentDialog = ({
   change,
   TransitionComponent,
   loading = false,
+  depositCredit = 0,
 }) => {
   const theme = useTheme();
   const [cardErrors, setCardErrors] = useState({
@@ -204,6 +205,14 @@ const PaymentDialog = ({
       return;
     }
     onComplete();
+  };
+
+  // Calculate change based on payment method and amount
+  const calculateChange = () => {
+    if (paymentMethod === 'cash' && parseFloat(cashReceived) >= total) {
+      return parseFloat(cashReceived) - total;
+    }
+    return 0;
   };
 
   return (
@@ -413,7 +422,7 @@ const PaymentDialog = ({
                       >
                         <Typography variant="body1">Rückgeld:</Typography>
                         <Typography variant="h6" color="primary" fontWeight="bold">
-                          {parseFloat(change).toFixed(2)} €
+                          {calculateChange().toFixed(2)} €
                         </Typography>
                       </Box>
                     </Box>
@@ -556,6 +565,21 @@ const PaymentDialog = ({
               </Box>
             )}
 
+            {depositCredit > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="body1">Pfand-Guthaben:</Typography>
+                <Typography variant="body1" color="error">
+                  -{depositCredit.toFixed(2)} €
+                </Typography>
+              </Box>
+            )}
+
             <Divider sx={{ my: 1 }} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -600,6 +624,32 @@ const PaymentDialog = ({
       </DialogActions>
     </Dialog>
   );
+};
+
+PaymentDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  total: PropTypes.number.isRequired,
+  cartItemsCount: PropTypes.number.isRequired,
+  voucherDiscount: PropTypes.number.isRequired,
+  appliedVouchers: PropTypes.array,
+  giftCardPayment: PropTypes.number,
+  paymentMethod: PropTypes.string.isRequired,
+  onPaymentMethodChange: PropTypes.func.isRequired,
+  cashReceived: PropTypes.string.isRequired,
+  onCashReceivedChange: PropTypes.func.isRequired,
+  cardDetails: PropTypes.object.isRequired,
+  onCardDetailsChange: PropTypes.func.isRequired,
+  change: PropTypes.string.isRequired,
+  TransitionComponent: PropTypes.elementType,
+  loading: PropTypes.bool,
+  depositCredit: PropTypes.number,
+};
+
+PaymentDialog.defaultProps = {
+  appliedVouchers: [],
+  giftCardPayment: 0,
+  depositCredit: 0,
 };
 
 export default PaymentDialog;

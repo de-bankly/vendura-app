@@ -72,6 +72,22 @@ class DepositService {
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to delete deposit receipt'));
     }
   }
+
+  /**
+   * Mark a deposit receipt as redeemed
+   * @param {string} id - Deposit receipt ID to redeem
+   * @returns {Promise<Object>} - Promise with updated receipt data
+   */
+  async redeemDepositReceipt(id) {
+    try {
+      // We'll assume there's a PATCH endpoint to update the redeemed status
+      // If this endpoint doesn't exist, backend team will need to implement it
+      return await apiClient.patch(`/v1/depositreceipt/${id}/redeem`);
+    } catch (error) {
+      console.error('Error redeeming deposit receipt:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to redeem deposit receipt'));
+    }
+  }
 }
 
 export default new DepositService();
