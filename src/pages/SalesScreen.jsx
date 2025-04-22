@@ -28,7 +28,7 @@ import {
   PurchaseVoucherDialog,
 } from '../components/vouchers';
 import { RedeemDepositDialog } from '../components/deposit';
-import { ProductService, CartService, SaleService } from '../services';
+import { ProductService, CartService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
 import TransactionService from '../services/TransactionService';
 
@@ -106,7 +106,8 @@ const SalesScreen = () => {
         setError(null); // Clear previous errors
         const productData = await ProductService.getProducts({ page: 0, size: 100 }); // Consider pagination/infinite load
         if (isMounted) {
-          const products = productData.content || [];
+          // Filter products to only include those with stock quantity > 0
+          const products = (productData.content || []).filter(product => product.stockQuantity > 0);
           setProducts(products);
           const groupedProducts = ProductService.groupByCategory(products);
           setProductsByCategory(groupedProducts);
