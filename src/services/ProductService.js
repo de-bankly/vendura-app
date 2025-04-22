@@ -153,6 +153,13 @@ class ProductService {
         ];
       }
 
+      // Set standalone property based on connected products
+      if (dataToSend.connectedProducts && dataToSend.connectedProducts.length > 0) {
+        dataToSend.standalone = false;
+      } else {
+        dataToSend.standalone = dataToSend.standalone ?? true;
+      }
+
       const response = await apiClient.post('/v1/product', dataToSend);
       return this.transformProductData(response.data);
     } catch (error) {
@@ -171,13 +178,12 @@ class ProductService {
     try {
       // Create a properly formatted data object for the backend
       const dataToSend = {
-        id: id,
-        name: productData.name,
         productCategory: productData.productCategory || productData.category,
         brand: productData.brand,
         defaultSupplier: productData.defaultSupplier || productData.supplier,
-        // Only add new price history if the price has changed
         priceHistories: productData.priceHistories,
+        standalone: productData.standalone,
+        connectedProducts: productData.connectedProducts,
       };
 
       // Remove any undefined or null values
@@ -232,7 +238,8 @@ class ProductService {
     return {
       id: product.id,
       name: product.name,
-      description: '', // Backend doesn't seem to have description
+      shortDescription: product.shortDescription || '',
+      longDescription: product.longDescription || '',
       price: price,
       stockQuantity: stockQuantity,
       lowStockThreshold: 5, // Default value
@@ -255,6 +262,12 @@ class ProductService {
           }
         : null,
       sku: product.id, // Using ID as SKU since backend doesn't have separate SKU field
+      standalone: product.standalone,
+      connectedProducts: product.connectedProducts
+        ? product.connectedProducts.map(connectedProduct =>
+            this.transformProductData(connectedProduct)
+          )
+        : [],
     };
   }
 
@@ -324,6 +337,22 @@ class ProductService {
     } catch (error) {
       console.error('Error fetching deposit products:', error.response || error.message);
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch deposit products'));
+    }
+  }
+
+  /**
+   * Get all products for selection (used for connected products)
+   * This fetches without discount calculation to improve performance
+   * @param {Object} pageable - Pagination parameters
+   * @returns {Promise} Promise resolving to products for selection
+   */
+  async getAllProductsForSelection(pageable = { page: 0, size: 1000 }) {
+    try {
+      const response = await this.getProducts(pageable, false, false);
+      return response.content || [];
+    } catch (error) {
+      console.error('Error fetching products for selection:', error);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products for selection'));
     }
   }
 }

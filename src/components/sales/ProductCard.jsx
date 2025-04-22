@@ -1,6 +1,7 @@
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import InfoIcon from '@mui/icons-material/Info';
+import LinkIcon from '@mui/icons-material/Link';
 import { Box, Paper, Typography, ButtonBase, Tooltip, useTheme, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -13,6 +14,9 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   // Determine if we should show discount information
   const hasDiscount = product.hasDiscount && product.discountPercentage > 0;
+
+  // Check if the product has connected products
+  const hasConnectedProducts = product.connectedProducts && product.connectedProducts.length > 0;
 
   // Format price with german locale
   const formatPrice = price => {
@@ -62,6 +66,49 @@ const ProductCard = ({ product, onAddToCart }) => {
             {product.discountPercentage}% RABATT
           </Typography>
         </Box>
+      )}
+
+      {/* Connected Products badge */}
+      {hasConnectedProducts && (
+        <Tooltip
+          title={
+            <Box>
+              <Typography variant="subtitle2">Mit diesem Produkt erhalten Sie:</Typography>
+              <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
+                {product.connectedProducts.map(connectedProduct => (
+                  <li key={connectedProduct.id}>
+                    <Typography variant="body2">
+                      {connectedProduct.name} ({formatPrice(connectedProduct.price)})
+                    </Typography>
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          }
+          arrow
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: hasDiscount ? 32 : 0,
+              right: 0,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              py: 0.5,
+              px: 1,
+              borderBottomLeftRadius: 8,
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'help',
+            }}
+          >
+            <LinkIcon fontSize="small" sx={{ mr: 0.5 }} />
+            <Typography variant="caption" fontWeight="bold">
+              BUNDLE
+            </Typography>
+          </Box>
+        </Tooltip>
       )}
 
       <ButtonBase
@@ -145,16 +192,20 @@ ProductCard.propTypes = {
   product: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
+    description: PropTypes.string,
     price: PropTypes.number.isRequired,
-    category: PropTypes.shape({
-      id: PropTypes.string,
-      name: PropTypes.string,
-    }),
     hasDiscount: PropTypes.bool,
-    originalPrice: PropTypes.number,
-    discountAmount: PropTypes.number,
-    discountedPrice: PropTypes.number,
     discountPercentage: PropTypes.number,
+    discountedPrice: PropTypes.number,
+    originalPrice: PropTypes.number,
+    standalone: PropTypes.bool,
+    connectedProducts: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        price: PropTypes.number.isRequired,
+      })
+    ),
   }).isRequired,
   onAddToCart: PropTypes.func.isRequired,
 };

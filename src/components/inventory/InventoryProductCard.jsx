@@ -1,4 +1,4 @@
-import { Info as InfoIcon, Store as StoreIcon } from '@mui/icons-material';
+import { Info as InfoIcon, Store as StoreIcon, Link as LinkIcon } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -9,6 +9,7 @@ import {
   Stack,
   Typography,
   useTheme,
+  Tooltip,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -47,6 +48,9 @@ const InventoryProductCard = ({ product }) => {
       currency: 'EUR',
     }).format(price);
   };
+
+  // Check if the product has connected products
+  const hasConnectedProducts = product.connectedProducts && product.connectedProducts.length > 0;
 
   return (
     <Card
@@ -156,6 +160,45 @@ const InventoryProductCard = ({ product }) => {
             )}
           </Stack>
 
+          {/* Connected Products */}
+          {hasConnectedProducts && (
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
+              <LinkIcon fontSize="small" color="primary" />
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="subtitle2">Verbundene Produkte:</Typography>
+                    <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
+                      {product.connectedProducts.map(connectedProduct => (
+                        <li key={connectedProduct.id}>
+                          <Typography variant="body2">
+                            {connectedProduct.name} ({formatPrice(connectedProduct.price)})
+                          </Typography>
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                }
+                arrow
+              >
+                <Chip
+                  label={`Bundle (${product.connectedProducts.length})`}
+                  color="primary"
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 500, cursor: 'help' }}
+                />
+              </Tooltip>
+              {!product.standalone && (
+                <Tooltip title="Nicht einzeln verkäuflich">
+                  <Typography variant="caption" color="text.secondary">
+                    Nur als Bundle
+                  </Typography>
+                </Tooltip>
+              )}
+            </Stack>
+          )}
+
           {/* SKU if available */}
           {product.sku && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
@@ -186,6 +229,14 @@ InventoryProductCard.propTypes = {
       id: PropTypes.string,
       name: PropTypes.string,
     }),
+    standalone: PropTypes.bool,
+    connectedProducts: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        price: PropTypes.number.isRequired,
+      })
+    ),
   }).isRequired,
 };
 
