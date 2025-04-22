@@ -43,8 +43,11 @@ export const processPayment = async ({
       depositReceipts: appliedDeposits,
       depositCredit: Math.round(depositCredit * 100) / 100,
       // Include additional payment details based on payment method
-      cashReceived: paymentMethod === 'cash' ? parseFloat(cashReceived) : 0,
-      change: paymentMethod === 'cash' ? parseFloat(cashReceived) - roundedTotal : 0,
+      cashReceived: paymentMethod === 'cash' ? Math.round(parseFloat(cashReceived) * 100) / 100 : 0,
+      change:
+        paymentMethod === 'cash'
+          ? Math.round((parseFloat(cashReceived) - roundedTotal) * 100) / 100
+          : 0,
       cardDetails:
         paymentMethod === 'card'
           ? {

@@ -74,8 +74,8 @@ class CartService {
       // Add connected products if any
       if (product.connectedProducts && product.connectedProducts.length > 0) {
         product.connectedProducts.forEach(connectedProduct => {
-          // Check if this is a Pfand product
-          const isPfandProduct = connectedProduct.category?.name === 'Pfand';
+          // Check if this is a Pfand product - add null check for category
+          const isPfandProduct = connectedProduct?.category?.name === 'Pfand';
 
           // Create a copy with additional property to mark it as a connected product
           const connectedProductWithParent = {

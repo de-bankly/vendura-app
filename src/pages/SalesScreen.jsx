@@ -123,7 +123,8 @@ const SalesScreen = () => {
   const change = useMemo(() => {
     if (paymentMethod !== 'cash' || !cashReceived) return 0;
     const cashValue = parseFloat(cashReceived);
-    return cashValue > total ? cashValue - total : 0;
+    const roundedTotal = Math.round(total * 100) / 100;
+    return cashValue > roundedTotal ? Math.round((cashValue - roundedTotal) * 100) / 100 : 0;
   }, [paymentMethod, cashReceived, total]);
 
   // Monitor undo/redo availability
@@ -199,7 +200,7 @@ const SalesScreen = () => {
   // Payment operations
   const handlePaymentModalOpen = useCallback(() => {
     setPaymentModalOpen(true);
-    setCashReceived(total.toFixed(2));
+    setCashReceived((Math.round(total * 100) / 100).toFixed(2));
   }, [total]);
 
   const handlePaymentModalClose = useCallback(() => {
