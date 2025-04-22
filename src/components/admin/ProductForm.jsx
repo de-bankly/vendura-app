@@ -87,26 +87,26 @@ const ProductForm = ({
   const [newSupplierZip, setNewSupplierZip] = useState('');
   const [newSupplierCountry, setNewSupplierCountry] = useState('Deutschland');
 
-  // Load data when form opens
+  // Load data and reset form when dialog opens
   useEffect(() => {
     if (open) {
+      // Reset form data
+      setFormData({
+        name: initialData?.name || '',
+        description: initialData?.description || '',
+        price: initialData?.price || 0,
+        category: initialData?.category || '',
+        brand: initialData?.brand || '',
+        supplier: initialData?.supplier || '',
+        standalone: initialData?.standalone !== false, // Default to true unless explicitly set to false
+        connectedProducts: initialData?.connectedProducts || [],
+      });
+
+      // Fetch options
       fetchOptions();
     }
-  }, [open]);
-
-  // Reset form when initialData changes
-  useEffect(() => {
-    setFormData({
-      name: initialData?.name || '',
-      description: initialData?.description || '',
-      price: initialData?.price || 0,
-      category: initialData?.category || '',
-      brand: initialData?.brand || '',
-      supplier: initialData?.supplier || '',
-      standalone: initialData?.standalone !== false, // Default to true unless explicitly set to false
-      connectedProducts: initialData?.connectedProducts || [],
-    });
-  }, [initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialData]);
 
   // Fetch dropdown options
   const fetchOptions = async () => {
