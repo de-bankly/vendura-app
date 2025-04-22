@@ -2,6 +2,8 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
 import {
   Box,
   Grid,
@@ -16,6 +18,13 @@ import {
   alpha,
   Container,
   Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -30,7 +39,6 @@ import {
 import { RedeemDepositDialog } from '../components/deposit';
 import { ProductService, CartService } from '../services';
 import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
-import TransactionService from '../services/TransactionService';
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -94,6 +102,9 @@ const SalesScreen = () => {
   const [appliedDeposits, setAppliedDeposits] = useState([]);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [giftCardPayment, setGiftCardPayment] = useState(0);
+  const [cartUndoEnabled, setCartUndoEnabled] = useState(false);
+  const [cartRedoEnabled, setCartRedoEnabled] = useState(false);
   const [depositCredit, setDepositCredit] = useState(0);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
@@ -204,20 +215,95 @@ const SalesScreen = () => {
     return cashValue > total ? cashValue - total : 0;
   }, [paymentMethod, cashReceived, total]);
 
-  // --- Callback Handlers ---
-  const addToCart = useCallback(product => {
-    setCartItems(prevItems => CartService.addToCart(prevItems, product));
+  // Replace the useEffect that monitors undo/redo availability
+  useEffect(() => {
+    // Check if undo/redo is available
+    setCartUndoEnabled(CartService.canUndoCartState());
+    setCartRedoEnabled(CartService.canRedoCartState());
+
+    // Set up interval to periodically check if service is loaded
+    const checkInterval = setInterval(() => {
+      setCartUndoEnabled(CartService.canUndoCartState());
+      setCartRedoEnabled(CartService.canRedoCartState());
+    }, 500);
+
+    return () => clearInterval(checkInterval);
+  }, [cartItems, appliedVouchers]);
+
+  // Replace the undo handler
+  const handleUndoCartState = useCallback(async () => {
+    try {
+      const result = await CartService.undoCartState();
+      if (result) {
+        setCartItems(result.cartItems);
+        setAppliedVouchers(result.appliedVouchers || []);
+      }
+    } catch (err) {
+      console.error('Failed to undo cart state:', err);
+    }
   }, []);
 
-  const removeFromCart = useCallback(productId => {
-    setCartItems(prevItems => CartService.removeFromCart(prevItems, productId));
+  // Replace the redo handler
+  const handleRedoCartState = useCallback(async () => {
+    try {
+      const result = await CartService.redoCartState();
+      if (result) {
+        setCartItems(result.cartItems);
+        setAppliedVouchers(result.appliedVouchers || []);
+      }
+    } catch (err) {
+      console.error('Failed to redo cart state:', err);
+    }
   }, []);
 
-  const deleteFromCart = useCallback(productId => {
-    setCartItems(prevItems => CartService.deleteFromCart(prevItems, productId));
-  }, []);
+  // Modify the addToCart function to handle async operations
+  const addToCart = useCallback(
+    product => {
+      // Update UI immediately
+      const updatedItems = CartService.addToCart([...cartItems], product);
+      setCartItems(updatedItems);
 
+      // Save state in background
+      CartService.saveCartState(updatedItems, appliedVouchers).catch(err => {
+        console.error('Failed to save cart state after adding item:', err);
+      });
+    },
+    [cartItems, appliedVouchers]
+  );
+
+  // Modify the removeFromCart function to handle async operations
+  const removeFromCart = useCallback(
+    productId => {
+      // Update UI immediately
+      const updatedItems = CartService.removeFromCart([...cartItems], productId);
+      setCartItems(updatedItems);
+
+      // Save state in background
+      CartService.saveCartState(updatedItems, appliedVouchers).catch(err => {
+        console.error('Failed to save cart state after removing item:', err);
+      });
+    },
+    [cartItems, appliedVouchers]
+  );
+
+  // Modify the deleteFromCart function to handle async operations
+  const deleteFromCart = useCallback(
+    productId => {
+      // Update UI immediately
+      const updatedItems = CartService.deleteFromCart([...cartItems], productId);
+      setCartItems(updatedItems);
+
+      // Save state in background
+      CartService.saveCartState(updatedItems, appliedVouchers).catch(err => {
+        console.error('Failed to save cart state after deleting item:', err);
+      });
+    },
+    [cartItems, appliedVouchers]
+  );
+
+  // Modify the clearCart function to handle async operations
   const clearCart = useCallback(() => {
+    // Update UI immediately
     setCartItems([]);
     setAppliedVouchers([]);
     setAppliedDeposits([]);
@@ -229,8 +315,44 @@ const SalesScreen = () => {
       expirationDate: '',
       cvv: '',
     });
+
+    // Clear cart history in background
+    CartService.clearCartHistory().catch(err => {
+      console.error('Failed to clear cart history:', err);
+    });
   }, []);
 
+  // Modify the handleApplyVoucher function to handle async operations
+  const handleApplyVoucher = useCallback(
+    voucher => {
+      // Update UI immediately
+      const updatedVouchers = [...appliedVouchers, voucher];
+      setAppliedVouchers(updatedVouchers);
+
+      // Save state in background with a label
+      CartService.saveCartState(cartItems, updatedVouchers, 'Applied voucher').catch(err => {
+        console.error('Failed to save cart state after applying voucher:', err);
+      });
+    },
+    [cartItems, appliedVouchers]
+  );
+
+  // Modify the handleRemoveVoucher function to handle async operations
+  const handleRemoveVoucher = useCallback(
+    voucherId => {
+      // Update UI immediately
+      const updatedVouchers = appliedVouchers.filter(v => v.id !== voucherId);
+      setAppliedVouchers(updatedVouchers);
+
+      // Save state in background with a label
+      CartService.saveCartState(cartItems, updatedVouchers, 'Removed voucher').catch(err => {
+        console.error('Failed to save cart state after removing voucher:', err);
+      });
+    },
+    [cartItems, appliedVouchers]
+  );
+
+  // --- Callback Handlers ---
   const handlePaymentModalOpen = useCallback(() => {
     setPaymentModalOpen(true);
     setCashReceived(total.toFixed(2));
@@ -347,25 +469,25 @@ const SalesScreen = () => {
     // Potentially refetch products if needed
   }, [clearCart]);
 
-  const handleRedeemVoucherDialogOpen = useCallback(() => {
+  const handleRedeemVoucherDialog = () => {
     setRedeemVoucherDialogOpen(true);
-  }, []);
+  };
 
   const handleRedeemVoucherDialogClose = useCallback(() => {
     setRedeemVoucherDialogOpen(false);
   }, []);
 
-  const handleVoucherManagementDialogOpen = useCallback(() => {
+  const handleVoucherManagementDialog = () => {
     setVoucherManagementDialogOpen(true);
-  }, []);
+  };
 
   const handleVoucherManagementDialogClose = useCallback(() => {
     setVoucherManagementDialogOpen(false);
   }, []);
 
-  const handlePurchaseVoucherDialogOpen = useCallback(() => {
+  const handlePurchaseVoucherDialog = () => {
     setPurchaseVoucherDialogOpen(true);
-  }, []);
+  };
 
   const handlePurchaseVoucherDialogClose = useCallback(() => {
     setPurchaseVoucherDialogOpen(false);
@@ -626,42 +748,95 @@ const SalesScreen = () => {
                 </motion.div>
               </Grid>
 
-              {/* Shopping Cart */}
-              <Grid item xs={12} md={5} lg={4} sx={{ height: '100%' }}>
-                <motion.div variants={itemVariants} style={{ height: '100%' }}>
-                  <Paper
-                    elevation={0}
+              {/* Shopping Cart with additional Memento pattern buttons */}
+              <Grid
+                item
+                xs={12}
+                md={4}
+                sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+              >
+                <Paper
+                  elevation={3}
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    bgcolor: 'background.default',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Cart header with undo/redo buttons */}
+                  <Box
                     sx={{
-                      borderRadius: theme.shape.borderRadius,
-                      border: `1px solid ${theme.palette.divider}`,
-                      height: '100%', // Take full height of grid item
+                      p: 2,
                       display: 'flex',
-                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                      background: theme.palette.background.paper,
                     }}
                   >
-                    <ShoppingCart
-                      cartItems={cartItems}
-                      appliedVouchers={appliedVouchers}
-                      subtotal={subtotal}
-                      voucherDiscount={voucherDiscount}
-                      depositCredit={depositCredit}
-                      total={total}
-                      productDiscount={productDiscount}
-                      receiptReady={receiptReady}
-                      onAddItem={addToCart}
-                      onRemoveItem={removeFromCart}
-                      onDeleteItem={deleteFromCart}
-                      onClearCart={clearCart}
-                      onPayment={handlePaymentModalOpen}
-                      onPrintReceipt={handlePrintReceipt}
-                      onNewTransaction={handleNewTransaction}
-                      onRemoveVoucher={handleRemoveVoucher}
-                      onRedeemVoucher={handleRedeemVoucherDialogOpen}
-                      onManageVouchers={handleVoucherManagementDialogOpen}
-                      onPurchaseVoucher={handlePurchaseVoucherDialogOpen}
-                      onRedeemDeposit={handleRedeemDepositDialogOpen}
-                    />
-                  </Paper>
+                    <Typography variant="h6">Warenkorb</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Tooltip title="Rückgängig">
+                        <span>
+                          {' '}
+                          {/* Tooltip requires a wrapper when child is disabled */}
+                          <IconButton
+                            size="small"
+                            disabled={!cartUndoEnabled}
+                            onClick={handleUndoCartState}
+                            sx={{ mr: 0.5 }}
+                          >
+                            <UndoIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Wiederherstellen">
+                        <span>
+                          {' '}
+                          {/* Tooltip requires a wrapper when child is disabled */}
+                          <IconButton
+                            size="small"
+                            disabled={!cartRedoEnabled}
+                            onClick={handleRedoCartState}
+                            sx={{ mr: 0.5 }}
+                          >
+                            <RedoIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Chip
+                        icon={<ShoppingCartIcon fontSize="small" />}
+                        label={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                        color="primary"
+                        size="small"
+                        variant="outlined"
+                      />
+                    </Box>
+                  </Box>
+
+                  <ShoppingCart
+                    cartItems={cartItems}
+                    appliedVouchers={appliedVouchers}
+                    subtotal={subtotal}
+                    voucherDiscount={voucherDiscount}
+                    total={total}
+                    receiptReady={receiptReady}
+                    onAddItem={addToCart}
+                    onRemoveItem={removeFromCart}
+                    onDeleteItem={deleteFromCart}
+                    onClearCart={clearCart}
+                    onPayment={handlePaymentModalOpen}
+                    onPrintReceipt={handlePrintReceipt}
+                    onNewTransaction={handleNewTransaction}
+                    onRemoveVoucher={handleRemoveVoucher}
+                    onRedeemVoucher={handleRedeemVoucherDialog}
+                    onManageVouchers={handleVoucherManagementDialog}
+                    onPurchaseVoucher={handlePurchaseVoucherDialog}
+                  />
+                </Paper>
                 </motion.div>
               </Grid>
             </Grid>

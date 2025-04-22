@@ -15,11 +15,13 @@ import SupplierOrderService from './SupplierOrderService';
 import SupplierService from './SupplierService';
 import TransactionService from './TransactionService';
 import UserService from './UserService';
+import CartMementoService from './cart';
 
 export {
   AuthService,
   BrandService,
   CartService,
+  CartMementoService,
   DepositService,
   GiftCardService,
   GiftCardTransactionService,
