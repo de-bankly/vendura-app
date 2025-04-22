@@ -3,7 +3,6 @@ import { Grid, Paper, Box, CircularProgress, Alert, useTheme } from '@mui/materi
 import { motion } from 'framer-motion';
 import ProductGrid from './ProductGrid';
 import ShoppingCart from './ShoppingCart';
-import CartHeader from './CartHeader';
 
 // Animation variants
 const itemVariants = {
@@ -109,15 +108,6 @@ const SalesMainContent = ({
             overflow: 'hidden',
           }}
         >
-          {/* Cart header with undo/redo buttons */}
-          <CartHeader
-            cartItems={cartItems}
-            cartUndoEnabled={cartUndoEnabled}
-            cartRedoEnabled={cartRedoEnabled}
-            onUndoCartState={onUndoCartState}
-            onRedoCartState={onRedoCartState}
-          />
-
           <ShoppingCart
             cartItems={cartItems}
             appliedVouchers={appliedVouchers}
@@ -138,6 +128,10 @@ const SalesMainContent = ({
             onRedeemVoucher={onRedeemVoucher}
             onManageVouchers={onManageVouchers}
             onRedeemDeposit={onRedeemDeposit}
+            cartUndoEnabled={cartUndoEnabled}
+            cartRedoEnabled={cartRedoEnabled}
+            onUndoCartState={onUndoCartState}
+            onRedoCartState={onRedoCartState}
           />
         </Paper>
       </Grid>

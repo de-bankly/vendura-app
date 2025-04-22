@@ -1,5 +1,8 @@
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
 import {
   Box,
   Typography,
@@ -37,6 +40,8 @@ const ShoppingCart = ({
   giftCardPayment,
   total,
   receiptReady,
+  cartUndoEnabled,
+  cartRedoEnabled,
   onAddItem,
   onRemoveItem,
   onDeleteItem,
@@ -48,6 +53,8 @@ const ShoppingCart = ({
   onRedeemVoucher,
   onManageVouchers,
   onRedeemDeposit,
+  onUndoCartState,
+  onRedoCartState,
 }) => {
   const theme = useTheme();
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -66,8 +73,6 @@ const ShoppingCart = ({
     >
       {/* Header */}
       <Box
-        component={motion.div}
-        whileHover={{ backgroundColor: alpha(theme.palette.primary.main, 0.05) }}
         sx={{
           p: 2.5,
           display: 'flex',
@@ -100,27 +105,54 @@ const ShoppingCart = ({
           </Typography>
         </Box>
 
-        {!cartIsEmpty && (
-          <Tooltip title="Warenkorb leeren">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={onClearCart}
-              sx={{
-                transition: theme.transitions.create(['transform', 'background-color'], {
-                  duration: theme.transitions.duration.shorter,
-                }),
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  backgroundColor: alpha(theme.palette.error.main, 0.1),
-                },
-              }}
-              aria-label="Clear cart"
-            >
-              <ClearAllIcon />
-            </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="Rückgängig">
+            <span>
+              <IconButton
+                size="small"
+                disabled={!cartUndoEnabled}
+                onClick={onUndoCartState}
+                sx={{ mr: 0.5 }}
+              >
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
-        )}
+          <Tooltip title="Wiederherstellen">
+            <span>
+              <IconButton
+                size="small"
+                disabled={!cartRedoEnabled}
+                onClick={onRedoCartState}
+                sx={{ mr: 0.5 }}
+              >
+                <RedoIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {!cartIsEmpty && (
+            <Tooltip title="Warenkorb leeren">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={onClearCart}
+                sx={{
+                  transition: theme.transitions.create(['transform', 'background-color'], {
+                    duration: theme.transitions.duration.shorter,
+                  }),
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                    backgroundColor: alpha(theme.palette.error.main, 0.1),
+                  },
+                }}
+                aria-label="Clear cart"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
       {/* Cart items */}
@@ -248,6 +280,8 @@ ShoppingCart.propTypes = {
   giftCardPayment: PropTypes.number,
   total: PropTypes.number.isRequired,
   receiptReady: PropTypes.bool.isRequired,
+  cartUndoEnabled: PropTypes.bool,
+  cartRedoEnabled: PropTypes.bool,
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,
   onDeleteItem: PropTypes.func.isRequired,
@@ -259,6 +293,8 @@ ShoppingCart.propTypes = {
   onRedeemVoucher: PropTypes.func.isRequired,
   onManageVouchers: PropTypes.func.isRequired,
   onRedeemDeposit: PropTypes.func.isRequired,
+  onUndoCartState: PropTypes.func,
+  onRedoCartState: PropTypes.func,
 };
 
 ShoppingCart.defaultProps = {
