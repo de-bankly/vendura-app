@@ -13,7 +13,7 @@ import {
   TableRow,
   Chip,
 } from '@mui/material';
-import { QRCodeSVG } from '@qrcode/react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const DepositReceipt = ({ receipt }) => {
   // Format date string
