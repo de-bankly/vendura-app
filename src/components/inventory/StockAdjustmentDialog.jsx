@@ -10,9 +10,14 @@ import {
   Grid,
   TextField,
   Typography,
+  CircularProgress,
+  useTheme,
+  alpha,
+  Divider,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 
 import { InventoryManagementService } from '../../services';
 import { Select } from '../ui/inputs';
@@ -21,6 +26,7 @@ import { Select } from '../ui/inputs';
  * StockAdjustmentDialog allows users to manually adjust inventory stock levels
  */
 const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
+  const theme = useTheme();
   const [adjustmentType, setAdjustmentType] = useState('add');
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState('');
@@ -61,34 +67,100 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
   const currentStock = product.currentStock !== null ? product.currentStock : 'Unknown';
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Adjust Inventory for {product.name}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: theme.shadows[10],
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          pb: 1,
+          pt: 2,
+          fontWeight: 600,
+        }}
+      >
+        Bestand anpassen
+      </DialogTitle>
 
-      <DialogContent>
-        <DialogContentText>Current stock: {currentStock}</DialogContentText>
+      <Divider />
 
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
+      <DialogContent sx={{ pt: 2 }}>
+        <Box
+          sx={{
+            mb: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            p: 2,
+            bgcolor: alpha(theme.palette.primary.main, 0.05),
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            {product.name}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Artikel-ID: {product.id}
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                bgcolor: alpha(theme.palette.success.main, 0.1),
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+              }}
+            >
+              <Typography variant="body2" fontWeight={600} color="success.main">
+                Aktueller Bestand: {currentStock}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom>
-                  Adjustment Type
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                  Anpassungstyp
                 </Typography>
                 <Select
                   value={adjustmentType}
                   onChange={e => setAdjustmentType(e.target.value)}
                   options={[
-                    { value: 'add', label: 'Add Stock' },
-                    { value: 'remove', label: 'Remove Stock' },
+                    {
+                      value: 'add',
+                      label: 'Bestand hinzufügen',
+                      icon: <AddIcon fontSize="small" color="success" />,
+                    },
+                    {
+                      value: 'remove',
+                      label: 'Bestand entfernen',
+                      icon: <RemoveIcon fontSize="small" color="error" />,
+                    },
                   ]}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                    },
+                  }}
                 />
               </FormControl>
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom>
-                  Quantity
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                  Menge
                 </Typography>
                 <TextField
                   type="number"
@@ -96,44 +168,80 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
                   onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
                   InputProps={{ inputProps: { min: 1 } }}
                   fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                    },
+                  }}
                 />
               </FormControl>
             </Grid>
 
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom>
-                  Reason for Adjustment
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                  Grund für die Anpassung
                 </Typography>
                 <TextField
                   value={reason}
                   onChange={e => setReason(e.target.value)}
-                  placeholder="Enter reason for adjustment"
+                  placeholder="Geben Sie einen Grund für die Bestandsanpassung an"
                   multiline
-                  rows={2}
+                  rows={3}
                   fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                    },
+                  }}
                 />
               </FormControl>
             </Grid>
           </Grid>
 
           {error && (
-            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.error.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
+              }}
+            >
+              <Typography color="error" variant="body2">
+                {error}
+              </Typography>
+            </Box>
           )}
         </Box>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          sx={{
+            borderRadius: 1.5,
+            textTransform: 'none',
+            px: 3,
+          }}
+        >
+          Abbrechen
+        </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
-          color="primary"
+          color={adjustmentType === 'add' ? 'success' : 'primary'}
           disabled={isSubmitting || quantity < 1}
+          sx={{
+            borderRadius: 1.5,
+            textTransform: 'none',
+            px: 3,
+          }}
+          startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
         >
-          {isSubmitting ? 'Processing...' : 'Adjust Stock'}
+          {isSubmitting ? 'Wird bearbeitet...' : 'Bestand anpassen'}
         </Button>
       </DialogActions>
     </Dialog>

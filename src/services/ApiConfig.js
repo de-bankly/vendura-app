@@ -33,7 +33,11 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
-      window.location = '/login';
+      localStorage.removeItem('user');
+
+      // Use history API for consistent navigation behavior with the router
+      window.history.pushState({}, '', '/login');
+      window.location.reload();
     }
 
     // Check for network errors

@@ -14,7 +14,7 @@ class TransactionService {
     try {
       // Prepare position data (cart items)
       const positions = transactionData.cartItems.map(item => ({
-        productId: item.id,
+        productDTO: { id: item.id },
         quantity: item.quantity,
         unitPrice: item.price,
         total: item.price * item.quantity,
@@ -26,6 +26,7 @@ class TransactionService {
 
       // Add gift card payments if applicable
       let giftCardTotal = 0;
+
       if (transactionData.appliedVouchers && transactionData.appliedVouchers.length > 0) {
         // Filter for gift card type vouchers only
         const giftCardVouchers = transactionData.appliedVouchers.filter(
@@ -61,10 +62,38 @@ class TransactionService {
         }
       }
 
-      // Only add cash/card payment if the gift card doesn't cover the full amount
-      const isFullyCoveredByGiftCard = Math.abs(giftCardTotal - transactionData.total) < 0.01;
+      // Prepare deposit receipts data
+      const depositReceipts = [];
+      let depositTotal = 0;
 
-      if (!isFullyCoveredByGiftCard) {
+      // Add deposit receipts if applicable
+      if (transactionData.depositReceipts && transactionData.depositReceipts.length > 0) {
+        for (const receipt of transactionData.depositReceipts) {
+          // Jeder Pfandbeleg kann entweder ein 'value' oder ein 'total' Feld haben
+          // Wir müssen beide Fälle behandeln, um sicherzustellen, dass wir den korrekten Wert erhalten
+          const receiptValue = parseFloat(receipt.value || receipt.total || 0);
+
+          depositTotal += receiptValue;
+          depositReceipts.push({
+            id: receipt.id,
+          });
+        }
+      }
+
+      // Only add cash/card payment if the gift card and deposit receipts don't cover the full amount
+      const isFullyCoveredByGiftCards = Math.abs(giftCardTotal - transactionData.total) < 0.01;
+
+      // If the payment is intended to be fully covered by deposit receipts, don't add additional payment methods
+      if (transactionData.useDepositAsPayment) {
+        // Ensure that the total equals the depositCredit amount for deposit-only payments
+        if (Math.abs(transactionData.depositCredit - transactionData.total) > 0.01) {
+          throw new Error(
+            'Pfandguthaben entspricht nicht dem Gesamtbetrag. Bitte verwenden Sie eine andere Zahlungsmethode.'
+          );
+        }
+      } else if (!isFullyCoveredByGiftCards) {
+        // Der verbleibende Betrag ist einfach der Gesamtbetrag minus Gutscheinbeträge
+        // Das Pfandguthaben ist bereits in total berücksichtigt
         const remainingAmount = Math.max(0, transactionData.total - giftCardTotal);
 
         // Add cash payment if applicable
@@ -72,7 +101,7 @@ class TransactionService {
           payments.push({
             type: 'CASH',
             amount: parseFloat(remainingAmount.toFixed(2)),
-            cashReceived: transactionData.cashReceived,
+            handed: transactionData.cashReceived,
             change: transactionData.change,
           });
         }
@@ -96,10 +125,9 @@ class TransactionService {
       const saleDTO = {
         positions,
         payments,
+        depositReceipts,
         total: transactionData.subtotal,
       };
-
-      console.log('Sending sale transaction to backend:', saleDTO);
 
       // Send to backend
       const response = await apiClient.post('/v1/sale', saleDTO);

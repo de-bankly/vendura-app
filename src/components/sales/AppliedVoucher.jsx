@@ -1,6 +1,6 @@
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Paper, Typography, alpha, useTheme, Chip, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -19,52 +19,81 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher }) => {
       exit="exit"
       variants={slideFromRightVariants}
       layout
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
       <Paper
         elevation={0}
         sx={{
-          p: 1.5,
-          bgcolor: alpha(theme.palette.info.light, 0.15),
-          borderRadius: theme.shape.borderRadius,
-          border: `1px solid ${alpha(theme.palette.info.light, 0.4)}`,
-          transition: theme.transitions.create(['box-shadow', 'border-color']),
+          p: 2,
+          bgcolor: alpha(theme.palette.info.main, 0.08),
+          borderRadius: 2,
+          border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+          transition: theme.transitions.create(['box-shadow', 'border-color', 'transform'], {
+            duration: theme.transitions.duration.short,
+          }),
           '&:hover': {
-            boxShadow: theme.shadows[1],
+            boxShadow: theme.shadows[2],
             borderColor: theme.palette.info.main,
           },
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <CardGiftcardIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
-            <Typography variant="body2" fontWeight="medium">
-              {voucher.code}
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="error.main" fontWeight="bold">
-            -{formatCurrency(voucher.value)}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="caption" color="info.dark">
-            Restguthaben: {formatCurrency(voucher.balance)}
-          </Typography>
-          <Box sx={{ ml: 'auto' }}>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => onRemoveVoucher(voucher.id)}
-              sx={{ p: 0.5 }}
-              aria-label={`Remove voucher ${voucher.code}`}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                bgcolor: alpha(theme.palette.info.main, 0.12),
+                color: theme.palette.info.main,
+                mr: 1.5,
+              }}
             >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+              <CardGiftcardIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600}>
+                {voucher.code}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Restguthaben: {formatCurrency(voucher.balance)}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Chip
+              size="small"
+              label={`-${formatCurrency(voucher.value)}`}
+              sx={{
+                mr: 1,
+                fontWeight: 600,
+                fontSize: theme.typography.pxToRem(12),
+                bgcolor: alpha(theme.palette.error.main, 0.1),
+                color: theme.palette.error.main,
+              }}
+            />
+
+            <Tooltip title="Gutschein entfernen" arrow placement="top">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => onRemoveVoucher(voucher.id)}
+                sx={{
+                  p: 0.5,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.error.main, 0.1),
+                  },
+                }}
+                aria-label={`Remove voucher ${voucher.code}`}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
       </Paper>

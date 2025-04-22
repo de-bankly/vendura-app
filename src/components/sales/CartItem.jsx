@@ -4,7 +4,16 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import LinkIcon from '@mui/icons-material/Link';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import { Box, Paper, Typography, alpha, Avatar, useTheme, Tooltip } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Typography,
+  alpha,
+  Avatar,
+  useTheme,
+  Tooltip,
+  ButtonGroup,
+} from '@mui/material';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -33,96 +42,124 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
   const itemTotal = effectivePrice * item.quantity;
 
   return (
-    <motion.div initial="hidden" animate="visible" exit="exit" variants={listItemVariants} layout>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={listItemVariants}
+      layout
+      whileHover={{ y: -3 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+    >
       <Paper
         elevation={0}
         sx={{
           overflow: 'hidden',
-          borderRadius: theme.shape.borderRadius,
-          transition: theme.transitions.create(['box-shadow', 'border-color']),
+          borderRadius: 2,
+          transition: theme.transitions.create(['box-shadow', 'border-color', 'transform'], {
+            duration: theme.transitions.duration.short,
+          }),
           border: isPfandProduct
             ? `1px dashed ${theme.palette.success.main}`
             : isConnectedProduct
               ? `1px dashed ${theme.palette.primary.main}`
-              : `1px solid ${theme.palette.divider}`,
+              : `1px solid ${alpha(theme.palette.divider, 0.8)}`,
           backgroundColor: isPfandProduct
-            ? alpha(theme.palette.success.main, 0.05)
+            ? alpha(theme.palette.success.main, 0.04)
             : isConnectedProduct
-              ? alpha(theme.palette.primary.main, 0.05)
-              : 'inherit',
+              ? alpha(theme.palette.primary.main, 0.04)
+              : theme.palette.background.paper,
           '&:hover': {
-            boxShadow: theme.shadows[2],
-            borderColor: isPfandProduct ? theme.palette.success.main : theme.palette.primary.main,
+            boxShadow: theme.shadows[3],
+            borderColor: isPfandProduct
+              ? theme.palette.success.main
+              : isConnectedProduct
+                ? theme.palette.primary.main
+                : theme.palette.primary.light,
           },
         }}
       >
-        <Box sx={{ p: 2, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ p: 2, display: 'flex', gap: 2 }}>
+          {/* Left: Product avatar */}
           <Avatar
             sx={{
               bgcolor: hasDiscount
-                ? alpha(theme.palette.error.main, 0.1)
+                ? alpha(theme.palette.error.main, 0.12)
                 : isPfandProduct
-                  ? alpha(theme.palette.success.main, 0.2)
+                  ? alpha(theme.palette.success.main, 0.12)
                   : isConnectedProduct
-                    ? alpha(theme.palette.primary.main, 0.2)
-                    : alpha(theme.palette.primary.main, 0.1),
+                    ? alpha(theme.palette.primary.main, 0.12)
+                    : alpha(theme.palette.primary.main, 0.08),
               color: hasDiscount
-                ? theme.palette.error.dark
+                ? theme.palette.error.main
                 : isPfandProduct
-                  ? theme.palette.success.dark
-                  : theme.palette.primary.dark,
-              width: 40,
-              height: 40,
+                  ? theme.palette.success.main
+                  : theme.palette.primary.main,
+              width: 44,
+              height: 44,
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
             }}
           >
             {hasDiscount ? (
-              <LocalOfferIcon fontSize="small" />
+              <LocalOfferIcon />
             ) : isPfandProduct ? (
-              <ShoppingBagIcon fontSize="small" />
+              <ShoppingBagIcon />
             ) : isConnectedProduct ? (
-              <LinkIcon fontSize="small" />
+              <LinkIcon />
             ) : (
-              item.name.charAt(0)
+              item.name.charAt(0).toUpperCase()
             )}
           </Avatar>
 
+          {/* Middle: Product information */}
           <Box sx={{ flexGrow: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="medium">
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                mb: 0.5,
+                alignItems: 'flex-start',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mr: 1 }}>
                   {item.name}
                 </Typography>
+
                 {isPfandProduct && (
                   <Tooltip title="Pfand wird automatisch mit dem Produkt berechnet" arrow>
                     <Chip
                       size="small"
                       label="Pfand"
                       sx={{
-                        ml: 1,
                         fontSize: theme.typography.pxToRem(10),
-                        bgcolor: alpha(theme.palette.success.main, 0.1),
+                        bgcolor: alpha(theme.palette.success.main, 0.12),
                         color: theme.palette.success.dark,
-                        height: 18,
+                        height: 20,
+                        fontWeight: 500,
                       }}
                     />
                   </Tooltip>
                 )}
+
                 {isConnectedProduct && !isPfandProduct && (
                   <Tooltip title="Automatisch mit Hauptprodukt hinzugefügt" arrow>
                     <Chip
                       size="small"
                       label="Bundle"
                       sx={{
-                        ml: 1,
                         fontSize: theme.typography.pxToRem(10),
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
                         color: theme.palette.primary.dark,
-                        height: 18,
+                        height: 20,
+                        fontWeight: 500,
                       }}
                     />
                   </Tooltip>
                 )}
               </Box>
+
               <Typography
                 variant="subtitle1"
                 fontWeight="bold"
@@ -134,42 +171,41 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
               </Typography>
             </Box>
 
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
+            {/* Product price information */}
+            <Box sx={{ mt: 0.5 }}>
               {hasDiscount ? (
-                <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                   <Typography
                     variant="caption"
                     sx={{
                       textDecoration: 'line-through',
                       color: 'text.secondary',
-                      mr: 1,
                     }}
                   >
                     {formatCurrency(item.originalPrice)}
                   </Typography>
+
                   <Chip
                     size="small"
                     label={`${formatCurrency(effectivePrice)} × ${item.quantity}`}
                     sx={{
-                      fontSize: theme.typography.pxToRem(12),
-                      bgcolor: alpha(theme.palette.error.main, 0.1),
-                      color: theme.palette.error.dark,
+                      fontSize: theme.typography.pxToRem(11),
+                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                      color: theme.palette.error.main,
+                      height: 18,
+                      fontWeight: 500,
                     }}
                   />
+
                   <Chip
                     size="small"
                     label={`${item.discountPercentage}% Rabatt`}
                     sx={{
-                      ml: 1,
-                      fontSize: theme.typography.pxToRem(12),
-                      bgcolor: alpha(theme.palette.error.main, 0.1),
-                      color: theme.palette.error.dark,
+                      fontSize: theme.typography.pxToRem(11),
+                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                      color: theme.palette.error.main,
+                      height: 18,
+                      fontWeight: 500,
                     }}
                   />
                 </Box>
@@ -178,103 +214,159 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
                   size="small"
                   label={`${formatCurrency(item.price)} × ${item.quantity}`}
                   sx={{
-                    fontSize: theme.typography.pxToRem(12),
+                    fontSize: theme.typography.pxToRem(11),
                     bgcolor: isPfandProduct
-                      ? alpha(theme.palette.success.main, 0.1)
-                      : alpha(theme.palette.primary.main, 0.1),
-                    color: isPfandProduct ? theme.palette.success.dark : theme.palette.primary.dark,
+                      ? alpha(theme.palette.success.main, 0.08)
+                      : alpha(theme.palette.primary.main, 0.08),
+                    color: isPfandProduct ? theme.palette.success.main : theme.palette.primary.main,
+                    height: 18,
+                    fontWeight: 500,
                   }}
                 />
               )}
+            </Box>
+          </Box>
 
-              <Box sx={{ display: 'flex' }}>
-                {isConnectedProduct || isPfandProduct ? (
-                  <Tooltip
-                    title={
-                      isPfandProduct
-                        ? 'Pfand kann nicht einzeln entfernt werden'
-                        : 'Verbundene Produkte können nicht einzeln entfernt werden'
-                    }
-                    arrow
-                  >
-                    <span>
-                      <IconButton
-                        size="small"
-                        disabled
-                        sx={{ color: alpha(theme.palette.text.disabled, 0.5) }}
-                        aria-label={`Cannot remove ${item.name}`}
-                      >
-                        <RemoveIcon fontSize="inherit" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                ) : (
-                  <IconButton
-                    size="small"
-                    onClick={() => onRemoveItem(item.id)}
-                    sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                    aria-label={`Remove one ${item.name}`}
-                  >
-                    <RemoveIcon fontSize="inherit" />
-                  </IconButton>
-                )}
+          {/* Right: Action buttons */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <ButtonGroup
+              orientation="vertical"
+              size="small"
+              variant="outlined"
+              sx={{
+                '.MuiButtonGroup-grouped': {
+                  minWidth: 'unset',
+                },
+                borderColor: alpha(theme.palette.divider, 0.5),
+              }}
+            >
+              {isConnectedProduct || isPfandProduct ? (
+                <Tooltip
+                  title={
+                    isPfandProduct
+                      ? 'Pfand kann nicht einzeln gelöscht werden'
+                      : 'Verbundene Produkte können nicht einzeln gelöscht werden'
+                  }
+                  arrow
+                  placement="left"
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled
+                      sx={{
+                        color: alpha(theme.palette.text.disabled, 0.5),
+                        borderRadius: 0,
+                        bgcolor: 'background.paper',
+                        borderColor: 'transparent',
+                      }}
+                      aria-label={`Cannot delete ${item.name}`}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              ) : (
+                <IconButton
+                  size="small"
+                  onClick={() => onDeleteItem(item.id)}
+                  sx={{
+                    color: 'error.main',
+                    '&:hover': {
+                      color: 'error.dark',
+                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                    },
+                    borderRadius: 0,
+                    bgcolor: 'background.paper',
+                  }}
+                  aria-label={`Delete ${item.name}`}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              )}
 
+              {isConnectedProduct || isPfandProduct ? (
+                <Tooltip
+                  title={
+                    isPfandProduct
+                      ? 'Pfand kann nicht einzeln entfernt werden'
+                      : 'Verbundene Produkte können nicht einzeln entfernt werden'
+                  }
+                  arrow
+                  placement="left"
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled
+                      sx={{
+                        color: alpha(theme.palette.text.disabled, 0.5),
+                        borderRadius: 0,
+                        bgcolor: 'background.paper',
+                        borderColor: 'transparent',
+                      }}
+                      aria-label={`Cannot remove ${item.name}`}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              ) : (
+                <IconButton
+                  size="small"
+                  onClick={() => onRemoveItem(item.id)}
+                  sx={{
+                    color: 'text.secondary',
+                    '&:hover': {
+                      color: 'primary.main',
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    },
+                    borderRadius: 0,
+                    bgcolor: 'background.paper',
+                  }}
+                  aria-label={`Remove one ${item.name}`}
+                >
+                  <RemoveIcon fontSize="small" />
+                </IconButton>
+              )}
+
+              {isPfandProduct ? (
+                <Tooltip title="Pfandmenge kann nicht geändert werden" arrow placement="left">
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled
+                      sx={{
+                        color: alpha(theme.palette.text.disabled, 0.5),
+                        borderRadius: 0,
+                        bgcolor: 'background.paper',
+                        borderColor: 'transparent',
+                      }}
+                      aria-label={`Cannot add ${item.name}`}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              ) : (
                 <IconButton
                   size="small"
                   onClick={() => onAddItem(item)}
-                  sx={{ color: 'success.main', '&:hover': { color: 'success.dark' } }}
+                  sx={{
+                    color: 'success.main',
+                    '&:hover': {
+                      color: 'success.dark',
+                      bgcolor: alpha(theme.palette.success.main, 0.08),
+                    },
+                    borderRadius: 0,
+                    bgcolor: 'background.paper',
+                  }}
                   aria-label={`Add one ${item.name}`}
                 >
-                  <AddIcon fontSize="inherit" />
+                  <AddIcon fontSize="small" />
                 </IconButton>
-
-                {isConnectedProduct || isPfandProduct ? (
-                  <Tooltip
-                    title={
-                      isPfandProduct
-                        ? 'Pfand kann nicht einzeln gelöscht werden'
-                        : 'Verbundene Produkte können nicht einzeln gelöscht werden'
-                    }
-                    arrow
-                  >
-                    <span>
-                      <IconButton
-                        size="small"
-                        disabled
-                        sx={{ color: alpha(theme.palette.text.disabled, 0.5) }}
-                        aria-label={`Cannot delete ${item.name}`}
-                      >
-                        <DeleteIcon fontSize="inherit" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                ) : (
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => onDeleteItem(item.id)}
-                    sx={{ '&:hover': { color: 'error.dark' } }}
-                    aria-label={`Delete ${item.name}`}
-                  >
-                    <DeleteIcon fontSize="inherit" />
-                  </IconButton>
-                )}
-              </Box>
-            </Box>
-
-            {(isConnectedProduct || isPfandProduct) && (
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  mt: 1,
-                  color: isPfandProduct ? theme.palette.success.dark : theme.palette.text.secondary,
-                  fontStyle: 'italic',
-                }}
-              >
-                {isPfandProduct ? 'Automatisch mit Produkt berechnet' : 'Teil des Produkt-Bundles'}
-              </Typography>
-            )}
+              )}
+            </ButtonGroup>
           </Box>
         </Box>
       </Paper>
@@ -283,23 +375,7 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
 };
 
 CartItem.propTypes = {
-  item: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    quantity: PropTypes.number.isRequired,
-    hasDiscount: PropTypes.bool,
-    originalPrice: PropTypes.number,
-    discountedPrice: PropTypes.number,
-    discountPercentage: PropTypes.number,
-    isConnectedProduct: PropTypes.bool,
-    isPfandProduct: PropTypes.bool,
-    parentProductId: PropTypes.string,
-    category: PropTypes.shape({
-      id: PropTypes.string,
-      name: PropTypes.string,
-    }),
-  }).isRequired,
+  item: PropTypes.object.isRequired,
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,
   onDeleteItem: PropTypes.func.isRequired,

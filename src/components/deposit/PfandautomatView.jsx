@@ -39,8 +39,7 @@ const PfandautomatView = () => {
           product =>
             product.connectedProducts &&
             product.connectedProducts.some(
-              connectedProduct =>
-                connectedProduct.category && connectedProduct.category.name === 'Pfand'
+              connectedProduct => connectedProduct?.category?.name === 'Pfand'
             )
         );
         setProducts(productsWithDeposits);

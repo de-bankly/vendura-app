@@ -17,12 +17,16 @@ class CartService {
     if (!this._mementoService) {
       if (!this._mementoServicePromise) {
         // Use dynamic import instead of require
-        this._mementoServicePromise = import('./cart/CartMementoService').then(
-          (module) => {
-            this._mementoService = module.default;
-            return this._mementoService;
+        this._mementoServicePromise = import('./cart/CartMementoService').then(module => {
+          // The service is already an instance, not a class
+          this._mementoService = module.default;
+
+          if (!this._mementoService) {
+            console.error('Failed to load CartMementoService, module structure:', module);
+            throw new Error('CartMementoService not found in imported module');
           }
-        );
+          return this._mementoService;
+        });
       }
       await this._mementoServicePromise;
     }
@@ -39,31 +43,41 @@ class CartService {
     let updatedCartItems = [...cartItems];
 
     // Check if the product already exists in cart
-    const existingItem = updatedCartItems.find(
-      (item) => item.id === product.id
-    );
+    const existingItem = updatedCartItems.find(item => item.id === product.id);
 
     if (existingItem) {
-      // If product already exists, just increment quantity
-      updatedCartItems = updatedCartItems.map((item) =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
+      // Check if the product is a Pfand product
+      const isPfandProduct =
+        existingItem.isPfandProduct === true || existingItem.category?.name === 'Pfand';
+
+      // If it's a Pfand product, don't increment quantity
+      if (isPfandProduct) {
+        return cartItems; // Return original cart items without changes
+      }
+
+      // If product already exists and is not a Pfand product, increment quantity
+      updatedCartItems = updatedCartItems.map(item =>
+        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       );
 
       // If this is a parent product, also increment all its connected products
       if (product.connectedProducts && product.connectedProducts.length > 0) {
         for (const connectedProduct of product.connectedProducts) {
           const existingConnectedItem = updatedCartItems.find(
-            (item) =>
-              item.id === connectedProduct.id &&
-              item.parentProductId === product.id
+            item => item.id === connectedProduct.id && item.parentProductId === product.id
           );
 
           if (existingConnectedItem) {
-            updatedCartItems = updatedCartItems.map((item) =>
-              item.id === connectedProduct.id &&
-              item.parentProductId === product.id
+            // Check if connected product is a Pfand product
+            const isConnectedPfandProduct =
+              existingConnectedItem.isPfandProduct === true ||
+              connectedProduct?.category?.name === 'Pfand';
+
+            // For connected products, always update their quantity to match the parent
+            // This allows Pfand products to be updated when their parent product is updated
+            // but prevents them from being independently updated
+            updatedCartItems = updatedCartItems.map(item =>
+              item.id === connectedProduct.id && item.parentProductId === product.id
                 ? { ...item, quantity: item.quantity + 1 }
                 : item
             );
@@ -76,9 +90,9 @@ class CartService {
 
       // Add connected products if any
       if (product.connectedProducts && product.connectedProducts.length > 0) {
-        product.connectedProducts.forEach((connectedProduct) => {
-          // Check if this is a Pfand product
-          const isPfandProduct = connectedProduct.category?.name === 'Pfand';
+        product.connectedProducts.forEach(connectedProduct => {
+          // Check if this is a Pfand product - add null check for category
+          const isPfandProduct = connectedProduct?.category?.name === 'Pfand';
 
           // Create a copy with additional property to mark it as a connected product
           const connectedProductWithParent = {
@@ -107,14 +121,11 @@ class CartService {
    */
   removeFromCart(cartItems, productId) {
     // Find the item to remove
-    const itemToRemove = cartItems.find((item) => item.id === productId);
+    const itemToRemove = cartItems.find(item => item.id === productId);
     let updatedCartItems = [...cartItems]; // Start with a copy
 
     // If it's a connected product or Pfand product, don't remove it
-    if (
-      itemToRemove &&
-      (itemToRemove.isConnectedProduct || itemToRemove.isPfandProduct)
-    ) {
+    if (itemToRemove && (itemToRemove.isConnectedProduct || itemToRemove.isPfandProduct)) {
       // No change, return original items (no memento update needed)
       return cartItems;
     }
@@ -124,48 +135,40 @@ class CartService {
       // If quantity is more than 1, just decrement
       if (itemToRemove.quantity > 1) {
         // Decrement quantity of parent product
-        updatedCartItems = updatedCartItems.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
+        updatedCartItems = updatedCartItems.map(item =>
+          item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         );
 
         // Find and decrement quantities of connected products as well
         const connectedProductItems = updatedCartItems.filter(
-          (item) => item.parentProductId === productId
+          item => item.parentProductId === productId
         );
 
         if (connectedProductItems.length > 0) {
-          updatedCartItems = updatedCartItems.map((item) =>
-            item.parentProductId === productId
-              ? { ...item, quantity: item.quantity - 1 }
-              : item
+          updatedCartItems = updatedCartItems.map(item =>
+            item.parentProductId === productId ? { ...item, quantity: item.quantity - 1 } : item
           );
 
           // Remove connected products with zero quantity (shouldn't happen if parent > 1, but good practice)
-          updatedCartItems = updatedCartItems.filter(
-            (item) => item.quantity > 0
-          );
+          updatedCartItems = updatedCartItems.filter(item => item.quantity > 0);
         }
       } else {
         // Remove the parent product and all its connected products
         updatedCartItems = updatedCartItems.filter(
-          (item) => item.id !== productId && item.parentProductId !== productId
+          item => item.id !== productId && item.parentProductId !== productId
         );
       }
     } else {
       // Handle normal products (not parent, not connected/pfand)
-      const existingItem = cartItems.find((item) => item.id === productId);
+      const existingItem = cartItems.find(item => item.id === productId);
 
       if (existingItem && existingItem.quantity > 1) {
-        updatedCartItems = cartItems.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
+        updatedCartItems = cartItems.map(item =>
+          item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         );
       } else {
         // Remove the item completely if quantity is 1 or item not found (though handled above)
-        updatedCartItems = cartItems.filter((item) => item.id !== productId);
+        updatedCartItems = cartItems.filter(item => item.id !== productId);
       }
     }
 
@@ -182,14 +185,11 @@ class CartService {
    */
   deleteFromCart(cartItems, productId) {
     // Find the item to delete
-    const itemToDelete = cartItems.find((item) => item.id === productId);
+    const itemToDelete = cartItems.find(item => item.id === productId);
     let updatedCartItems = [...cartItems]; // Start with a copy
 
     // If it's a connected product or Pfand product, don't allow deletion
-    if (
-      itemToDelete &&
-      (itemToDelete.isConnectedProduct || itemToDelete.isPfandProduct)
-    ) {
+    if (itemToDelete && (itemToDelete.isConnectedProduct || itemToDelete.isPfandProduct)) {
       // No change, return original items (no memento update needed)
       return cartItems;
     }
@@ -197,11 +197,11 @@ class CartService {
     // If it's a parent product, delete it and all its connected products
     if (itemToDelete && !itemToDelete.isConnectedProduct) {
       updatedCartItems = cartItems.filter(
-        (item) => item.id !== productId && item.parentProductId !== productId
+        item => item.id !== productId && item.parentProductId !== productId
       );
     } else {
       // Default case: normal product deletion (or item not found)
-      updatedCartItems = cartItems.filter((item) => item.id !== productId);
+      updatedCartItems = cartItems.filter(item => item.id !== productId);
     }
 
     // Update cart locally first
@@ -217,10 +217,10 @@ class CartService {
   _updateMementoServiceAsync(cartItems) {
     // Fire and forget - don't block UI operations
     this._getMementoService()
-      .then((service) => {
+      .then(service => {
         service.updateCartItems(cartItems);
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('Failed to update cart memento:', err);
       });
   }
@@ -319,7 +319,7 @@ class CartService {
    * @returns {Array} Formatted cart items for sale
    */
   formatCartItemsForSale(cartItems) {
-    return cartItems.map((item) => {
+    return cartItems.map(item => {
       const formattedItem = {
         id: item.id,
         quantity: item.quantity,
@@ -408,8 +408,14 @@ class CartService {
    * @returns {boolean} True if undo is available
    */
   canUndoCartState() {
-    // Default to false if service not yet loaded or promise pending
-    if (!this._mementoService) return false;
+    // Try to get the memento service if it's not already loaded
+    if (!this._mementoService) {
+      // Trigger loading in the background, but return false for now
+      this._getMementoService().catch(err => {
+        console.error('Failed to load memento service for undo check:', err);
+      });
+      return false;
+    }
     return this._mementoService.canUndo();
   }
 
@@ -418,8 +424,14 @@ class CartService {
    * @returns {boolean} True if redo is available
    */
   canRedoCartState() {
-    // Default to false if service not yet loaded or promise pending
-    if (!this._mementoService) return false;
+    // Try to get the memento service if it's not already loaded
+    if (!this._mementoService) {
+      // Trigger loading in the background, but return false for now
+      this._getMementoService().catch(err => {
+        console.error('Failed to load memento service for redo check:', err);
+      });
+      return false;
+    }
     return this._mementoService.canRedo();
   }
 

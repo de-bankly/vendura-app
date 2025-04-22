@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
@@ -42,7 +42,11 @@ const reactBrowserRouter = createBrowserRouter([
   },
   {
     path: '/',
-    element: <TopNavLayout />,
+    element: (
+      <ProtectedRoute>
+        <TopNavLayout />
+      </ProtectedRoute>
+    ),
     errorElement: <RouterErrorBoundary />,
     children: [
       {
@@ -79,7 +83,11 @@ const reactBrowserRouter = createBrowserRouter([
       },
       {
         path: 'deposit',
-        element: <PfandautomatPage />,
+        element: (
+          <ProtectedRoute>
+            <PfandautomatPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'profile',
@@ -147,6 +155,11 @@ const reactBrowserRouter = createBrowserRouter([
         element: <NotFound />,
       },
     ],
+  },
+  // Catch-all route to redirect to login
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
   },
 ]);
 

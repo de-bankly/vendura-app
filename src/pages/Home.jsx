@@ -94,14 +94,14 @@ const Home = () => {
       title: 'Gutscheine',
       description: 'Gutscheine erstellen und einlösen',
       icon: <CardGiftcardIcon />,
-      path: '/giftcards',
+      path: '/admin/giftcards',
       color: 'success',
     },
     {
       title: 'Angebote',
       description: 'Rabatte und Angebote verwalten',
       icon: <LocalOfferIcon />,
-      path: '/vouchers',
+      path: '/admin/promotions',
       color: 'warning',
     },
   ];

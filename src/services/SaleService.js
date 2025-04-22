@@ -13,13 +13,11 @@ class SaleService {
     try {
       // Map cart items to positions
       const positions = saleData.items.map(item => ({
-        productDTO: {
-          id: item.id,
-          name: item.name,
-          price: parseFloat((Math.round(item.price * 100) / 100).toFixed(2)),
-        },
+        product: { id: item.id },
         quantity: item.quantity,
-        discountEuro: 0, // Let the backend apply promotions
+        unitPrice: parseFloat((Math.round(item.price * 100) / 100).toFixed(2)),
+        total: parseFloat((Math.round(item.price * item.quantity * 100) / 100).toFixed(2)),
+        discountValue: 0,
       }));
 
       // Prepare payments with the correct calculated total
@@ -57,15 +55,13 @@ class SaleService {
       if (saleData.paymentMethod === 'cash') {
         payments.push({
           type: 'CASH',
-          // Use the final total that the customer actually pays
           amount: finalTotal,
-          handed: parseFloat((Math.round(saleData.cashReceived * 100) / 100).toFixed(2)),
-          returned: parseFloat((Math.round((saleData.change || 0) * 100) / 100).toFixed(2)),
+          cashReceived: parseFloat((Math.round(saleData.cashReceived * 100) / 100).toFixed(2)),
+          change: parseFloat((Math.round((saleData.change || 0) * 100) / 100).toFixed(2)),
         });
       } else if (saleData.paymentMethod === 'card') {
         payments.push({
           type: 'CARD',
-          // Use the final total that the customer actually pays
           amount: finalTotal,
           cardDetails: {
             cardNumber: saleData.cardDetails?.cardNumber,
@@ -80,8 +76,7 @@ class SaleService {
       const saleDTO = {
         positions,
         payments,
-        total: saleData.subtotal, // Use the subtotal (before discounts) instead of final total
-        depositReceipts: [],
+        total: finalTotal,
       };
 
       const response = await apiClient.post('/v1/sale', saleDTO);
