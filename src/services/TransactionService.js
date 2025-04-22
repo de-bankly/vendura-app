@@ -14,7 +14,7 @@ class TransactionService {
     try {
       // Prepare position data (cart items)
       const positions = transactionData.cartItems.map(item => ({
-        productId: item.id,
+        product: { id: item.id },
         quantity: item.quantity,
         unitPrice: item.price,
         total: item.price * item.quantity,
