@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 
-const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
+const BottleScanner = ({ onScanBottle, isLoading, products }) => {
   const [customBottleType, setCustomBottleType] = useState('');
   const [scanActive, setScanActive] = useState(false);
 
@@ -37,10 +37,10 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
     // If activating scanner, simulate a scan after 2 seconds
     if (!scanActive) {
       setTimeout(() => {
-        // Randomly select a bottle type to simulate scanner recognizing it
-        if (depositProducts && depositProducts.length > 0) {
-          const randomIndex = Math.floor(Math.random() * depositProducts.length);
-          onScanBottle(depositProducts[randomIndex].name);
+        // Randomly select a product to simulate scanner recognizing it
+        if (products && products.length > 0) {
+          const randomIndex = Math.floor(Math.random() * products.length);
+          onScanBottle(products[randomIndex].name);
         }
         setScanActive(false);
       }, 2000);
@@ -113,9 +113,9 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
         <Box display="flex" justifyContent="center" my={2}>
           <CircularProgress size={24} />
         </Box>
-      ) : depositProducts && depositProducts.length > 0 ? (
+      ) : products && products.length > 0 ? (
         <Grid container spacing={1} sx={{ mb: 3 }}>
-          {depositProducts.slice(0, 8).map(product => (
+          {products.slice(0, 8).map(product => (
             <Grid item xs={6} key={product.id}>
               <Button
                 variant="outlined"
@@ -134,7 +134,7 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
                     {product.name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Pfand: {product.depositValue.toFixed(2)} €
+                    {product.connectedProducts.length} Pfandprodukt(e)
                   </Typography>
                 </Box>
               </Button>
@@ -143,7 +143,7 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
         </Grid>
       ) : (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Keine Pfandprodukte verfügbar
+          Keine Produkte mit Pfand verfügbar
         </Typography>
       )}
 
@@ -157,7 +157,7 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
           <TextField
             fullWidth
             size="small"
-            placeholder="Flaschentyp eingeben"
+            placeholder="Produktname eingeben"
             value={customBottleType}
             onChange={e => setCustomBottleType(e.target.value)}
             disabled={isLoading}
@@ -179,12 +179,12 @@ const BottleScanner = ({ onScanBottle, isLoading, depositProducts }) => {
 BottleScanner.propTypes = {
   onScanBottle: PropTypes.func.isRequired,
   isLoading: PropTypes.bool,
-  depositProducts: PropTypes.array,
+  products: PropTypes.array,
 };
 
 BottleScanner.defaultProps = {
   isLoading: false,
-  depositProducts: [],
+  products: [],
 };
 
 export default BottleScanner;

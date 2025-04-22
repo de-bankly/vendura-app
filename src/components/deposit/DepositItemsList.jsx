@@ -61,15 +61,18 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
           >
             <ListItemText
               primary={item.product.name}
-              secondary={`Pfand: ${(item.product.depositValue || item.product.price).toFixed(2)} €`}
+              secondary={`Pfand: ${(item.product.price || 0).toFixed(2)} €`}
             />
-
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-              <ButtonGroup size="small">
-                <Button aria-label="decrease" onClick={() => handleDecreaseQuantity(index)}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+              <ButtonGroup size="small" aria-label="quantity button group">
+                <Button
+                  aria-label="decrease"
+                  onClick={() => handleDecreaseQuantity(index)}
+                  disabled={item.quantity <= 0}
+                >
                   <RemoveIcon fontSize="small" />
                 </Button>
-                <Button disableRipple disableTouchRipple sx={{ pointerEvents: 'none', px: 2 }}>
+                <Button disabled sx={{ minWidth: '40px' }}>
                   {item.quantity}
                 </Button>
                 <Button aria-label="increase" onClick={() => handleIncreaseQuantity(index)}>
@@ -78,15 +81,7 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
               </ButtonGroup>
             </Box>
           </ListItem>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pr: 2, pb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Summe:{' '}
-              {((item.product.depositValue || item.product.price) * item.quantity).toFixed(2)} €
-            </Typography>
-          </Box>
-
-          {index < items.length - 1 && <Divider />}
+          {index < items.length - 1 && <Divider component="li" />}
         </React.Fragment>
       ))}
     </List>
@@ -94,12 +89,7 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
 };
 
 DepositItemsList.propTypes = {
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      product: PropTypes.object.isRequired,
-      quantity: PropTypes.number.isRequired,
-    })
-  ),
+  items: PropTypes.array,
   onRemoveItem: PropTypes.func.isRequired,
   onUpdateQuantity: PropTypes.func.isRequired,
 };

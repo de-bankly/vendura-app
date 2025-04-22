@@ -335,17 +335,13 @@ class ProductService {
       const response = await this.getProducts(pageable, true, includeDiscounts);
       const products = response.content || []; // Ensure products is an array
 
-      // Filter for products that have 'Pfand' in their name or description
+      // Filter for products that are not standalone (i.e., they're connected to other products)
+      // These are the ones we want to display in the Pfandautomat
       const depositProducts = products
-        .filter(
-          product =>
-            (product.shortDescription &&
-              product.shortDescription.toLowerCase().includes('pfand')) ||
-            (product.name && product.name.toLowerCase().includes('pfand'))
-        )
+        .filter(product => product.standalone === false)
         .map(product => ({
           ...product,
-          // Nutze den Produktpreis als Pfandwert
+          // Use the product price as deposit value
           depositValue: product.price,
         }));
 
@@ -369,6 +365,27 @@ class ProductService {
     } catch (error) {
       console.error('Error fetching products for selection:', error);
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products for selection'));
+    }
+  }
+
+  /**
+   * Get all deposit items connected to a specific product
+   * @param {string} productId - ID of the product to get connected deposit items for
+   * @returns {Promise} Promise resolving to connected deposit items
+   */
+  async getConnectedDepositItems(productId) {
+    try {
+      if (!productId) {
+        throw new Error('Product ID is required');
+      }
+
+      const response = await apiClient.get(`/v1/depositreceipt/positions/${productId}`);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching connected deposit items:', error.response || error.message);
+      throw new Error(
+        getUserFriendlyErrorMessage(error, 'Failed to fetch deposit items for product')
+      );
     }
   }
 }

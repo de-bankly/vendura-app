@@ -22,66 +22,98 @@ const PfandautomatView = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [scannedItems, setScannedItems] = useState([]);
-  const [depositProducts, setDepositProducts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
 
-  // Load deposit products from the backend
+  // Load products that have deposit items connected to them
   useEffect(() => {
-    const fetchDepositProducts = async () => {
+    const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Fetch deposit products directly using the dedicated method
-        const depositItems = await ProductService.getDepositProducts({ page: 0, size: 50 });
-        setDepositProducts(depositItems);
+        // Fetch all products - we'll filter for those with connected products in the UI
+        const response = await ProductService.getProducts({ page: 0, size: 100 });
+        // Keep only products that have connected products
+        const productsWithDeposits = response.content.filter(
+          product => product.connectedProducts && product.connectedProducts.length > 0
+        );
+        setProducts(productsWithDeposits);
       } catch (err) {
-        setError('Failed to load deposit products. Please try again later.');
+        setError('Failed to load products. Please try again later.');
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDepositProducts();
+    fetchProducts();
   }, []);
 
-  // Simulate scanning a bottle
-  const handleScanBottle = bottleType => {
-    // Find a matching deposit product
-    const matchedProduct = depositProducts.find(product =>
-      product.name.toLowerCase().includes(bottleType.toLowerCase())
-    );
-
-    if (!matchedProduct) {
-      setError(`No matching product found for "${bottleType}"`);
+  // Handle product scan - fetch its connected deposit items
+  const handleScanProduct = async product => {
+    if (!product || !product.id) {
+      setError('Invalid product selected');
       return;
     }
 
-    // Add to scanned items
-    const existingItemIndex = scannedItems.findIndex(item => item.product.id === matchedProduct.id);
+    try {
+      setIsLoading(true);
+      // Fetch the connected deposit items for this product
+      const depositItems = await ProductService.getConnectedDepositItems(product.id);
 
-    if (existingItemIndex !== -1) {
-      // Increment quantity if already scanned
-      const updatedItems = [...scannedItems];
-      updatedItems[existingItemIndex] = {
-        ...updatedItems[existingItemIndex],
-        quantity: updatedItems[existingItemIndex].quantity + 1,
-      };
-      setScannedItems(updatedItems);
-    } else {
-      // Add new item if not scanned before
-      setScannedItems([
-        ...scannedItems,
-        {
-          product: matchedProduct,
-          quantity: 1,
-        },
-      ]);
+      if (!depositItems || depositItems.length === 0) {
+        setError(`No deposit items found for "${product.name}"`);
+        return;
+      }
+
+      // Add all connected deposit items to scanned items
+      const newScannedItems = [...scannedItems];
+
+      depositItems.forEach(item => {
+        const existingItemIndex = newScannedItems.findIndex(
+          existingItem => existingItem.product.id === item.product.id
+        );
+
+        if (existingItemIndex !== -1) {
+          // Increment quantity if already scanned
+          newScannedItems[existingItemIndex] = {
+            ...newScannedItems[existingItemIndex],
+            quantity: newScannedItems[existingItemIndex].quantity + 1,
+          };
+        } else {
+          // Add new item if not scanned before
+          newScannedItems.push({
+            product: item.product,
+            quantity: 1,
+          });
+        }
+      });
+
+      setScannedItems(newScannedItems);
+      setError(null);
+    } catch (err) {
+      setError(`Failed to process product: ${err.message}`);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Simulate scanning a bottle by product name
+  const handleScanBottle = bottleName => {
+    // Find a matching product
+    const matchedProduct = products.find(product =>
+      product.name.toLowerCase().includes(bottleName.toLowerCase())
+    );
+
+    if (!matchedProduct) {
+      setError(`No matching product found for "${bottleName}"`);
+      return;
     }
 
-    // Clear any previous errors
-    setError(null);
+    // Process the found product
+    handleScanProduct(matchedProduct);
   };
 
   // Remove an item from the scanned list
@@ -139,8 +171,7 @@ const PfandautomatView = () => {
   // Calculate total deposit value
   const calculateTotal = () => {
     return scannedItems.reduce((total, item) => {
-      // Verwende depositValue statt price für die Berechnung des Pfandwerts
-      return total + (item.product.depositValue || item.product.price) * item.quantity;
+      return total + (item.product.price || 0) * item.quantity;
     }, 0);
   };
 
@@ -163,7 +194,7 @@ const PfandautomatView = () => {
             <BottleScanner
               onScanBottle={handleScanBottle}
               isLoading={isLoading}
-              depositProducts={depositProducts}
+              products={products} // Pass regular products instead of deposit products
             />
           </Paper>
         </Grid>
