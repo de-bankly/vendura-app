@@ -235,7 +235,7 @@ const RoleManagementPage = () => {
                   color: theme.palette.text.primary,
                 }}
               >
-                Rolle Verwaltung
+                Rollen Verwaltung
               </Typography>
             </Box>
 
