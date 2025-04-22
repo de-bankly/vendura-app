@@ -43,11 +43,11 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   // Check if the product has Pfand (deposit) connected to it
   const hasPfand =
-    hasConnectedProducts && product.connectedProducts.some(p => p.category?.name === 'Pfand');
+    hasConnectedProducts && product.connectedProducts.some(p => p?.category?.name === 'Pfand');
 
   // Check if there are non-Pfand connected products
   const hasNonPfandConnectedProducts =
-    hasConnectedProducts && product.connectedProducts.some(p => p.category?.name !== 'Pfand');
+    hasConnectedProducts && product.connectedProducts.some(p => p?.category?.name !== 'Pfand');
 
   // Only show Bundle badge if there are connected products that are not Pfand
   const showBundleBadge = hasNonPfandConnectedProducts;
@@ -62,7 +62,7 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   // Find Pfand item if exists to display its price
   const pfandItem = hasPfand
-    ? product.connectedProducts.find(p => p.category?.name === 'Pfand')
+    ? product.connectedProducts.find(p => p?.category?.name === 'Pfand')
     : null;
 
   // Calculate total price with Pfand
@@ -164,7 +164,7 @@ const ProductCard = ({ product, onAddToCart }) => {
 
     // Find matching category
     for (const mapping of categoryMappings) {
-      if (mapping.keywords.some(keyword => category.includes(keyword))) {
+      if (mapping.keywords && mapping.keywords.some(keyword => category.includes(keyword))) {
         return {
           productIcon: mapping.icon,
           bgColor: mapping.color,
