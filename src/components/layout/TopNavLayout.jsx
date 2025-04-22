@@ -97,20 +97,6 @@ const TopNavLayout = () => {
       },
     },
     {
-      text: 'Einstellungen',
-      icon: <SettingsIcon />,
-      action: () => {
-        handleUserMenuClose();
-      },
-    },
-    {
-      text: 'Hilfe',
-      icon: <HelpOutlineIcon />,
-      action: () => {
-        handleUserMenuClose();
-      },
-    },
-    {
       text: 'Abmelden',
       icon: <LogoutIcon />,
       action: () => {
@@ -476,9 +462,24 @@ const TopNavLayout = () => {
                   border: 2,
                   borderColor: alpha(theme.palette.primary.main, 0.1),
                   p: 0.5,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    transform: 'translateY(-2px)',
+                  },
                 }}
               >
-                <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    width: 32,
+                    height: 32,
+                    boxShadow: userMenuOpen
+                      ? `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`
+                      : 'none',
+                  }}
+                >
                   {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || 'U'}
                 </Avatar>
               </IconButton>
@@ -489,6 +490,15 @@ const TopNavLayout = () => {
               color="primary"
               startIcon={<LoginIcon />}
               onClick={() => navigate('/login')}
+              sx={{
+                borderRadius: 1.5,
+                transition: 'all 0.2s ease-in-out',
+                fontWeight: 500,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 4px 8px ${alpha(theme.palette.primary.main, 0.25)}`,
+                },
+              }}
             >
               Anmelden
             </Button>
@@ -505,15 +515,28 @@ const TopNavLayout = () => {
             PaperProps={{
               sx: {
                 mt: 1.5,
-                minWidth: 200,
-                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
-                borderRadius: 1,
+                minWidth: 240,
+                overflow: 'visible',
+                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.15)',
+                borderRadius: 2,
+                '&:before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: -5,
+                  right: 16,
+                  width: 10,
+                  height: 10,
+                  bgcolor: 'background.paper',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                },
               },
             }}
           >
             <ProfileCard user={user} />
 
-            <Divider />
+            <Divider sx={{ my: 1 }} />
 
             {userMenuItems.map(item => (
               <MenuItem
@@ -521,21 +544,37 @@ const TopNavLayout = () => {
                 onClick={item.action}
                 sx={{
                   py: 1.5,
+                  mx: 1,
+                  my: 0.5,
+                  px: 2,
                   display: 'flex',
                   alignItems: 'center',
-                  mx: 0.5,
                   borderRadius: 1,
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                    transform: 'translateX(4px)',
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: 'text.primary', minWidth: 36 }}>
+                <ListItemIcon
+                  sx={{
+                    color:
+                      item.text === 'Abmelden'
+                        ? theme.palette.error.main
+                        : theme.palette.primary.main,
+                    minWidth: 36,
+                  }}
+                >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={
-                    <Typography variant="body2" fontWeight={500}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      color={item.text === 'Abmelden' ? 'error' : 'textPrimary'}
+                    >
                       {item.text}
                     </Typography>
                   }
