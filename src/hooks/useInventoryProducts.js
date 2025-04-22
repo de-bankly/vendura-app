@@ -30,113 +30,6 @@ const useInventoryProducts = () => {
   const [rowsPerPage, setRowsPerPage] = useState(24);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Generate mock product data for fallback
-  const generateMockProducts = () => {
-    const categories = [
-      { id: 'cat1', name: 'Getränke' },
-      { id: 'cat2', name: 'Snacks' },
-      { id: 'cat3', name: 'Elektronik' },
-    ];
-
-    const brands = [
-      { id: 'brand1', name: 'Coca-Cola' },
-      { id: 'brand2', name: 'Fanta' },
-      { id: 'brand3', name: 'Haribo' },
-      { id: 'brand4', name: 'Samsung' },
-    ];
-
-    return [
-      {
-        id: '001',
-        name: 'Cola Zero',
-        description: 'Zuckerfreies Erfrischungsgetränk',
-        price: 1.99,
-        stockQuantity: 25,
-        lowStockThreshold: 5,
-        category: categories[0],
-        brand: brands[0],
-        sku: 'CC001',
-      },
-      {
-        id: '002',
-        name: 'Fanta Orange',
-        description: 'Orangenlimonade',
-        price: 1.89,
-        stockQuantity: 32,
-        lowStockThreshold: 5,
-        category: categories[0],
-        brand: brands[1],
-        sku: 'FA002',
-      },
-      {
-        id: '003',
-        name: 'Goldbären',
-        description: 'Fruchtgummi Mischung',
-        price: 2.49,
-        stockQuantity: 15,
-        lowStockThreshold: 5,
-        category: categories[1],
-        brand: brands[2],
-        sku: 'HB003',
-      },
-      {
-        id: '004',
-        name: 'Cola Classic',
-        description: 'Das Original',
-        price: 1.99,
-        stockQuantity: 0,
-        lowStockThreshold: 5,
-        category: categories[0],
-        brand: brands[0],
-        sku: 'CC004',
-      },
-      {
-        id: '005',
-        name: 'Galaxy Tab',
-        description: 'Tablet',
-        price: 299.99,
-        stockQuantity: 3,
-        lowStockThreshold: 5,
-        category: categories[2],
-        brand: brands[3],
-        sku: 'ST005',
-      },
-      {
-        id: '006',
-        name: 'Smartphone S23',
-        description: 'Aktuelles Smartphone Modell',
-        price: 899.99,
-        stockQuantity: 8,
-        lowStockThreshold: 5,
-        category: categories[2],
-        brand: brands[3],
-        sku: 'SS006',
-      },
-      {
-        id: '007',
-        name: 'Cola Cherry',
-        description: 'Mit Kirschgeschmack',
-        price: 2.29,
-        stockQuantity: 12,
-        lowStockThreshold: 5,
-        category: categories[0],
-        brand: brands[0],
-        sku: 'CC007',
-      },
-      {
-        id: '008',
-        name: 'Erdbeerlaces',
-        description: 'Fruchtschnüre mit Erdbeergeschmack',
-        price: 1.99,
-        stockQuantity: 22,
-        lowStockThreshold: 5,
-        category: categories[1],
-        brand: brands[2],
-        sku: 'HB008',
-      },
-    ];
-  };
-
   // Fetch products
   const fetchProducts = useCallback(async () => {
     try {
@@ -152,13 +45,7 @@ const useInventoryProducts = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching products:', err);
-      setError('Fehler beim Laden der Produkte. Zeige Beispiel-Produkte an.');
-
-      // Fallback to mock data if API call fails
-      const mockProducts = generateMockProducts();
-      setProducts(mockProducts);
-      setFilteredProducts(mockProducts);
-      setTotalElements(mockProducts.length);
+      setError('Fehler beim Laden der Produkte.');
     } finally {
       setLoading(false);
     }
@@ -174,13 +61,6 @@ const useInventoryProducts = () => {
       setCategories(categoriesData.content || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
-
-      // Fallback to mock categories if API call fails
-      setCategories([
-        { id: 'cat1', name: 'Getränke' },
-        { id: 'cat2', name: 'Snacks' },
-        { id: 'cat3', name: 'Elektronik' },
-      ]);
     }
   }, []);
 
