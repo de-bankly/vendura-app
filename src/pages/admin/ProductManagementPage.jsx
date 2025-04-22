@@ -142,6 +142,7 @@ const ProductManagementPage = () => {
   // Open form for creating a new product
   const handleOpenCreateForm = () => {
     setCurrentProduct({
+      id: '',
       name: '',
       description: '',
       price: 0,

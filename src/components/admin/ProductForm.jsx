@@ -48,11 +48,14 @@ const ProductForm = ({
     category: null,
     brand: null,
     supplier: null,
+    standalone: true,
+    connectedProducts: [],
   },
   mode = 'create',
 }) => {
   // Form data
   const [formData, setFormData] = useState({
+    id: initialData?.id || '',
     name: initialData?.name || '',
     description: initialData?.description || '',
     price: initialData?.price || 0,
@@ -92,6 +95,7 @@ const ProductForm = ({
     if (open) {
       // Reset form data
       setFormData({
+        id: initialData?.id || '',
         name: initialData?.name || '',
         description: initialData?.description || '',
         price: initialData?.price || 0,
@@ -323,6 +327,8 @@ const ProductForm = ({
     const brandValid = Boolean(formData?.brand);
     const supplierValid = Boolean(formData?.supplier);
 
+    // ID is optional, so we don't validate it
+
     return nameValid && priceValid && categoryValid && brandValid && supplierValid;
   };
 
@@ -379,6 +385,18 @@ const ProductForm = ({
                 onChange={handleInputChange}
                 required
               />
+
+              {mode === 'create' && (
+                <TextField
+                  name="id"
+                  label="ID (optional)"
+                  fullWidth
+                  variant="outlined"
+                  value={formData.id}
+                  onChange={handleInputChange}
+                  helperText="Wenn keine ID angegeben wird, wird automatisch eine generiert"
+                />
+              )}
 
               <TextField
                 name="description"
@@ -715,6 +733,8 @@ ProductForm.propTypes = {
     category: PropTypes.object,
     brand: PropTypes.object,
     supplier: PropTypes.object,
+    standalone: PropTypes.bool,
+    connectedProducts: PropTypes.array,
   }),
   /**
    * Form mode - 'create' or 'edit'
