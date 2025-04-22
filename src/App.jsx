@@ -1,7 +1,6 @@
 import { RouterProvider } from 'react-router-dom';
 import router from './routes/router';
 import { AuthProvider } from './contexts/AuthContext';
-import { BarcodeProvider } from './contexts/BarcodeContext';
 
 /**
  * Main application component
@@ -10,9 +9,7 @@ import { BarcodeProvider } from './contexts/BarcodeContext';
 function App() {
   return (
     <AuthProvider>
-      <BarcodeProvider>
-        <RouterProvider router={router} />
-      </BarcodeProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 }

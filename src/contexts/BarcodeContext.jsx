@@ -55,6 +55,9 @@ export const BarcodeProvider = ({ children }) => {
     setScannedProduct(null);
     setError(null);
     resetBarcode();
+    // Force a small delay to ensure state is updated before next scan
+    setTimeout(() => {
+    }, 10);
   }, [resetBarcode]);
 
   const enableScanner = useCallback(() => {

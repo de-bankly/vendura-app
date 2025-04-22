@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react';
  */
 export function useBarcode({ 
   onScan, 
-  timeout = 100, 
+  timeout = 100, // Long timeout for detecting consecutive scans
   endCharacter = 'Enter',
   isEnabled = true,
   inputRef = null
@@ -47,7 +47,8 @@ export function useBarcode({
       const currentTime = new Date().getTime();
       
       // Typical barcode scanners send characters very quickly
-      if (currentTime - lastScanTime > timeout && !isScanning) {
+      if ((currentTime - lastScanTime > timeout && !isScanning) || 
+          (isScanning && currentTime - lastScanTime > 500)) { // Reset scanning state if too much time passed
         // New scan is starting
         setBarcode(event.key);
         setIsScanning(true);

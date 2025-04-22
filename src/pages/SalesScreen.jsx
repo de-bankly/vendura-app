@@ -414,21 +414,8 @@ const SalesScreen = () => {
   // Handle scanned product
   useEffect(() => {
     if (scannedProduct) {
-      // Add scanned product to cart
-      const existingItem = cartItems.find(item => item.id === scannedProduct.id);
-      
-      if (existingItem) {
-        // Increment quantity if product already in cart
-        const updatedItems = cartItems.map(item => 
-          item.id === scannedProduct.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-        setCartItems(updatedItems);
-      } else {
-        // Add new item to cart
-        setCartItems([...cartItems, { ...scannedProduct, quantity: 1 }]);
-      }
+      // Use the existing addToCart function to handle the scanned product
+      addToCart(scannedProduct);
       
       // Show success toast
       showToast({
@@ -439,7 +426,7 @@ const SalesScreen = () => {
       // Reset scan to prepare for next one
       resetScan();
     }
-  }, [scannedProduct, cartItems, resetScan, showToast]);
+  }, [scannedProduct, addToCart, resetScan, showToast]);
 
   // Handle scan errors
   useEffect(() => {

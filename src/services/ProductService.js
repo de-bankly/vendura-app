@@ -48,6 +48,7 @@ class ProductService {
             transformedProducts.map(async product => {
               // Find any promotion for this product
               const productPromotion = activePromotions.find(p => p.productId === product.id);
+              
               if (productPromotion) {
                 const discountInfo = PromotionService.calculateDiscount(product, productPromotion);
                 return {
@@ -304,7 +305,7 @@ class ProductService {
    */
   async getProductByBarcode(barcode, calculateStock = true, includeDiscounts = true) {
     try {
-      const response = await apiClient.get(`/v1/product/barcode/${barcode}`, {
+      const response = await apiClient.get(`/v1/product/${barcode}`, {
         params: { calculateStock },
       });
 
@@ -315,20 +316,21 @@ class ProductService {
       const transformedProduct = this.transformProductData(response.data);
 
       // If includeDiscounts is true, fetch and apply promotions
-      if (includeDiscounts) {
+      if (includeDiscounts && transformedProduct) {
         try {
-          const promotions = await PromotionService.getActivePromotionsForProduct(transformedProduct.id);
-          if (promotions && promotions.length > 0) {
-            // Get the promotion with the highest discount
-            const highestPromotion = promotions.reduce(
-              (max, p) => (p.discount > max.discount ? p : max),
-              promotions[0]
-            );
-
-            const discountInfo = PromotionService.calculateDiscount(
-              transformedProduct,
-              highestPromotion
-            );
+          // Use the same promotion fetching approach as in getProducts to ensure consistency
+          const promotionsResponse = await PromotionService.getPromotions({ page: 0, size: 1000 });
+          const promotions = promotionsResponse.content || [];
+          
+          // Filter active promotions
+          const activePromotions = promotions.filter(promo => promo.active);
+          
+          // Find promotion for this specific product
+          const productPromotion = activePromotions.find(p => p.productId === transformedProduct.id);
+          
+          if (productPromotion) {
+            const discountInfo = PromotionService.calculateDiscount(transformedProduct, productPromotion);
+            
             return {
               ...transformedProduct,
               hasDiscount: discountInfo.hasDiscount,
@@ -336,11 +338,11 @@ class ProductService {
               discountAmount: discountInfo.discountAmount,
               discountedPrice: discountInfo.discountedPrice,
               discountPercentage: discountInfo.discountPercentage,
-              promotion: highestPromotion,
+              promotion: productPromotion,
             };
           }
         } catch (promotionError) {
-          console.error('Error fetching promotions for product:', promotionError);
+          console.error('Error processing promotions for barcode product:', promotionError);
           // Continue with the product without discount information
         }
       }

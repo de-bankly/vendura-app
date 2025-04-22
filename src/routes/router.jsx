@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 
 import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
+import { BarcodeWrapper } from '../components/scanner';
 
 // Layouts
 const TopNavLayout = lazy(() => import('../components/layout/TopNavLayout'));
@@ -50,7 +51,11 @@ const reactBrowserRouter = createBrowserRouter([
       },
       {
         path: 'sales',
-        element: <SalesScreen />,
+        element: (
+          <BarcodeWrapper>
+            <SalesScreen />
+          </BarcodeWrapper>
+        ),
       },
       {
         path: 'inventory',
