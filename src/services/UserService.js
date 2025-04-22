@@ -60,7 +60,21 @@ class UserService {
    */
   async createUser(userData) {
     try {
-      const response = await apiClient.post('/v1/user', userData);
+      // Create a clean data object with only the fields the API expects
+      const cleanedData = {
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        active: userData.active,
+        locked: userData.locked,
+        roles: Array.isArray(userData.roles)
+          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
+          : [],
+      };
+
+      const response = await apiClient.post('/v1/user', cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating user:', error.response || error.message);
@@ -83,6 +97,7 @@ class UserService {
         lastName: userData.lastName,
         email: userData.email,
         active: userData.active,
+        locked: userData.locked,
       };
 
       // Only include roles if they're explicitly provided

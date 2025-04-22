@@ -57,6 +57,7 @@ const UserManagementPage = () => {
     email: '',
     password: '',
     active: true,
+    locked: false,
     roles: [],
   });
 
@@ -107,6 +108,18 @@ const UserManagementPage = () => {
         <Chip
           label={row.active !== false ? 'Active' : 'Inactive'}
           color={row.active !== false ? 'success' : 'error'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'locked',
+      headerName: 'Lock Status',
+      sortable: true,
+      renderCell: row => (
+        <Chip
+          label={row.locked ? 'Locked' : 'Unlocked'}
+          color={row.locked ? 'error' : 'success'}
           size="small"
         />
       ),
@@ -182,6 +195,7 @@ const UserManagementPage = () => {
       email: '',
       password: '',
       active: true,
+      locked: false,
       roles: [],
     });
     setOpen(true);
@@ -200,6 +214,7 @@ const UserManagementPage = () => {
       email: user.email || '',
       password: '', // Don't pre-fill password
       active: user.active !== false,
+      locked: user.locked === true,
       roles: userRoles,
     });
     setOpen(true);
