@@ -3,6 +3,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   VpnKey as RoleIcon,
+  Badge as BadgeIcon,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 import {
   Container,
@@ -28,6 +30,10 @@ import {
   Switch,
   FormControlLabel,
   useTheme,
+  Grid,
+  Card,
+  CardContent,
+  alpha,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -199,6 +205,10 @@ const RoleManagementPage = () => {
     }
   }, [roleToDelete, fetchRoles, handleCloseDeleteDialog]);
 
+  // Stats calculation
+  const activeRolesCount = roles.filter(role => role.active !== false).length;
+  const inactiveRolesCount = roles.length - activeRolesCount;
+
   return (
     <Box sx={{ py: 3 }}>
       {/* Header Section */}
@@ -210,7 +220,7 @@ const RoleManagementPage = () => {
         <Container maxWidth="xl">
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Box display="flex" alignItems="center">
-              <RoleIcon
+              <SecurityIcon
                 sx={{
                   fontSize: 40,
                   color: theme.palette.primary.main,
@@ -225,7 +235,7 @@ const RoleManagementPage = () => {
                   color: theme.palette.text.primary,
                 }}
               >
-                Role Management
+                Rolle Verwaltung
               </Typography>
             </Box>
 
@@ -235,8 +245,9 @@ const RoleManagementPage = () => {
               startIcon={<AddIcon />}
               onClick={handleOpenAddDialog}
               aria-label="Add new role"
+              sx={{ borderRadius: 2 }}
             >
-              Add Role
+              Neue Rolle
             </Button>
           </Box>
         </Container>
@@ -250,22 +261,129 @@ const RoleManagementPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
               {error}
             </Alert>
           </motion.div>
         )}
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          {/* Statistics Cards */}
+          <Grid container spacing={3} mb={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <motion.div variants={itemVariants}>
+                <Card
+                  elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    height: '100%',
+                    background: `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.light, 0.15)} 100%)`,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                  }}
+                >
+                  <CardContent>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Box
+                        sx={{
+                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                          borderRadius: 1,
+                          p: 1,
+                          mr: 2,
+                        }}
+                      >
+                        <BadgeIcon color="primary" />
+                      </Box>
+                      <Typography variant="h6" fontWeight={600}>
+                        Gesamt
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" fontWeight={700} my={1}>
+                      {roles.length}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Definierte Rollen
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <motion.div variants={itemVariants}>
+                <Card
+                  elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    height: '100%',
+                    background: `linear-gradient(45deg, ${alpha(theme.palette.success.main, 0.05)} 0%, ${alpha(theme.palette.success.light, 0.15)} 100%)`,
+                    border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                  }}
+                >
+                  <CardContent>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Box
+                        sx={{
+                          backgroundColor: alpha(theme.palette.success.main, 0.1),
+                          borderRadius: 1,
+                          p: 1,
+                          mr: 2,
+                        }}
+                      >
+                        <RoleIcon color="success" />
+                      </Box>
+                      <Typography variant="h6" fontWeight={600}>
+                        Aktiv
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" fontWeight={700} my={1}>
+                      {activeRolesCount}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Aktive Rollen
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={6}>
+              <motion.div variants={itemVariants}>
+                <Card
+                  elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    height: '100%',
+                    background: theme.palette.background.paper,
+                  }}
+                >
+                  <CardContent>
+                    <Box display="flex" alignItems="center" mb={2}>
+                      <SecurityIcon color="error" sx={{ mr: 1 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Hinweis
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Rollen können nicht gelöscht, sondern nur deaktiviert werden, um die
+                      Integrität des Systems zu bewahren.
+                      <br />
+                      <br />
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+          </Grid>
+
           {/* Roles Table Section */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
               sx={{
                 p: 3,
-                minHeight: '60vh',
                 borderRadius: 2,
                 bgcolor: theme.palette.background.paper,
+                overflow: 'hidden',
               }}
             >
               <Typography
@@ -274,12 +392,15 @@ const RoleManagementPage = () => {
                   mb: 2,
                   fontWeight: 600,
                   color: theme.palette.text.primary,
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
-                Role Overview
+                <RoleIcon sx={{ mr: 1, fontSize: 20 }} />
+                Rollenübersicht
               </Typography>
 
-              <TableContainer>
+              <TableContainer sx={{ minHeight: '50vh' }}>
                 <MuiTable>
                   <TableHead>
                     <TableRow
@@ -290,10 +411,10 @@ const RoleManagementPage = () => {
                         },
                       }}
                     >
-                      <TableCell>Role Name</TableCell>
-                      <TableCell>Description</TableCell>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Beschreibung</TableCell>
                       <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell align="right">Aktionen</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -307,36 +428,74 @@ const RoleManagementPage = () => {
                       <TableRow>
                         <TableCell colSpan={4} align="center">
                           <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                            No roles found. Create a new one to get started.
+                            Keine Rollen gefunden. Erstellen Sie eine neue Rolle, um zu beginnen.
                           </Typography>
                         </TableCell>
                       </TableRow>
                     ) : (
                       roles?.map(role => (
-                        <TableRow key={role.id} hover>
-                          <TableCell>{role.name}</TableCell>
+                        <TableRow
+                          key={role.id}
+                          hover
+                          sx={{
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                            },
+                          }}
+                        >
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <RoleIcon
+                                fontSize="small"
+                                sx={{
+                                  mr: 1,
+                                  color:
+                                    role.active !== false
+                                      ? theme.palette.primary.main
+                                      : theme.palette.text.disabled,
+                                }}
+                              />
+                              <Typography fontWeight={500}>{role.name}</Typography>
+                            </Box>
+                          </TableCell>
                           <TableCell>{role.description || '-'}</TableCell>
                           <TableCell>
                             <Chip
-                              label={role.active !== false ? 'Active' : 'Inactive'}
+                              label={role.active !== false ? 'Aktiv' : 'Inaktiv'}
                               color={role.active !== false ? 'success' : 'error'}
                               size="small"
+                              sx={{ fontWeight: 500 }}
                             />
                           </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <Tooltip title="Edit Role">
-                                <IconButton size="small" onClick={() => handleOpenEditDialog(role)}>
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Deactivate Role">
+                          <TableCell align="right">
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                              <Tooltip title="Rolle bearbeiten">
                                 <IconButton
                                   size="small"
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(role)}
+                                  onClick={() => handleOpenEditDialog(role)}
+                                  sx={{
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                    },
+                                  }}
                                 >
-                                  <DeleteIcon fontSize="small" />
+                                  <EditIcon fontSize="small" color="primary" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Rolle deaktivieren">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenDeleteDialog(role)}
+                                  sx={{
+                                    backgroundColor: alpha(theme.palette.error.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.error.main, 0.2),
+                                    },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" color="error" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -384,9 +543,9 @@ const RoleManagementPage = () => {
                               color="primary"
                               disabled={page === 0}
                               onClick={e => handlePageChange(e, page)}
-                              aria-label="Previous page"
+                              aria-label="Vorherige Seite"
                             >
-                              Previous
+                              Zurück
                             </Button>
                           </Box>
                           {[...Array(totalPages).keys()].map(pageNum => (
@@ -402,8 +561,9 @@ const RoleManagementPage = () => {
                                 variant={pageNum === page ? 'contained' : 'text'}
                                 color="primary"
                                 onClick={e => handlePageChange(e, pageNum + 1)}
-                                aria-label={`Page ${pageNum + 1}`}
+                                aria-label={`Seite ${pageNum + 1}`}
                                 aria-current={pageNum === page ? 'page' : undefined}
+                                sx={{ borderRadius: 2, minWidth: '36px' }}
                               >
                                 {pageNum + 1}
                               </Button>
@@ -421,9 +581,9 @@ const RoleManagementPage = () => {
                               color="primary"
                               disabled={page === totalPages - 1}
                               onClick={e => handlePageChange(e, page + 2)}
-                              aria-label="Next page"
+                              aria-label="Nächste Seite"
                             >
-                              Next
+                              Weiter
                             </Button>
                           </Box>
                         </Box>
@@ -444,48 +604,62 @@ const RoleManagementPage = () => {
         fullWidth
         maxWidth="md"
         aria-labelledby="role-dialog-title"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: theme.shadows[10],
+          },
+        }}
       >
-        <DialogTitle id="role-dialog-title">
+        <DialogTitle id="role-dialog-title" sx={{ pb: 1 }}>
           <Box display="flex" alignItems="center">
-            <RoleIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h6" component="span">
-              {editMode ? 'Edit Role' : 'Add New Role'}
+            <SecurityIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Typography variant="h6" component="span" fontWeight={600}>
+              {editMode ? 'Rolle bearbeiten' : 'Neue Rolle erstellen'}
             </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             <TextField
-              label="Role Name"
+              label="Rollenname"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
               fullWidth
               required
               error={!formData.name && error.includes('name')}
-              helperText={!formData.name && error.includes('name') ? 'Role name is required' : ''}
+              helperText={
+                !formData.name && error.includes('name') ? 'Rollenname ist erforderlich' : ''
+              }
               autoFocus
+              InputProps={{
+                sx: { borderRadius: 2 },
+              }}
             />
             <TextField
-              label="Description"
+              label="Beschreibung"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
               fullWidth
               multiline
               rows={4}
+              InputProps={{
+                sx: { borderRadius: 2 },
+              }}
             />
             <FormControlLabel
               control={
                 <Switch checked={formData.active} onChange={handleActiveToggle} color="primary" />
               }
-              label="Active"
+              label="Aktiv"
             />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleClose} color="inherit">
-            Cancel
+          <Button onClick={handleClose} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>
+            Abbrechen
           </Button>
           <Button
             onClick={handleSubmit}
@@ -493,8 +667,9 @@ const RoleManagementPage = () => {
             color="primary"
             disabled={loading}
             loading={loading}
+            sx={{ borderRadius: 2 }}
           >
-            {editMode ? 'Save Changes' : 'Create Role'}
+            {editMode ? 'Änderungen speichern' : 'Rolle erstellen'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -504,24 +679,35 @@ const RoleManagementPage = () => {
         open={confirmDelete}
         onClose={handleCloseDeleteDialog}
         aria-labelledby="delete-dialog-title"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: theme.shadows[10],
+          },
+        }}
       >
-        <DialogTitle id="delete-dialog-title">
+        <DialogTitle id="delete-dialog-title" sx={{ pb: 1 }}>
           <Box display="flex" alignItems="center">
             <DeleteIcon sx={{ mr: 1, color: theme.palette.error.main }} />
-            <Typography variant="h6" component="span">
-              Deactivate Role
+            <Typography variant="h6" component="span" fontWeight={600}>
+              Rolle deaktivieren
             </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to deactivate the role "{roleToDelete?.name}"? Users with this
-            role may lose access to certain features.
+          <Typography variant="body1">
+            Sind Sie sicher, dass Sie die Rolle "{roleToDelete?.name}" deaktivieren möchten?
+            Benutzer mit dieser Rolle könnten den Zugriff auf bestimmte Funktionen verlieren.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleCloseDeleteDialog} color="inherit">
-            Cancel
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="inherit"
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
+            Abbrechen
           </Button>
           <Button
             onClick={handleDeleteRole}
@@ -529,8 +715,9 @@ const RoleManagementPage = () => {
             color="error"
             disabled={loading}
             loading={loading}
+            sx={{ borderRadius: 2 }}
           >
-            Deactivate
+            Deaktivieren
           </Button>
         </DialogActions>
       </Dialog>
