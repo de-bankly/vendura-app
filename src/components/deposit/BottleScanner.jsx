@@ -17,14 +17,15 @@ const BottleScanner = ({ onScanBottle, isLoading, products }) => {
   const [scanActive, setScanActive] = useState(false);
 
   // Handle scanning from predefined bottle types
-  const handleQuickScan = bottleType => {
-    onScanBottle(bottleType);
+  const handleQuickScan = product => {
+    onScanBottle(product);
   };
 
   // Handle manual entry of bottle type
   const handleManualEntry = e => {
     e.preventDefault();
     if (customBottleType.trim()) {
+      // For manual entry, we pass the string and let handleScanBottle find the product
       onScanBottle(customBottleType.trim());
       setCustomBottleType('');
     }
@@ -40,7 +41,7 @@ const BottleScanner = ({ onScanBottle, isLoading, products }) => {
         // Randomly select a product to simulate scanner recognizing it
         if (products && products.length > 0) {
           const randomIndex = Math.floor(Math.random() * products.length);
-          onScanBottle(products[randomIndex].name);
+          onScanBottle(products[randomIndex]);
         }
         setScanActive(false);
       }, 2000);
@@ -115,31 +116,39 @@ const BottleScanner = ({ onScanBottle, isLoading, products }) => {
         </Box>
       ) : products && products.length > 0 ? (
         <Grid container spacing={1} sx={{ mb: 3 }}>
-          {products.slice(0, 8).map(product => (
-            <Grid item xs={6} key={product.id}>
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => handleQuickScan(product.name)}
-                disabled={isLoading}
-                sx={{
-                  textTransform: 'none',
-                  textAlign: 'left',
-                  justifyContent: 'flex-start',
-                  height: '100%',
-                }}
-              >
-                <Box>
-                  <Typography variant="body2" noWrap>
-                    {product.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {product.connectedProducts.length} Pfandprodukt(e)
-                  </Typography>
-                </Box>
-              </Button>
-            </Grid>
-          ))}
+          {products.slice(0, 8).map(product => {
+            // Count pfand products
+            const pfandCount = product.connectedProducts
+              ? product.connectedProducts.filter(cp => cp.category && cp.category.name === 'Pfand')
+                  .length
+              : 0;
+
+            return (
+              <Grid item xs={6} key={product.id}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => handleQuickScan(product)}
+                  disabled={isLoading}
+                  sx={{
+                    textTransform: 'none',
+                    textAlign: 'left',
+                    justifyContent: 'flex-start',
+                    height: '100%',
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" noWrap>
+                      {product.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {pfandCount} Pfandprodukt(e)
+                    </Typography>
+                  </Box>
+                </Button>
+              </Grid>
+            );
+          })}
         </Grid>
       ) : (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

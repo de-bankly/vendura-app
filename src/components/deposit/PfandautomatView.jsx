@@ -34,9 +34,14 @@ const PfandautomatView = () => {
         setIsLoading(true);
         // Fetch all products - we'll filter for those with connected products in the UI
         const response = await ProductService.getProducts({ page: 0, size: 100 });
-        // Keep only products that have connected products
+        // Keep only products that have at least one connected product in the "Pfand" category
         const productsWithDeposits = response.content.filter(
-          product => product.connectedProducts && product.connectedProducts.length > 0
+          product =>
+            product.connectedProducts &&
+            product.connectedProducts.some(
+              connectedProduct =>
+                connectedProduct.category && connectedProduct.category.name === 'Pfand'
+            )
         );
         setProducts(productsWithDeposits);
       } catch (err) {
@@ -50,70 +55,60 @@ const PfandautomatView = () => {
     fetchProducts();
   }, []);
 
-  // Handle product scan - fetch its connected deposit items
-  const handleScanProduct = async product => {
-    if (!product || !product.id) {
-      setError('Invalid product selected');
-      return;
-    }
+  // Handle scanning a bottle by product name or product object
+  const handleScanBottle = bottleInput => {
+    // If bottleInput is an object (from quick selection), use it directly
+    let matchedProduct = null;
 
-    try {
-      setIsLoading(true);
-      // Fetch the connected deposit items for this product
-      const depositItems = await ProductService.getConnectedDepositItems(product.id);
+    if (typeof bottleInput === 'object' && bottleInput !== null) {
+      matchedProduct = bottleInput;
+    } else {
+      // If bottleInput is a string (from manual entry), find matching product
+      matchedProduct = products.find(product =>
+        product.name.toLowerCase().includes(bottleInput.toLowerCase())
+      );
 
-      if (!depositItems || depositItems.length === 0) {
-        setError(`No deposit items found for "${product.name}"`);
+      if (!matchedProduct) {
+        setError(`Kein passendes Produkt gefunden für "${bottleInput}"`);
         return;
       }
-
-      // Add all connected deposit items to scanned items
-      const newScannedItems = [...scannedItems];
-
-      depositItems.forEach(item => {
-        const existingItemIndex = newScannedItems.findIndex(
-          existingItem => existingItem.product.id === item.product.id
-        );
-
-        if (existingItemIndex !== -1) {
-          // Increment quantity if already scanned
-          newScannedItems[existingItemIndex] = {
-            ...newScannedItems[existingItemIndex],
-            quantity: newScannedItems[existingItemIndex].quantity + 1,
-          };
-        } else {
-          // Add new item if not scanned before
-          newScannedItems.push({
-            product: item.product,
-            quantity: 1,
-          });
-        }
-      });
-
-      setScannedItems(newScannedItems);
-      setError(null);
-    } catch (err) {
-      setError(`Failed to process product: ${err.message}`);
-      console.error(err);
-    } finally {
-      setIsLoading(false);
     }
-  };
 
-  // Simulate scanning a bottle by product name
-  const handleScanBottle = bottleName => {
-    // Find a matching product
-    const matchedProduct = products.find(product =>
-      product.name.toLowerCase().includes(bottleName.toLowerCase())
-    );
+    // Check if this product has any connected Pfand products
+    const pfandProducts = matchedProduct.connectedProducts
+      ? matchedProduct.connectedProducts.filter(cp => cp.category && cp.category.name === 'Pfand')
+      : [];
 
-    if (!matchedProduct) {
-      setError(`No matching product found for "${bottleName}"`);
+    if (pfandProducts.length === 0) {
+      setError(`Keine Pfandprodukte verbunden mit "${matchedProduct.name}"`);
       return;
     }
 
-    // Process the found product
-    handleScanProduct(matchedProduct);
+    // Add pfand products directly to the scanned items list
+    const newScannedItems = [...scannedItems];
+
+    pfandProducts.forEach(pfandProduct => {
+      const existingItemIndex = newScannedItems.findIndex(
+        existingItem => existingItem.product.id === pfandProduct.id
+      );
+
+      if (existingItemIndex !== -1) {
+        // Increment quantity if already scanned
+        newScannedItems[existingItemIndex] = {
+          ...newScannedItems[existingItemIndex],
+          quantity: newScannedItems[existingItemIndex].quantity + 1,
+        };
+      } else {
+        // Add new item if not scanned before
+        newScannedItems.push({
+          product: pfandProduct,
+          quantity: 1,
+        });
+      }
+    });
+
+    setScannedItems(newScannedItems);
+    setError(null);
   };
 
   // Remove an item from the scanned list

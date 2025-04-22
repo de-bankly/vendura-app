@@ -380,7 +380,13 @@ class ProductService {
       }
 
       const response = await apiClient.get(`/v1/depositreceipt/positions/${productId}`);
-      return response.data || [];
+
+      // Filter to only include items from the "Pfand" category
+      const pfandItems = (response.data || []).filter(
+        item => item.product && item.product.category && item.product.category.name === 'Pfand'
+      );
+
+      return pfandItems;
     } catch (error) {
       console.error('Error fetching connected deposit items:', error.response || error.message);
       throw new Error(
