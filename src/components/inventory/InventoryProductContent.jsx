@@ -1,9 +1,28 @@
-import { Box, CircularProgress, Grid, Paper, Typography, useTheme } from '@mui/material';
+import { Box, Grid, Paper, Typography, useTheme, Skeleton, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { motion } from 'framer-motion';
 
 import InventoryProductCard from './InventoryProductCard';
 import InventoryProductList from './InventoryProductList';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3 },
+  },
+};
 
 /**
  * InventoryProductContent component for displaying the product list or grid
@@ -15,15 +34,33 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
   // Loading state
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '60vh',
-        }}
-      >
-        <CircularProgress />
+      <Box>
+        {viewMode === 'grid' ? (
+          <Grid container spacing={2}>
+            {[...Array(8)].map((_, index) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                <Skeleton
+                  variant="rounded"
+                  height={220}
+                  animation="wave"
+                  sx={{ borderRadius: 2 }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box>
+            {[...Array(5)].map((_, index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                height={72}
+                animation="wave"
+                sx={{ borderRadius: 1, mb: 1 }}
+              />
+            ))}
+          </Box>
+        )}
       </Box>
     );
   }
@@ -33,12 +70,14 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
     return (
       <Paper
         sx={{
-          p: 3,
+          p: 4,
           textAlign: 'center',
-          bgcolor: theme.palette.grey[50],
+          bgcolor: alpha(theme.palette.primary.light, 0.04),
+          borderRadius: 2,
+          border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
         }}
       >
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="h6" color="text.primary" fontWeight={500}>
           Keine Produkte gefunden
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -51,18 +90,26 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
   // Grid view
   if (viewMode === 'grid') {
     return (
-      <Grid container spacing={2}>
-        {products.map(product => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-            <InventoryProductCard product={product} />
-          </Grid>
-        ))}
-      </Grid>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        <Grid container spacing={2}>
+          {products.map(product => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+              <motion.div variants={itemVariants}>
+                <InventoryProductCard product={product} />
+              </motion.div>
+            </Grid>
+          ))}
+        </Grid>
+      </motion.div>
     );
   }
 
   // List view
-  return <InventoryProductList products={products} />;
+  return (
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <InventoryProductList products={products} />
+    </motion.div>
+  );
 };
 
 InventoryProductContent.propTypes = {
