@@ -294,6 +294,38 @@ class ProductService {
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch products by category'));
     }
   }
+
+  /**
+   * Get deposit products (products with "Pfand" in their description)
+   * @param {Object} pageable - Pagination parameters
+   * @param {Boolean} includeDiscounts - Whether to include discount information
+   * @returns {Promise} Promise resolving to deposit products
+   */
+  async getDepositProducts(pageable = { page: 0, size: 50 }, includeDiscounts = true) {
+    try {
+      const response = await this.getProducts(pageable, true, includeDiscounts);
+      const products = response.content || []; // Ensure products is an array
+
+      // Filter for products that have 'Pfand' in their name or description
+      const depositProducts = products
+        .filter(
+          product =>
+            (product.shortDescription &&
+              product.shortDescription.toLowerCase().includes('pfand')) ||
+            (product.name && product.name.toLowerCase().includes('pfand'))
+        )
+        .map(product => ({
+          ...product,
+          // Nutze den Produktpreis als Pfandwert
+          depositValue: product.price,
+        }));
+
+      return depositProducts;
+    } catch (error) {
+      console.error('Error fetching deposit products:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch deposit products'));
+    }
+  }
 }
 
 export default new ProductService();
