@@ -1,5 +1,4 @@
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EuroIcon from '@mui/icons-material/Euro';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import {
   Dialog,
