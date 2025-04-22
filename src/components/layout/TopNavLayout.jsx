@@ -74,8 +74,6 @@ const TopNavLayout = () => {
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
       { text: 'Inventar', path: '/inventory', icon: <InventoryIcon /> },
       { text: 'Aktionen', path: '/promotions', icon: <DiscountIcon /> },
-      { text: 'Gutscheine', path: '/giftcards', icon: <CardGiftcardIcon /> },
-      { text: 'Angebote', path: '/vouchers', icon: <LocalOfferIcon /> },
     ],
     admin: isAdmin
       ? [
