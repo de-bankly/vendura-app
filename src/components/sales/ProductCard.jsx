@@ -73,7 +73,14 @@ const ProductCard = ({ product, onAddToCart }) => {
         <Tooltip
           title={
             <Box>
-              <Typography variant="subtitle2">Mit diesem Produkt erhalten Sie:</Typography>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
+                Bundle-Produkt
+              </Typography>
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Diese Produkte werden automatisch zum Warenkorb hinzugefügt:
+              </Typography>
+
               <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
                 {product.connectedProducts.map(connectedProduct => (
                   <li key={connectedProduct.id}>
@@ -83,9 +90,24 @@ const ProductCard = ({ product, onAddToCart }) => {
                   </li>
                 ))}
               </ul>
+
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 1,
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                  p: 1,
+                  borderRadius: 1,
+                  color: theme.palette.info.dark,
+                }}
+              >
+                Hinweis: Die verbundenen Produkte können nicht einzeln aus dem Warenkorb entfernt
+                werden.
+              </Typography>
             </Box>
           }
           arrow
+          placement="top-end"
         >
           <Box
             sx={{
@@ -163,7 +185,14 @@ const ProductCard = ({ product, onAddToCart }) => {
             </Typography>
           )}
 
-          <Tooltip title="In den Warenkorb" arrow>
+          <Tooltip
+            title={
+              hasConnectedProducts
+                ? 'Mit verbundenen Produkten in den Warenkorb'
+                : 'In den Warenkorb'
+            }
+            arrow
+          >
             <Box
               sx={{
                 display: 'flex',

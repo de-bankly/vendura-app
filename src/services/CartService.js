@@ -9,23 +9,106 @@ class CartService {
    * @returns {Array} Updated cart items
    */
   addToCart(cartItems, product) {
-    const existingItem = cartItems.find(item => item.id === product.id);
+    let updatedCartItems = [...cartItems];
+
+    // Check if the product already exists in cart
+    const existingItem = updatedCartItems.find(item => item.id === product.id);
+
     if (existingItem) {
-      return cartItems.map(item =>
+      // If product already exists, just increment quantity
+      updatedCartItems = updatedCartItems.map(item =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       );
+
+      // If this is a parent product, also increment all its connected products
+      if (product.connectedProducts && product.connectedProducts.length > 0) {
+        for (const connectedProduct of product.connectedProducts) {
+          const existingConnectedItem = updatedCartItems.find(
+            item => item.id === connectedProduct.id && item.parentProductId === product.id
+          );
+
+          if (existingConnectedItem) {
+            updatedCartItems = updatedCartItems.map(item =>
+              item.id === connectedProduct.id && item.parentProductId === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            );
+          }
+        }
+      }
     } else {
-      return [...cartItems, { ...product, quantity: 1 }];
+      // Add the product to cart
+      updatedCartItems.push({ ...product, quantity: 1 });
+
+      // Add connected products if any
+      if (product.connectedProducts && product.connectedProducts.length > 0) {
+        product.connectedProducts.forEach(connectedProduct => {
+          // Create a copy with additional property to mark it as a connected product
+          const connectedProductWithParent = {
+            ...connectedProduct,
+            quantity: 1,
+            isConnectedProduct: true,
+            parentProductId: product.id,
+          };
+
+          updatedCartItems.push(connectedProductWithParent);
+        });
+      }
     }
+
+    return updatedCartItems;
   }
 
   /**
    * Remove a product from the cart
    * @param {Array} cartItems Current cart items
-   * @param {number} productId ID of product to remove
+   * @param {string} productId ID of product to remove
    * @returns {Array} Updated cart items
    */
   removeFromCart(cartItems, productId) {
+    // Find the item to remove
+    const itemToRemove = cartItems.find(item => item.id === productId);
+
+    // If it's a connected product, don't remove it
+    if (itemToRemove && itemToRemove.isConnectedProduct) {
+      return cartItems;
+    }
+
+    // Handle parent product removal
+    if (itemToRemove && !itemToRemove.isConnectedProduct) {
+      let updatedCartItems = [...cartItems];
+
+      // If quantity is more than 1, just decrement
+      if (itemToRemove.quantity > 1) {
+        // Decrement quantity of parent product
+        updatedCartItems = updatedCartItems.map(item =>
+          item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+        );
+
+        // Find and decrement quantities of connected products as well
+        const connectedProductItems = updatedCartItems.filter(
+          item => item.parentProductId === productId
+        );
+
+        if (connectedProductItems.length > 0) {
+          updatedCartItems = updatedCartItems.map(item =>
+            item.parentProductId === productId ? { ...item, quantity: item.quantity - 1 } : item
+          );
+
+          // Remove connected products with zero quantity
+          updatedCartItems = updatedCartItems.filter(item => item.quantity > 0);
+        }
+      } else {
+        // Remove the parent product and all its connected products
+        updatedCartItems = updatedCartItems.filter(
+          item => item.id !== productId && item.parentProductId !== productId
+        );
+      }
+
+      return updatedCartItems;
+    }
+
+    // Handle normal products
     const existingItem = cartItems.find(item => item.id === productId);
     if (existingItem && existingItem.quantity > 1) {
       return cartItems.map(item =>
@@ -39,11 +122,34 @@ class CartService {
   /**
    * Delete a product from the cart
    * @param {Array} cartItems Current cart items
-   * @param {number} productId ID of product to delete
+   * @param {string} productId ID of product to delete
    * @returns {Array} Updated cart items
    */
   deleteFromCart(cartItems, productId) {
+    // Find the item to delete
+    const itemToDelete = cartItems.find(item => item.id === productId);
+
+    // If it's a connected product, don't allow deletion
+    if (itemToDelete && itemToDelete.isConnectedProduct) {
+      return cartItems;
+    }
+
+    // If it's a parent product, delete it and all its connected products
+    if (itemToDelete && !itemToDelete.isConnectedProduct) {
+      return cartItems.filter(item => item.id !== productId && item.parentProductId !== productId);
+    }
+
+    // Default case: normal product deletion
     return cartItems.filter(item => item.id !== productId);
+  }
+
+  /**
+   * Check if an item in the cart is removable
+   * @param {Object} cartItem The cart item to check
+   * @returns {boolean} Whether the item can be removed
+   */
+  isItemRemovable(cartItem) {
+    return !cartItem.isConnectedProduct;
   }
 
   /**
@@ -137,6 +243,12 @@ class CartService {
       // Add discount information if available
       if (item.hasDiscount && item.discountAmount) {
         formattedItem.discountEuro = item.discountAmount;
+      }
+
+      // Add connected product information if it's a connected product
+      if (item.isConnectedProduct && item.parentProductId) {
+        formattedItem.isConnectedProduct = true;
+        formattedItem.parentProductId = item.parentProductId;
       }
 
       return formattedItem;
