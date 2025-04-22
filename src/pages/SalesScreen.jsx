@@ -320,10 +320,7 @@ const SalesScreen = () => {
     <Box
       sx={{
         height: '100%',
-        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${alpha(
-          theme.palette.primary.light,
-          0.1
-        )} 100%)`,
+        background: theme.palette.background.default,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
