@@ -333,7 +333,7 @@ const ProductCard = ({ product, onAddToCart }) => {
             fontWeight: 'bold',
             lineHeight: 1.2,
             fontSize: '1rem',
-            height: '1.2rem',
+            height: '1.5rem',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -342,37 +342,99 @@ const ProductCard = ({ product, onAddToCart }) => {
           {product.name}
         </Typography>
 
-        {/* Optional description - only show if there's space */}
-        {product.description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mb: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {product.description}
-          </Typography>
-        )}
+        <Divider sx={{ my: 1 }} />
 
-        <Box sx={{ mt: 'auto' }}>
-          <Divider sx={{ my: 1 }} />
-
-          {/* Price Section */}
-          <Box sx={{ mb: 1 }}>
-            {hasPfand ? (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Produkt:
-                  </Typography>
-                  <Typography variant="caption" fontWeight="medium">
-                    {formatPrice(product.price)}
-                  </Typography>
-                </Box>
+        {/* Price Section */}
+        <Box sx={{ mb: 1 }}>
+          {hasPfand ? (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Produkt:
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {formatPrice(product.price)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="success.main">
+                  Pfand:
+                </Typography>
+                <Typography variant="caption" fontWeight="medium" color="success.main">
+                  {formatPrice(pfandItem?.price || 0)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Gesamt:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" color="primary.main">
+                  {formatPrice(totalPriceWithPfand)}
+                </Typography>
+              </Box>
+            </Box>
+          ) : hasDiscount ? (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Original:
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    textDecoration: 'line-through',
+                    color: 'text.secondary',
+                  }}
+                >
+                  {formatPrice(product.originalPrice)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Jetzt:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" color="error.main">
+                  {formatPrice(product.discountedPrice)}
+                </Typography>
+              </Box>
+            </Box>
+          ) : showBundleBadge ? (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Hauptprodukt:
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {formatPrice(product.price)}
+                </Typography>
+              </Box>
+              {/* Bundle items */}
+              {product.connectedProducts
+                .filter(p => p?.category?.name !== 'Pfand')
+                .map((bundleItem, index) => (
+                  <Box
+                    key={bundleItem.id || index}
+                    sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="primary.main"
+                      sx={{
+                        maxWidth: '70%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {bundleItem.name}:
+                    </Typography>
+                    <Typography variant="caption" fontWeight="medium" color="primary.main">
+                      {formatPrice(bundleItem.price)}
+                    </Typography>
+                  </Box>
+                ))}
+              {/* Show total if there's also pfand */}
+              {hasPfand && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography variant="caption" color="success.main">
                     Pfand:
@@ -381,129 +443,49 @@ const ProductCard = ({ product, onAddToCart }) => {
                     {formatPrice(pfandItem?.price || 0)}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Gesamt:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold" color="primary.main">
-                    {formatPrice(totalPriceWithPfand)}
-                  </Typography>
-                </Box>
-              </Box>
-            ) : hasDiscount ? (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Original:
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      textDecoration: 'line-through',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    {formatPrice(product.originalPrice)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Jetzt:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold" color="error.main">
-                    {formatPrice(product.discountedPrice)}
-                  </Typography>
-                </Box>
-              </Box>
-            ) : showBundleBadge ? (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Hauptprodukt:
-                  </Typography>
-                  <Typography variant="caption" fontWeight="medium">
-                    {formatPrice(product.price)}
-                  </Typography>
-                </Box>
-                {/* Bundle items */}
-                {product.connectedProducts
-                  .filter(p => p?.category?.name !== 'Pfand')
-                  .map((bundleItem, index) => (
-                    <Box
-                      key={bundleItem.id || index}
-                      sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="primary.main"
-                        sx={{
-                          maxWidth: '70%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {bundleItem.name}:
-                      </Typography>
-                      <Typography variant="caption" fontWeight="medium" color="primary.main">
-                        {formatPrice(bundleItem.price)}
-                      </Typography>
-                    </Box>
-                  ))}
-                {/* Show total if there's also pfand */}
-                {hasPfand && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="caption" color="success.main">
-                      Pfand:
-                    </Typography>
-                    <Typography variant="caption" fontWeight="medium" color="success.main">
-                      {formatPrice(pfandItem?.price || 0)}
-                    </Typography>
-                  </Box>
-                )}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Gesamt:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold" color="primary.main">
-                    {formatPrice(
-                      parseFloat(product.price) +
-                        product.connectedProducts.reduce(
-                          (sum, item) => sum + parseFloat(item.price || 0),
-                          0
-                        )
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Typography variant="body1" fontWeight="bold" color="primary.main">
-                  {formatPrice(product.price)}
+              )}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Gesamt:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" color="primary.main">
+                  {formatPrice(
+                    parseFloat(product.price) +
+                      product.connectedProducts.reduce(
+                        (sum, item) => sum + parseFloat(item.price || 0),
+                        0
+                      )
+                  )}
                 </Typography>
               </Box>
-            )}
-          </Box>
-
-          {/* Add to Cart Button */}
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={() => onAddToCart(product)}
-            startIcon={<AddShoppingCartIcon fontSize="small" />}
-            sx={{
-              borderRadius: '6px',
-              textTransform: 'none',
-              fontWeight: 'bold',
-              boxShadow: theme.shadows[2],
-              py: 0.75,
-            }}
-          >
-            In den Warenkorb
-          </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Typography variant="body1" fontWeight="bold" color="primary.main">
+                {formatPrice(product.price)}
+              </Typography>
+            </Box>
+          )}
         </Box>
+
+        {/* Add to Cart Button */}
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          size="small"
+          onClick={() => onAddToCart(product)}
+          startIcon={<AddShoppingCartIcon fontSize="small" />}
+          sx={{
+            borderRadius: '6px',
+            textTransform: 'none',
+            fontWeight: 'bold',
+            boxShadow: theme.shadows[2],
+            py: 0.75,
+          }}
+        >
+          In den Warenkorb
+        </Button>
       </Box>
     </Paper>
   );
