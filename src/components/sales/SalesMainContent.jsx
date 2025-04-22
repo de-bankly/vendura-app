@@ -31,6 +31,8 @@ const SalesMainContent = ({
   appliedVouchers,
   subtotal,
   voucherDiscount,
+  depositCredit,
+  giftCardPayment,
   total,
   receiptReady,
   cartUndoEnabled,
@@ -46,6 +48,7 @@ const SalesMainContent = ({
   onRedeemVoucher,
   onManageVouchers,
   onPurchaseVoucher,
+  onRedeemDeposit,
   onUndoCartState,
   onRedoCartState,
 }) => {
@@ -121,6 +124,8 @@ const SalesMainContent = ({
             appliedVouchers={appliedVouchers}
             subtotal={subtotal}
             voucherDiscount={voucherDiscount}
+            depositCredit={depositCredit}
+            giftCardPayment={giftCardPayment}
             total={total}
             receiptReady={receiptReady}
             onAddItem={onAddToCart}
@@ -134,6 +139,7 @@ const SalesMainContent = ({
             onRedeemVoucher={onRedeemVoucher}
             onManageVouchers={onManageVouchers}
             onPurchaseVoucher={onPurchaseVoucher}
+            onRedeemDeposit={onRedeemDeposit}
           />
         </Paper>
       </Grid>

@@ -33,6 +33,7 @@ const ShoppingCart = ({
   subtotal,
   voucherDiscount,
   depositCredit,
+  giftCardPayment,
   total,
   receiptReady,
   onAddItem,
@@ -225,6 +226,7 @@ const ShoppingCart = ({
           subtotal={subtotal}
           voucherDiscount={voucherDiscount}
           depositCredit={depositCredit}
+          giftCardPayment={giftCardPayment}
           total={total}
         />
 
@@ -247,6 +249,7 @@ ShoppingCart.propTypes = {
   subtotal: PropTypes.number.isRequired,
   voucherDiscount: PropTypes.number.isRequired,
   depositCredit: PropTypes.number,
+  giftCardPayment: PropTypes.number,
   total: PropTypes.number.isRequired,
   receiptReady: PropTypes.bool.isRequired,
   onAddItem: PropTypes.func.isRequired,
@@ -265,6 +268,7 @@ ShoppingCart.propTypes = {
 
 ShoppingCart.defaultProps = {
   depositCredit: 0,
+  giftCardPayment: 0,
 };
 
 export default ShoppingCart;

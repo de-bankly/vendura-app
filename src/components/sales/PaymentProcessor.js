@@ -35,7 +35,7 @@ export const processPayment = async ({
         price: Math.round(item.price * 100) / 100,
         discount: item.discount || 0,
       })),
-      paymentMethod: paymentMethod,
+      paymentMethod: paymentMethod === 'deposit' ? 'cash' : paymentMethod, // Use cash as fallback since deposit is not a payment method
       total: roundedTotal,
       subtotal: Math.round(subtotal * 100) / 100,
       appliedVouchers: appliedVouchers,
@@ -55,6 +55,8 @@ export const processPayment = async ({
               cardNumber: cardDetails.cardNumber.replace(/\s/g, ''),
             }
           : null,
+      // For deposit payment method, mark it as using deposit as main payment
+      useDepositAsPayment: paymentMethod === 'deposit',
     };
 
     // Submit transaction to backend

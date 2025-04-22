@@ -5,6 +5,7 @@ import EuroIcon from '@mui/icons-material/Euro';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import {
   Dialog,
   DialogTitle,
@@ -31,7 +32,7 @@ import {
   alpha,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 /**
@@ -291,11 +292,36 @@ const PaymentDialog = ({
     return !hasErrors;
   };
 
+  const canCompletePayment = useCallback(() => {
+    if (loading) return false;
+
+    // Für Pfandbeleg-Zahlungsmethode prüfen, ob der Pfandwert ausreicht
+    if (paymentMethod === 'deposit') {
+      // Prüfen, ob das Pfandguthaben ausreicht (mit kleiner Toleranz für Rundungsfehler)
+      return Math.abs(depositCredit - total) < 0.01 || depositCredit >= total;
+    }
+
+    // Für Barzahlung prüfen, ob genug Bargeld gegeben wurde
+    if (paymentMethod === 'cash') {
+      return parseFloat(cashReceived) >= total - 0.005;
+    }
+
+    // Für Kartenzahlung prüfen, ob alle erforderlichen Felder ausgefüllt sind
+    if (paymentMethod === 'card') {
+      return (
+        cardDetails.cardNumber.replace(/\s/g, '').length >= 16 &&
+        cardDetails.cardHolderName.trim().length > 3 &&
+        cardDetails.expirationDate.length === 5 &&
+        cardDetails.cvv.length >= 3
+      );
+    }
+
+    return true;
+  }, [paymentMethod, loading, cashReceived, total, cardDetails, depositCredit]);
+
   // Handle payment completion with validation
   const handleCompletePayment = () => {
-    if (paymentMethod === 'card' && !validateCardDetails()) {
-      return;
-    }
+    if (!canCompletePayment()) return;
     onComplete();
   };
 
@@ -408,6 +434,17 @@ const PaymentDialog = ({
             checked={paymentMethod === 'card'}
             onChange={handlePaymentMethodChange}
           />
+
+          {depositCredit > 0 && (
+            <PaymentMethodOption
+              value="deposit"
+              label="Pfandbeleg einlösen"
+              icon={ReceiptIcon}
+              description={`Pfandguthaben: ${depositCredit.toFixed(2)} €`}
+              checked={paymentMethod === 'deposit'}
+              onChange={handlePaymentMethodChange}
+            />
+          )}
         </Box>
 
         {/* Rest of the payment form - cash received, card details, etc. */}
@@ -733,9 +770,7 @@ const PaymentDialog = ({
             onClick={handleCompletePayment}
             variant="contained"
             color="primary"
-            disabled={
-              loading || (paymentMethod === 'cash' && parseFloat(cashReceived) < total - 0.005)
-            }
+            disabled={!canCompletePayment()}
             startIcon={loading ? null : <CheckCircleIcon />}
             sx={{
               px: 3,

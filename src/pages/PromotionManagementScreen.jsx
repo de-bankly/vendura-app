@@ -108,7 +108,6 @@ const PromotionManagementScreen = () => {
   const handleSubmit = useCallback(
     async (formData, promotionId) => {
       try {
-        console.log('Handling promotion submit:', { isEditMode, promotionId, formData });
         if (isEditMode) {
           await PromotionService.updatePromotion(promotionId, formData);
           showToast({

@@ -73,7 +73,6 @@ class GiftCardService {
         throw new Error('Discount percentage and maximum usages are required for discount cards');
       }
 
-      console.log('GiftCardService createGiftCard payload:', giftCardData);
       const response = await apiClient.post('/v1/giftcard', giftCardData);
       return response.data;
     } catch (error) {

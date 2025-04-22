@@ -183,14 +183,12 @@ const VoucherManagement = () => {
 
   const handleInputChange = e => {
     const { name, value } = e.target;
-    console.log('Input changed:', { name, value, event: e });
 
     setFormData(prev => {
       const newState = {
         ...prev,
         [name]: value,
       };
-      console.log('Updated form state:', newState);
       return newState;
     });
 
@@ -250,8 +248,6 @@ const VoucherManagement = () => {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    console.log('Form data before submission:', formData);
-
     setSubmitLoading(true);
     setSubmitError(null);
     setSubmitSuccess(false);
@@ -277,7 +273,6 @@ const VoucherManagement = () => {
           payload.discountPercentage = currentVoucher.discountPercentage || 0;
         }
 
-        console.log('Update payload:', payload);
         await GiftCardService.updateGiftCard(currentVoucher.id, payload);
       } else {
         // Create a new voucher
@@ -293,7 +288,6 @@ const VoucherManagement = () => {
           payload.maximumUsages = parseInt(formData.maximumUsages, 10);
         }
 
-        console.log('Create payload:', payload);
         await GiftCardService.createGiftCard(payload);
       }
 

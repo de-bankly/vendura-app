@@ -7,7 +7,14 @@ import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
-const CartSummary = ({ subtotal, voucherDiscount, depositCredit, total, productDiscount = 0 }) => {
+const CartSummary = ({
+  subtotal,
+  voucherDiscount,
+  depositCredit,
+  giftCardPayment,
+  total,
+  productDiscount = 0,
+}) => {
   const theme = useTheme();
 
   // Calculate the original total before any discounts
@@ -17,7 +24,7 @@ const CartSummary = ({ subtotal, voucherDiscount, depositCredit, total, productD
   const hasAnyDiscount = voucherDiscount > 0 || productDiscount > 0;
 
   // Calculate total savings
-  const totalSavings = productDiscount + voucherDiscount + depositCredit;
+  const totalSavings = productDiscount + voucherDiscount + depositCredit + giftCardPayment;
 
   // Summary item component for consistent styling
   const SummaryItem = ({ label, value, color, icon: Icon, hideZero = false, bold = false }) => {
@@ -89,8 +96,17 @@ const CartSummary = ({ subtotal, voucherDiscount, depositCredit, total, productD
         <SummaryItem
           label="Pfand-Guthaben"
           value={-depositCredit}
-          color="error.main"
+          color={Math.abs(depositCredit - total) < 0.01 ? 'success.main' : 'error.main'}
           icon={ReceiptIcon}
+          hideZero
+          bold
+        />
+
+        <SummaryItem
+          label="Gutschein-Zahlung"
+          value={-giftCardPayment}
+          color="error.main"
+          icon={DiscountIcon}
           hideZero
           bold
         />
@@ -155,12 +171,14 @@ CartSummary.propTypes = {
   subtotal: PropTypes.number.isRequired,
   voucherDiscount: PropTypes.number.isRequired,
   depositCredit: PropTypes.number,
+  giftCardPayment: PropTypes.number,
   total: PropTypes.number.isRequired,
   productDiscount: PropTypes.number,
 };
 
 CartSummary.defaultProps = {
   depositCredit: 0,
+  giftCardPayment: 0,
   productDiscount: 0,
 };
 

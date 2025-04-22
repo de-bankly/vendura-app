@@ -22,6 +22,7 @@ const DialogManager = ({
   cartItems,
   voucherDiscount,
   depositCredit,
+  giftCardPayment,
   appliedVouchers,
   paymentMethod,
   cashReceived,
@@ -66,6 +67,7 @@ const DialogManager = ({
         cartItemsCount={cartItems.length}
         voucherDiscount={voucherDiscount}
         depositCredit={depositCredit}
+        giftCardPayment={giftCardPayment}
         appliedVouchers={appliedVouchers}
         paymentMethod={paymentMethod}
         cashReceived={cashReceived}

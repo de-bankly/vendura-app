@@ -112,13 +112,13 @@ const SalesScreen = () => {
 
     const afterDiscountTotal = subtotal - calculatedDiscount;
     const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
-    setDepositCredit(calculatedGiftCardPayment);
+    setGiftCardPayment(calculatedGiftCardPayment);
   }, [subtotal, appliedVouchers]);
 
   const total = useMemo(() => {
-    const calculatedTotal = subtotal - voucherDiscount - depositCredit;
+    const calculatedTotal = subtotal - voucherDiscount - depositCredit - giftCardPayment;
     return calculatedTotal > 0 ? calculatedTotal : 0;
-  }, [subtotal, voucherDiscount, depositCredit]);
+  }, [subtotal, voucherDiscount, depositCredit, giftCardPayment]);
 
   const change = useMemo(() => {
     if (paymentMethod !== 'cash' || !cashReceived) return 0;
@@ -350,6 +350,8 @@ const SalesScreen = () => {
             appliedVouchers={appliedVouchers}
             subtotal={subtotal}
             voucherDiscount={voucherDiscount}
+            depositCredit={depositCredit}
+            giftCardPayment={giftCardPayment}
             total={total}
             receiptReady={receiptReady}
             cartUndoEnabled={cartUndoEnabled}
@@ -365,6 +367,7 @@ const SalesScreen = () => {
             onRedeemVoucher={handleRedeemVoucherDialog}
             onManageVouchers={handleVoucherManagementDialog}
             onPurchaseVoucher={handlePurchaseVoucherDialog}
+            onRedeemDeposit={handleRedeemDepositDialogOpen}
             onUndoCartState={handleUndoCartState}
             onRedoCartState={handleRedoCartState}
           />
@@ -380,6 +383,7 @@ const SalesScreen = () => {
         cartItems={cartItems}
         voucherDiscount={voucherDiscount}
         depositCredit={depositCredit}
+        giftCardPayment={giftCardPayment}
         appliedVouchers={appliedVouchers}
         paymentMethod={paymentMethod}
         cashReceived={cashReceived}
