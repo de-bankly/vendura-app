@@ -46,7 +46,16 @@ class CartService {
     const existingItem = updatedCartItems.find(item => item.id === product.id);
 
     if (existingItem) {
-      // If product already exists, just increment quantity
+      // Check if the product is a Pfand product
+      const isPfandProduct =
+        existingItem.isPfandProduct === true || existingItem.category?.name === 'Pfand';
+
+      // If it's a Pfand product, don't increment quantity
+      if (isPfandProduct) {
+        return cartItems; // Return original cart items without changes
+      }
+
+      // If product already exists and is not a Pfand product, increment quantity
       updatedCartItems = updatedCartItems.map(item =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       );
@@ -59,6 +68,14 @@ class CartService {
           );
 
           if (existingConnectedItem) {
+            // Check if connected product is a Pfand product
+            const isConnectedPfandProduct =
+              existingConnectedItem.isPfandProduct === true ||
+              connectedProduct?.category?.name === 'Pfand';
+
+            // For connected products, always update their quantity to match the parent
+            // This allows Pfand products to be updated when their parent product is updated
+            // but prevents them from being independently updated
             updatedCartItems = updatedCartItems.map(item =>
               item.id === connectedProduct.id && item.parentProductId === product.id
                 ? { ...item, quantity: item.quantity + 1 }

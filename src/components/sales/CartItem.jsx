@@ -330,22 +330,42 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
                 </IconButton>
               )}
 
-              <IconButton
-                size="small"
-                onClick={() => onAddItem(item)}
-                sx={{
-                  color: 'success.main',
-                  '&:hover': {
-                    color: 'success.dark',
-                    bgcolor: alpha(theme.palette.success.main, 0.08),
-                  },
-                  borderRadius: 0,
-                  bgcolor: 'background.paper',
-                }}
-                aria-label={`Add one ${item.name}`}
-              >
-                <AddIcon fontSize="small" />
-              </IconButton>
+              {isPfandProduct ? (
+                <Tooltip title="Pfandmenge kann nicht geändert werden" arrow placement="left">
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled
+                      sx={{
+                        color: alpha(theme.palette.text.disabled, 0.5),
+                        borderRadius: 0,
+                        bgcolor: 'background.paper',
+                        borderColor: 'transparent',
+                      }}
+                      aria-label={`Cannot add ${item.name}`}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              ) : (
+                <IconButton
+                  size="small"
+                  onClick={() => onAddItem(item)}
+                  sx={{
+                    color: 'success.main',
+                    '&:hover': {
+                      color: 'success.dark',
+                      bgcolor: alpha(theme.palette.success.main, 0.08),
+                    },
+                    borderRadius: 0,
+                    bgcolor: 'background.paper',
+                  }}
+                  aria-label={`Add one ${item.name}`}
+                >
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              )}
             </ButtonGroup>
           </Box>
         </Box>
