@@ -43,11 +43,15 @@ class CartService {
       // Add connected products if any
       if (product.connectedProducts && product.connectedProducts.length > 0) {
         product.connectedProducts.forEach(connectedProduct => {
+          // Check if this is a Pfand product
+          const isPfandProduct = connectedProduct.category?.name === 'Pfand';
+
           // Create a copy with additional property to mark it as a connected product
           const connectedProductWithParent = {
             ...connectedProduct,
             quantity: 1,
             isConnectedProduct: true,
+            isPfandProduct: isPfandProduct, // Mark Pfand products
             parentProductId: product.id,
           };
 
@@ -69,8 +73,8 @@ class CartService {
     // Find the item to remove
     const itemToRemove = cartItems.find(item => item.id === productId);
 
-    // If it's a connected product, don't remove it
-    if (itemToRemove && itemToRemove.isConnectedProduct) {
+    // If it's a connected product or Pfand product, don't remove it
+    if (itemToRemove && (itemToRemove.isConnectedProduct || itemToRemove.isPfandProduct)) {
       return cartItems;
     }
 
@@ -129,8 +133,8 @@ class CartService {
     // Find the item to delete
     const itemToDelete = cartItems.find(item => item.id === productId);
 
-    // If it's a connected product, don't allow deletion
-    if (itemToDelete && itemToDelete.isConnectedProduct) {
+    // If it's a connected product or Pfand product, don't allow deletion
+    if (itemToDelete && (itemToDelete.isConnectedProduct || itemToDelete.isPfandProduct)) {
       return cartItems;
     }
 
@@ -149,7 +153,7 @@ class CartService {
    * @returns {boolean} Whether the item can be removed
    */
   isItemRemovable(cartItem) {
-    return !cartItem.isConnectedProduct;
+    return !cartItem.isConnectedProduct && !cartItem.isPfandProduct;
   }
 
   /**
@@ -249,6 +253,11 @@ class CartService {
       if (item.isConnectedProduct && item.parentProductId) {
         formattedItem.isConnectedProduct = true;
         formattedItem.parentProductId = item.parentProductId;
+      }
+
+      // Add Pfand information if it's a deposit item
+      if (item.isPfandProduct) {
+        formattedItem.isPfandProduct = true;
       }
 
       return formattedItem;

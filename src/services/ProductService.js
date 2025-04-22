@@ -263,12 +263,22 @@ class ProductService {
         : null,
       sku: product.id, // Using ID as SKU since backend doesn't have separate SKU field
       standalone: product.standalone,
+      // Always include all connected products (including Pfand items) even if they're filtered in the product grid
       connectedProducts: product.connectedProducts
         ? product.connectedProducts.map(connectedProduct =>
             this.transformProductData(connectedProduct)
           )
         : [],
     };
+  }
+
+  /**
+   * Check if a product belongs to the Pfand category
+   * @param {Object} product - The product to check
+   * @returns {boolean} True if the product is in the Pfand category
+   */
+  isPfandProduct(product) {
+    return product?.category?.name === 'Pfand';
   }
 
   /**
@@ -282,6 +292,12 @@ class ProductService {
     products.forEach(product => {
       // Ensure product and category exist before accessing name
       const categoryName = product?.category?.name || 'Uncategorized';
+
+      // Skip products in the "Pfand" category
+      if (this.isPfandProduct(product)) {
+        return; // Skip this product - don't add it to any category
+      }
+
       if (!grouped[categoryName]) {
         grouped[categoryName] = [];
       }
