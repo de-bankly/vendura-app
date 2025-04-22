@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Box, Container, alpha, useTheme } from '@mui/material';
+import { Box, Container, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 
 // Import components and utilities

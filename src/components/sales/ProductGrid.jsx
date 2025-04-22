@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
-
 import Chip from '../ui/feedback/Chip';
 import ProductCard from './ProductCard';
 
@@ -168,7 +167,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
       {/* Products Display */}
       <Box
         sx={{
-          p: 2,
+          p: 3,
           flexGrow: 1,
           overflow: 'auto', // Allow product grid to scroll
           bgcolor: alpha(theme.palette.background.default, 0.5),
@@ -183,9 +182,9 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             </Typography>
           </Box>
         ) : (
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             {filteredProducts.map(product => (
-              <Grid item xs={6} sm={4} md={3} lg={2} key={product.id}>
+              <Grid item xs={12} sm={6} md={6} lg={4} key={product.id}>
                 <ProductCard product={product} onAddToCart={() => onProductSelect(product)} />
               </Grid>
             ))}
