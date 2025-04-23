@@ -15,7 +15,7 @@ import {
 } from '../components/sales';
 
 // Import services
-import { ProductService } from '../services';
+import { ProductService, CartService } from '../services';
 import { useToast } from '../components/ui/feedback';
 
 // Animation variant
@@ -100,9 +100,15 @@ const SalesScreen = () => {
   }, []);
 
   // --- Calculations ---
+  const cartService = useMemo(() => CartService, []);
+
   const subtotal = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cartItems]);
+    return cartService.calculateSubtotal(cartItems);
+  }, [cartItems, cartService]);
+
+  const productDiscount = useMemo(() => {
+    return cartService.calculateTotalDiscount(cartItems);
+  }, [cartItems, cartService]);
 
   useEffect(() => {
     const calculatedDiscount = calculateVoucherDiscount(subtotal, appliedVouchers);
@@ -351,6 +357,7 @@ const SalesScreen = () => {
             onRedeemDeposit={handleRedeemDepositDialogOpen}
             onUndoCartState={handleUndoCartState}
             onRedoCartState={handleRedoCartState}
+            productDiscount={productDiscount}
           />
         </Box>
       </Container>

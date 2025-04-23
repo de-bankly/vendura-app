@@ -49,6 +49,7 @@ const SalesMainContent = ({
   onRedeemDeposit,
   onUndoCartState,
   onRedoCartState,
+  productDiscount,
 }) => {
   const theme = useTheme();
 
@@ -132,6 +133,7 @@ const SalesMainContent = ({
             cartRedoEnabled={cartRedoEnabled}
             onUndoCartState={onUndoCartState}
             onRedoCartState={onRedoCartState}
+            productDiscount={productDiscount}
           />
         </Paper>
       </Grid>

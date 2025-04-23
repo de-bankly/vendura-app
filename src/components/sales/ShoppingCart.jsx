@@ -54,6 +54,7 @@ const ShoppingCart = ({
   onRedeemDeposit,
   onUndoCartState,
   onRedoCartState,
+  productDiscount,
 }) => {
   const theme = useTheme();
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -255,6 +256,7 @@ const ShoppingCart = ({
           depositCredit={depositCredit}
           giftCardPayment={giftCardPayment}
           total={total}
+          productDiscount={productDiscount || 0}
         />
 
         {/* Action Buttons */}
@@ -294,6 +296,7 @@ ShoppingCart.propTypes = {
   onRedeemDeposit: PropTypes.func.isRequired,
   onUndoCartState: PropTypes.func,
   onRedoCartState: PropTypes.func,
+  productDiscount: PropTypes.number,
 };
 
 ShoppingCart.defaultProps = {
