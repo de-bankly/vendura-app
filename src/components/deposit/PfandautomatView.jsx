@@ -17,6 +17,7 @@ import { DepositService, ProductService } from '../../services';
 import BottleScanner from './BottleScanner';
 import DepositItemsList from './DepositItemsList';
 import DepositReceipt from './DepositReceipt';
+import { useBarcodeScan } from '../../contexts/BarcodeContext';
 
 const PfandautomatView = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,36 @@ const PfandautomatView = () => {
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const { pendingDepositItems, clearPendingDepositItems } = useBarcodeScan();
+
+  // Process pendingDepositItems from BarcodeContext
+  useEffect(() => {
+    if (pendingDepositItems.length > 0) {
+      // Merge with existing scanned items
+      const updatedItems = [...scannedItems];
+
+      pendingDepositItems.forEach(pendingItem => {
+        const existingItemIndex = updatedItems.findIndex(
+          item => item.product.id === pendingItem.product.id
+        );
+
+        if (existingItemIndex !== -1) {
+          // Increment quantity if already in list
+          updatedItems[existingItemIndex] = {
+            ...updatedItems[existingItemIndex],
+            quantity: updatedItems[existingItemIndex].quantity + pendingItem.quantity,
+          };
+        } else {
+          // Add new item if not in list
+          updatedItems.push({ ...pendingItem });
+        }
+      });
+
+      setScannedItems(updatedItems);
+      // Clear the pending items after processing them
+      clearPendingDepositItems();
+    }
+  }, [pendingDepositItems, clearPendingDepositItems, scannedItems]);
 
   // Load products that have deposit items connected to them
   useEffect(() => {
