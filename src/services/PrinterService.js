@@ -236,12 +236,72 @@ class PrinterService {
         };
       }
 
+      // If it's a deposit receipt, set the flag
+      if (
+        receiptData.isDepositReceipt ||
+        (receiptData.title && receiptData.title.includes('PFAND'))
+      ) {
+        receiptData.isDepositReceipt = true;
+        receiptData.footerText =
+          receiptData.footerText || 'Pfandbeleg kann an der Kasse eingelöst werden';
+      }
+
       console.log('Sending formatted receipt data to printer service:', receiptData);
       const response = await this.client.post('/print/receipt', receiptData);
       console.log('Receipt print response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error printing receipt:', error);
+      throw new Error(error.response?.data?.error || error.message);
+    }
+  }
+
+  /**
+   * Print a deposit receipt
+   * @param {Object} depositData - Deposit receipt data
+   * @returns {Promise<{success: boolean, message: string}>}
+   */
+  async printDepositReceipt(depositData) {
+    try {
+      console.log('PrintDepositReceipt called with data:', depositData);
+
+      // Format the deposit receipt data
+      const formattedDate = new Date().toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Format items for the receipt
+      const items =
+        depositData.positions?.map(position => ({
+          name: position.product.name,
+          price: `${position.product.price.toFixed(2)} €`,
+          description: position.quantity > 1 ? `${position.quantity} x Stück` : null,
+        })) || [];
+
+      // Prepare receipt data
+      const receiptData = {
+        title: 'PFANDBELEG',
+        orderNumber: depositData.id || `PF-${Date.now().toString().slice(-6)}`,
+        date: formattedDate,
+        items: items,
+        total: `${depositData.total?.toFixed(2) || '0.00'} €`,
+        footerText: 'Pfandbeleg kann an der Kasse eingelöst werden',
+        printerConfig: {
+          characterSet: 'SLOVENIA',
+        },
+      };
+
+      // Use dedicated deposit receipt endpoint
+      console.log('Sending deposit receipt data to printer service:', receiptData);
+      const response = await this.client.post('/print/deposit', receiptData);
+      console.log('Deposit receipt print response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error printing deposit receipt:', error);
       throw new Error(error.response?.data?.error || error.message);
     }
   }

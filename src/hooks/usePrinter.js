@@ -83,6 +83,35 @@ const usePrinter = (options = {}) => {
     [statusChecked, isLoading]
   );
 
+  // Print deposit receipt with barcode
+  const printDepositReceipt = useCallback(
+    async depositData => {
+      if (!statusChecked && !isLoading) {
+        try {
+          const { connected } = await PrinterService.checkStatus();
+          setIsConnected(connected);
+          setStatusChecked(true);
+        } catch (error) {
+          console.warn('Silent printer check failed, continuing anyway');
+        }
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await PrinterService.printDepositReceipt(depositData);
+        return result;
+      } catch (err) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [statusChecked, isLoading]
+  );
+
   // Print simple text
   const printText = useCallback(async text => {
     setIsLoading(true);
@@ -114,6 +143,7 @@ const usePrinter = (options = {}) => {
     checkStatus,
     print,
     printReceipt,
+    printDepositReceipt,
     printText,
   };
 };

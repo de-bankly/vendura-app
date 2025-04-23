@@ -40,6 +40,7 @@ import DepositItemsList from './DepositItemsList';
 import DepositReceipt from './DepositReceipt';
 import { useBarcodeScan } from '../../contexts/BarcodeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePrinter } from '../../hooks';
 
 // Animation variants
 const containerVariants = {
@@ -91,6 +92,7 @@ const PfandautomatView = () => {
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [itemAdded, setItemAdded] = useState(false);
   const { pendingDepositItems, clearPendingDepositItems } = useBarcodeScan();
+  const { printDepositReceipt, isLoading: isPrinting, error: printerError } = usePrinter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -174,9 +176,19 @@ const PfandautomatView = () => {
       // Make API call to create receipt
       const response = await DepositService.createDepositReceipt(depositReceiptData);
 
+      // Set receipt data for display
       setReceiptData(response.data);
       setReceiptGenerated(true);
       setShowReceiptDialog(true);
+
+      // Print the receipt (automatically)
+      try {
+        await printDepositReceipt(response.data);
+      } catch (printError) {
+        console.error('Error printing deposit receipt:', printError);
+        // We don't want to show an error for print failures
+        // as the receipt generation was successful
+      }
 
       // Reset scanned items after successful receipt generation
       setScannedItems([]);
@@ -698,11 +710,13 @@ const PfandautomatView = () => {
               color="primary"
               startIcon={<PrintIcon />}
               onClick={() => {
-                setShowReceiptDialog(false);
-                // Here you could add logic to print the receipt
+                if (receiptData) {
+                  printDepositReceipt(receiptData);
+                }
               }}
+              disabled={isPrinting}
             >
-              Drucken
+              {isPrinting ? <CircularProgress size={24} color="inherit" /> : 'Erneut drucken'}
             </Button>
           </motion.div>
         </DialogActions>
