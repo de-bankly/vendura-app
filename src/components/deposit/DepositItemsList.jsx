@@ -16,17 +16,21 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
-const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
+const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity, readOnly }) => {
   // Handle increasing quantity
   const handleIncreaseQuantity = index => {
-    onUpdateQuantity(index, items[index].quantity + 1);
+    if (onUpdateQuantity && !readOnly) {
+      onUpdateQuantity(index, items[index].quantity + 1);
+    }
   };
 
   // Handle decreasing quantity
   const handleDecreaseQuantity = index => {
-    if (items[index].quantity > 1) {
+    if (readOnly) return;
+
+    if (items[index].quantity > 1 && onUpdateQuantity) {
       onUpdateQuantity(index, items[index].quantity - 1);
-    } else {
+    } else if (onRemoveItem) {
       onRemoveItem(index);
     }
   };
@@ -41,7 +45,7 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
           Noch keine Flaschen gescannt
         </Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-          Scannen Sie Flaschen ein, um diese hier anzuzeigen
+          Pfandprodukte werden automatisch hinzugefügt
         </Typography>
       </Paper>
     );
@@ -53,9 +57,11 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
         <React.Fragment key={`${item.product.id}-${index}`}>
           <ListItem
             secondaryAction={
-              <IconButton edge="end" aria-label="delete" onClick={() => onRemoveItem(index)}>
-                <DeleteIcon />
-              </IconButton>
+              !readOnly && onRemoveItem ? (
+                <IconButton edge="end" aria-label="delete" onClick={() => onRemoveItem(index)}>
+                  <DeleteIcon />
+                </IconButton>
+              ) : null
             }
             sx={{ py: 2 }}
           >
@@ -63,23 +69,29 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
               primary={item.product.name}
               secondary={`Pfand: ${(item.product.price || 0).toFixed(2)} €`}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-              <ButtonGroup size="small" aria-label="quantity button group">
-                <Button
-                  aria-label="decrease"
-                  onClick={() => handleDecreaseQuantity(index)}
-                  disabled={item.quantity <= 0}
-                >
-                  <RemoveIcon fontSize="small" />
-                </Button>
-                <Button disabled sx={{ minWidth: '40px' }}>
-                  {item.quantity}
-                </Button>
-                <Button aria-label="increase" onClick={() => handleIncreaseQuantity(index)}>
-                  <AddIcon fontSize="small" />
-                </Button>
-              </ButtonGroup>
-            </Box>
+            {!readOnly && onUpdateQuantity ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                <ButtonGroup size="small" aria-label="quantity button group">
+                  <Button
+                    aria-label="decrease"
+                    onClick={() => handleDecreaseQuantity(index)}
+                    disabled={item.quantity <= 0}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </Button>
+                  <Button disabled sx={{ minWidth: '40px' }}>
+                    {item.quantity}
+                  </Button>
+                  <Button aria-label="increase" onClick={() => handleIncreaseQuantity(index)}>
+                    <AddIcon fontSize="small" />
+                  </Button>
+                </ButtonGroup>
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ mr: 2, fontWeight: 'medium' }}>
+                {item.quantity} Stk.
+              </Typography>
+            )}
           </ListItem>
           {index < items.length - 1 && <Divider component="li" />}
         </React.Fragment>
@@ -90,12 +102,14 @@ const DepositItemsList = ({ items, onRemoveItem, onUpdateQuantity }) => {
 
 DepositItemsList.propTypes = {
   items: PropTypes.array,
-  onRemoveItem: PropTypes.func.isRequired,
-  onUpdateQuantity: PropTypes.func.isRequired,
+  onRemoveItem: PropTypes.func,
+  onUpdateQuantity: PropTypes.func,
+  readOnly: PropTypes.bool,
 };
 
 DepositItemsList.defaultProps = {
   items: [],
+  readOnly: false,
 };
 
 export default DepositItemsList;
