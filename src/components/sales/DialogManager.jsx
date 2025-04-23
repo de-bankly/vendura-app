@@ -1,5 +1,5 @@
 import React from 'react';
-import { Slide, Snackbar, Alert } from '@mui/material';
+import { Slide } from '@mui/material';
 import { PaymentDialog } from './index';
 import { RedeemVoucherDialog } from '../vouchers';
 import { RedeemDepositDialog } from '../deposit';
@@ -43,10 +43,6 @@ const DialogManager = ({
   onRedeemDepositDialogClose,
   onDepositRedeemed,
   appliedDepositIds,
-
-  // Snackbar props
-  successSnackbarOpen,
-  onSnackbarClose,
 }) => {
   return (
     <>
@@ -71,24 +67,6 @@ const DialogManager = ({
         TransitionComponent={Transition}
         loading={paymentLoading}
       />
-
-      {/* Success Snackbar */}
-      <Snackbar
-        open={successSnackbarOpen}
-        autoHideDuration={6000}
-        onClose={onSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={onSnackbarClose}
-          severity="success"
-          variant="filled"
-          elevation={6}
-          sx={{ width: '100%' }}
-        >
-          Zahlung erfolgreich abgeschlossen!
-        </Alert>
-      </Snackbar>
 
       {/* Redeem Voucher Dialog */}
       <RedeemVoucherDialog

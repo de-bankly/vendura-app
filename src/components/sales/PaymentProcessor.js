@@ -18,7 +18,6 @@ export const processPayment = async ({
   showToast,
   setReceiptReady,
   setPaymentModalOpen,
-  setSuccessSnackbarOpen,
   setPaymentLoading,
 }) => {
   setPaymentLoading(true);
@@ -64,14 +63,23 @@ export const processPayment = async ({
 
     // Show success message
     showToast({
-      message: 'Zahlung erfolgreich',
+      message: 'Zahlung erfolgreich abgeschlossen!',
       severity: 'success',
+      title: 'Erfolg',
+      anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
+      variant: 'filled',
+      autoHideDuration: 6000,
+      sx: {
+        left: 'auto',
+        right: 'auto',
+        width: '100%',
+        maxWidth: '400px',
+      },
     });
 
     // Update UI to show receipt
     setReceiptReady(true);
     setPaymentModalOpen(false);
-    setSuccessSnackbarOpen(true);
 
     return response;
   } catch (error) {

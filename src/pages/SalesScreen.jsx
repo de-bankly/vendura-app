@@ -62,7 +62,6 @@ const SalesScreen = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Dialog state
-  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
@@ -295,7 +294,6 @@ const SalesScreen = () => {
       showToast,
       setReceiptReady,
       setPaymentModalOpen,
-      setSuccessSnackbarOpen,
       setPaymentLoading,
     });
     // Lock the cart after successful payment
@@ -316,11 +314,6 @@ const SalesScreen = () => {
 
   const handlePrintReceipt = useCallback(() => {
     alert('Rechnung wird gedruckt...');
-  }, []);
-
-  const handleSnackbarClose = useCallback((event, reason) => {
-    if (reason === 'clickaway') return;
-    setSuccessSnackbarOpen(false);
   }, []);
 
   const handleNewTransaction = useCallback(() => {
@@ -482,8 +475,6 @@ const SalesScreen = () => {
         onRedeemDepositDialogClose={handleRedeemDepositDialogClose}
         onDepositRedeemed={handleDepositRedeemed}
         appliedDepositIds={appliedDeposits.map(deposit => deposit.id)}
-        successSnackbarOpen={successSnackbarOpen}
-        onSnackbarClose={handleSnackbarClose}
       />
     </Box>
   );
