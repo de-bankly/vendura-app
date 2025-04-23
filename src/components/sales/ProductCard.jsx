@@ -52,13 +52,24 @@ const ProductCard = ({ product, onAddToCart }) => {
   // Only show Bundle badge if there are connected products that are not Pfand
   const showBundleBadge = hasNonPfandConnectedProducts;
 
+  // Get the most accurate stock count, prioritizing currentStock (from API) if available
+  const availableStock =
+    product.currentStock !== undefined && product.currentStock !== null
+      ? product.currentStock
+      : product.stockQuantity;
+
   // Check if product is out of stock
-  const isOutOfStock = product.stockQuantity <= 0;
+  const isOutOfStock = availableStock <= 0;
 
   // Check if any connected products (except Pfand) are out of stock
   const hasOutOfStockConnectedProducts =
     hasConnectedProducts &&
-    product.connectedProducts.some(p => p?.category?.name !== 'Pfand' && p.stockQuantity <= 0);
+    product.connectedProducts.some(p => {
+      // For each connected product, check both currentStock and stockQuantity
+      const connectedAvailableStock =
+        p.currentStock !== undefined && p.currentStock !== null ? p.currentStock : p.stockQuantity;
+      return p?.category?.name !== 'Pfand' && connectedAvailableStock <= 0;
+    });
 
   // Product should be visually marked as unavailable if either:
   // 1. The main product itself is out of stock, OR
@@ -596,13 +607,13 @@ const ProductCard = ({ product, onAddToCart }) => {
             align="center"
             sx={{
               mt: 0.5,
-              color: product.stockQuantity <= 5 ? 'warning.main' : 'text.secondary',
-              fontWeight: product.stockQuantity <= 5 ? 'medium' : 'normal',
+              color: availableStock <= 5 ? 'warning.main' : 'text.secondary',
+              fontWeight: availableStock <= 5 ? 'medium' : 'normal',
             }}
           >
-            {product.stockQuantity <= 5
-              ? `Nur noch ${product.stockQuantity} auf Lager!`
-              : `${product.stockQuantity} auf Lager`}
+            {availableStock <= 5
+              ? `Nur noch ${availableStock} auf Lager!`
+              : `${availableStock} auf Lager`}
           </Typography>
         )}
       </Box>

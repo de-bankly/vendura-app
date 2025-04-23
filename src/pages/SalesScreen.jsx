@@ -436,13 +436,9 @@ const SalesScreen = () => {
   useEffect(() => {
     if (scannedProduct) {
       handleAddToCart(scannedProduct);
-      showToast({
-        severity: 'success',
-        message: `${scannedProduct.name} wurde hinzugefügt`,
-      });
       resetScan();
     }
-  }, [scannedProduct, handleAddToCart, resetScan, showToast]);
+  }, [scannedProduct, handleAddToCart, resetScan]);
 
   useEffect(() => {
     if (scanError) {
@@ -452,7 +448,7 @@ const SalesScreen = () => {
       });
       resetScan();
     }
-  }, [scanError, showToast ]);
+  }, [scanError, showToast, resetScan]);
 
   return (
     <Box
@@ -528,36 +524,6 @@ const SalesScreen = () => {
         onDepositRedeemed={handleDepositRedeemed}
         appliedDepositIds={appliedDeposits.map(deposit => deposit.id)}
       />
-
-      <Dialog
-        open={scannerDialogOpen}
-        onClose={handleCloseScannerDialog}
-        TransitionComponent={Transition}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Barcode Scanner</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body1" gutterBottom>
-              Scannen Sie ein Produkt mit dem Barcodescanner oder geben Sie den Barcode manuell ein.
-            </Typography>
-
-            {isScannerEnabled ? (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Scanner ist aktiv. Produkte werden automatisch zum Warenkorb hinzugefügt.
-              </Alert>
-            ) : (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                Scanner ist deaktiviert.
-              </Alert>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseScannerDialog}>Schließen</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

@@ -20,19 +20,25 @@ import React from 'react';
 const InventoryProductCard = ({ product }) => {
   const theme = useTheme();
 
+  // Get the most accurate stock count, prioritizing currentStock (from API) if available
+  const availableStock =
+    product.currentStock !== undefined && product.currentStock !== null
+      ? product.currentStock
+      : product.stockQuantity;
+
   // Determine stock status
   const getStockStatus = () => {
-    if (!product.stockQuantity && product.stockQuantity !== 0) {
+    if (availableStock === undefined || availableStock === null) {
       return { color: 'default', label: 'Unbekannt' };
     }
 
-    if (product.stockQuantity === 0) {
+    if (availableStock === 0) {
       return { color: 'error', label: 'Nicht vorrätig' };
     }
 
     const lowThreshold = product.lowStockThreshold || 5;
 
-    if (product.stockQuantity <= lowThreshold) {
+    if (availableStock <= lowThreshold) {
       return { color: 'warning', label: 'Fast leer' };
     }
 
@@ -153,9 +159,9 @@ const InventoryProductCard = ({ product }) => {
                 sx={{ fontWeight: 500 }}
               />
             </Box>
-            {(product.stockQuantity || product.stockQuantity === 0) && (
+            {availableStock !== undefined && availableStock !== null && (
               <Typography variant="body2" color="text.secondary">
-                {product.stockQuantity} Stk.
+                {availableStock} Stk.
               </Typography>
             )}
           </Stack>

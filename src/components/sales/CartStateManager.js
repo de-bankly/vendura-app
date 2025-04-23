@@ -4,8 +4,14 @@ import { CartService } from '../../services';
  * Handles adding a product to cart with background state saving
  */
 export const addToCart = (cartItems, appliedVouchers, product, setCartItems, showToast) => {
+  // Get the most accurate stock count, prioritizing currentStock (from API) if available
+  const availableStock =
+    product.currentStock !== undefined && product.currentStock !== null
+      ? product.currentStock
+      : product.stockQuantity;
+
   // Check stock availability for the product
-  if (product.stockQuantity <= 0) {
+  if (availableStock <= 0) {
     if (showToast) {
       showToast({
         severity: 'error',
@@ -20,11 +26,11 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
   const currentQuantity = existingItem ? existingItem.quantity : 0;
 
   // Check if adding one more would exceed available stock
-  if (currentQuantity >= product.stockQuantity) {
+  if (currentQuantity >= availableStock) {
     if (showToast) {
       showToast({
         severity: 'warning',
-        message: `Kann ${product.name} nicht hinzufügen. Nur noch ${product.stockQuantity} auf Lager.`,
+        message: `Kann ${product.name} nicht hinzufügen. Nur noch ${availableStock} auf Lager.`,
       });
     }
     return cartItems; // Return unchanged cart items
@@ -33,7 +39,12 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
   // Check if the product has out-of-stock connected products (for bundles)
   const hasOutOfStockConnectedProducts =
     product.connectedProducts &&
-    product.connectedProducts.some(p => p?.category?.name !== 'Pfand' && p.stockQuantity <= 0);
+    product.connectedProducts.some(p => {
+      // For each connected product, check both currentStock and stockQuantity
+      const connectedAvailableStock =
+        p.currentStock !== undefined && p.currentStock !== null ? p.currentStock : p.stockQuantity;
+      return p?.category?.name !== 'Pfand' && connectedAvailableStock <= 0;
+    });
 
   // If the product is part of a bundle but some connected products are out of stock,
   // treat the entire bundle as out of stock and prevent purchase
@@ -50,6 +61,14 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
   // If all stock checks pass, proceed with adding to cart normally (including all connected products)
   const updatedItems = CartService.addToCart([...cartItems], product);
   setCartItems(updatedItems);
+
+  // Show success toast notification
+  if (showToast) {
+    showToast({
+      severity: 'success',
+      message: `${product.name} wurde dem Warenkorb hinzugefügt`,
+    });
+  }
 
   // Save state in background with explicit label
   CartService.saveCartState(updatedItems, appliedVouchers, 'Added product').catch(err => {

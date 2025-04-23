@@ -17,51 +17,53 @@ export const BarcodeProvider = ({ children }) => {
   const inputRef = useRef(null);
   const { showToast } = useToast();
 
-  const handleScan = useCallback(async (barcode) => {
-    if (isProcessing) return;
-    
-    try {
-      setIsProcessing(true);
-      setError(null);
-      
-      // If there's an active field, directly fill it with barcode value
-      if (activeField && typeof activeField === 'function') {
-        activeField(barcode);
-        setIsProcessing(false);
-        return;
-      }
-      
-      // Otherwise look up product by barcode
+  const handleScan = useCallback(
+    async barcode => {
+      if (isProcessing) return;
+
       try {
-        const product = await ProductService.getProductById(barcode);
-        setScannedProduct(product);
-        
-      } catch (lookupError) {
-        // Always use a specific product not found message for 404 errors
-        const errorMsg = `Produkt nicht gefunden.`;
+        setIsProcessing(true);
+        setError(null);
+
+        // If there's an active field, directly fill it with barcode value
+        if (activeField && typeof activeField === 'function') {
+          activeField(barcode);
+          setIsProcessing(false);
+          return;
+        }
+
+        // Otherwise look up product by barcode
+        try {
+          const product = await ProductService.getProductById(barcode, true);
+          setScannedProduct(product);
+        } catch (lookupError) {
+          // Always use a specific product not found message for 404 errors
+          const errorMsg = `Produkt nicht gefunden.`;
+          setError(errorMsg);
+          showToast({
+            severity: 'error',
+            message: errorMsg,
+          });
+        }
+      } catch (err) {
+        const errorMsg = `Fehler beim Scannen: ${err.message}`;
         setError(errorMsg);
-        showToast({ 
-          severity: 'error', 
-          message: errorMsg 
+        showToast({
+          severity: 'error',
+          message: errorMsg,
         });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (err) {
-      const errorMsg = `Fehler beim Scannen: ${err.message}`;
-      setError(errorMsg);
-      showToast({ 
-        severity: 'error', 
-        message: errorMsg 
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [isProcessing, activeField, showToast]);
+    },
+    [isProcessing, activeField, showToast]
+  );
 
   // Barcode hook usage
-  const { barcode, isScanning, resetBarcode } = useBarcode({ 
-    onScan: handleScan, 
+  const { barcode, isScanning, resetBarcode } = useBarcode({
+    onScan: handleScan,
     isEnabled,
-    inputRef
+    inputRef,
   });
 
   const resetScan = useCallback(() => {
@@ -69,8 +71,7 @@ export const BarcodeProvider = ({ children }) => {
     setError(null);
     resetBarcode();
     // Force a small delay to ensure state is updated before next scan
-    setTimeout(() => {
-    }, 10);
+    setTimeout(() => {}, 10);
   }, [resetBarcode]);
 
   const enableScanner = useCallback(() => {
@@ -85,7 +86,7 @@ export const BarcodeProvider = ({ children }) => {
    * Register a field to receive barcode scan value
    * @param {Function} callback Function to call with barcode value
    */
-  const registerScanField = useCallback((callback) => {
+  const registerScanField = useCallback(callback => {
     setActiveField(() => callback);
     return () => setActiveField(null);
   }, []);
@@ -110,14 +111,10 @@ export const BarcodeProvider = ({ children }) => {
     disableScanner,
     registerScanField,
     unregisterScanField,
-    inputRef
+    inputRef,
   };
 
-  return (
-    <BarcodeContext.Provider value={value}>
-      {children}
-    </BarcodeContext.Provider>
-  );
+  return <BarcodeContext.Provider value={value}>{children}</BarcodeContext.Provider>;
 };
 
 /**
@@ -131,4 +128,4 @@ export const useBarcodeScan = () => {
   return context;
 };
 
-export default BarcodeContext; 
+export default BarcodeContext;
