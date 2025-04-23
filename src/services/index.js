@@ -1,4 +1,5 @@
 import AuthService from './AuthService';
+import BarcodeService from './BarcodeService';
 import BrandService from './BrandService';
 import CartService from './CartService';
 import DepositService from './DepositService';
@@ -19,6 +20,7 @@ import CartMementoService from './cart';
 
 export {
   AuthService,
+  BarcodeService,
   BrandService,
   CartService,
   CartMementoService,

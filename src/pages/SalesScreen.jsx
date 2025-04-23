@@ -1,5 +1,17 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Box, Container, useTheme } from '@mui/material';
+import {
+  Box,
+  Container,
+  useTheme,
+  Slide,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert,
+  Typography,
+} from '@mui/material';
 import { motion } from 'framer-motion';
 
 // Import components and utilities
@@ -16,8 +28,8 @@ import {
 // Import services
 import { ProductService, CartService } from '../services';
 import { useToast } from '../components/ui/feedback';
+import { useBarcodeScan } from '../contexts/BarcodeContext';
 
-// Animation variant
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -29,8 +41,14 @@ const containerVariants = {
 const SalesScreen = () => {
   const theme = useTheme();
   const { showToast } = useToast();
+  const {
+    scannedProduct,
+    error: scanError,
+    resetScan,
+    enableScanner,
+    isEnabled: isScannerEnabled,
+  } = useBarcodeScan();
 
-  // --- State ---
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,12 +61,10 @@ const SalesScreen = () => {
   const [giftCardPayment, setGiftCardPayment] = useState(0);
   const [cartLocked, setCartLocked] = useState(false);
 
-  // Cart state management
   const [cartUndoEnabled, setCartUndoEnabled] = useState(false);
   const [cartRedoEnabled, setCartRedoEnabled] = useState(false);
   const [receiptReady, setReceiptReady] = useState(false);
 
-  // Payment related state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
@@ -60,18 +76,15 @@ const SalesScreen = () => {
   });
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-  // Dialog state
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
-  // --- Data Fetching ---
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const productData = await ProductService.getProducts({ page: 0, size: 100 });
-      // Show all products regardless of stock quantity
       const allProducts = productData.content || [];
       setProducts(allProducts);
       setProductsByCategory(ProductService.groupByCategory(allProducts));
@@ -92,7 +105,6 @@ const SalesScreen = () => {
         setError(null);
         const productData = await ProductService.getProducts({ page: 0, size: 100 });
         if (isMounted) {
-          // Show all products regardless of stock quantity
           const allProducts = productData.content || [];
           setProducts(allProducts);
           setProductsByCategory(ProductService.groupByCategory(allProducts));
@@ -115,7 +127,6 @@ const SalesScreen = () => {
     };
   }, []);
 
-  // --- Calculations ---
   const cartService = useMemo(() => CartService, []);
 
   const subtotal = useMemo(() => {
@@ -147,7 +158,6 @@ const SalesScreen = () => {
     return cashValue > roundedTotal ? Math.round((cashValue - roundedTotal) * 100) / 100 : 0;
   }, [paymentMethod, cashReceived, total]);
 
-  // Monitor undo/redo availability
   useEffect(() => {
     const checkUndoRedoState = () => {
       setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
@@ -159,8 +169,6 @@ const SalesScreen = () => {
     return () => clearInterval(interval);
   }, [cartItems, appliedVouchers]);
 
-  // --- Handlers ---
-  // Cart operations
   const handleAddToCart = useCallback(
     product => {
       if (cartLocked) {
@@ -241,7 +249,6 @@ const SalesScreen = () => {
     CartStateManager.redoCartState(setCartItems, setAppliedVouchers);
   }, [cartLocked, showToast]);
 
-  // Voucher operations
   const handleApplyVoucher = useCallback(
     voucher => {
       if (cartLocked) {
@@ -273,7 +280,6 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
-  // Payment operations
   const handlePaymentModalOpen = useCallback(() => {
     setPaymentModalOpen(true);
     setCashReceived((Math.round(total * 100) / 100).toFixed(2));
@@ -313,12 +319,9 @@ const SalesScreen = () => {
       setPaymentLoading,
     });
 
-    // Lock the cart after successful payment
     setCartLocked(true);
 
-    // Reload product inventory after successful payment
     if (paymentResult && paymentResult.success) {
-      // Short delay to ensure backend processing is complete
       setTimeout(() => {
         fetchProducts();
         showToast({
@@ -353,12 +356,9 @@ const SalesScreen = () => {
     setCashReceived('');
     setError(null);
     setCartLocked(false);
-
-    // Reload products for the new transaction
     fetchProducts();
   }, [handleClearCart, fetchProducts]);
 
-  // Dialog handlers
   const handleRedeemVoucherDialog = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -391,7 +391,6 @@ const SalesScreen = () => {
     setVoucherManagementDialogOpen(false);
   }, []);
 
-  // Deposit handlers
   const handleRedeemDepositDialogOpen = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -430,7 +429,31 @@ const SalesScreen = () => {
     [appliedDeposits, cartLocked, showToast]
   );
 
-  // --- Render ---
+  useEffect(() => {
+    enableScanner();
+  }, [enableScanner]);
+
+  useEffect(() => {
+    if (scannedProduct) {
+      handleAddToCart(scannedProduct);
+      showToast({
+        severity: 'success',
+        message: `${scannedProduct.name} wurde hinzugefügt`,
+      });
+      resetScan();
+    }
+  }, [scannedProduct, handleAddToCart, resetScan, showToast]);
+
+  useEffect(() => {
+    if (scanError) {
+      showToast({
+        severity: 'error',
+        message: scanError,
+      });
+      resetScan();
+    }
+  }, [scanError, showToast ]);
+
   return (
     <Box
       sx={{
@@ -505,6 +528,36 @@ const SalesScreen = () => {
         onDepositRedeemed={handleDepositRedeemed}
         appliedDepositIds={appliedDeposits.map(deposit => deposit.id)}
       />
+
+      <Dialog
+        open={scannerDialogOpen}
+        onClose={handleCloseScannerDialog}
+        TransitionComponent={Transition}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Barcode Scanner</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              Scannen Sie ein Produkt mit dem Barcodescanner oder geben Sie den Barcode manuell ein.
+            </Typography>
+
+            {isScannerEnabled ? (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Scanner ist aktiv. Produkte werden automatisch zum Warenkorb hinzugefügt.
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                Scanner ist deaktiviert.
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseScannerDialog}>Schließen</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

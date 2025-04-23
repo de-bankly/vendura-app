@@ -13,9 +13,8 @@ import './style/global/index.css';
 
 import ErrorBoundary from './components/error/ErrorBoundary';
 
-// Import AuthProvider
+// Import AuthProvider and ToastProvider
 import { AuthProvider } from './contexts/AuthContext';
-// Import ToastProvider
 import { ToastProvider } from './components/ui/feedback';
 import router from './routes/router';
 import theme from './style/theme';

@@ -48,6 +48,7 @@ class ProductService {
             transformedProducts.map(async product => {
               // Find any promotion for this product
               const productPromotion = activePromotions.find(p => p.productId === product.id);
+
               if (productPromotion) {
                 const discountInfo = PromotionService.calculateDiscount(product, productPromotion);
                 return {

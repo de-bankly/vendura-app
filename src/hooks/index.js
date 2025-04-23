@@ -1,3 +1,4 @@
 import useInventoryProducts from './useInventoryProducts';
+import { useBarcode } from './useBarcode';
 
-export { useInventoryProducts };
+export { useInventoryProducts, useBarcode };
