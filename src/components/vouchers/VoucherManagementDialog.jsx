@@ -161,7 +161,7 @@ const VoucherManagementDialog = ({ open, onClose }) => {
                   {filteredVouchers.map(voucher => (
                     <TableRow key={voucher.id}>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>{voucher.code}</Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>{voucher.id}</Box>
                       </TableCell>
                       <TableCell>{voucher.value.toFixed(2)} €</TableCell>
                       <TableCell>{voucher.issuedAt}</TableCell>
@@ -181,11 +181,11 @@ const VoucherManagementDialog = ({ open, onClose }) => {
                       <TableCell align="right">
                         <IconButton
                           size="small"
-                          onClick={() => handleCopyCode(voucher.code, voucher.id)}
-                          color={copiedId === voucher.id ? 'success' : 'default'}
+                          onClick={() => handleCopyCode(voucher.id, voucher.id + '_copied')}
+                          color={copiedId === voucher.id + '_copied' ? 'success' : 'default'}
                           disabled={voucher.isRedeemed}
                         >
-                          {copiedId === voucher.id ? (
+                          {copiedId === voucher.id + '_copied' ? (
                             <CheckCircleIcon fontSize="small" />
                           ) : (
                             <ContentCopyIcon fontSize="small" />

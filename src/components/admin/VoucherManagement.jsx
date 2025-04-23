@@ -571,7 +571,7 @@ const VoucherManagement = forwardRef(
                       >
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
-                            {voucher.code}
+                            {voucher.id}
                           </Typography>
                         </TableCell>
                         <TableCell>
