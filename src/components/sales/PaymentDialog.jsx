@@ -6,6 +6,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import {
   Dialog,
   DialogTitle,
@@ -693,6 +694,19 @@ const PaymentDialog = ({
                     <ListItemText
                       primary={`Gutschein: ${voucher.code}`}
                       secondary={`Angewendet: ${voucher.value.toFixed(2)} €`}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItem>
+                ))}
+
+                {discountVouchers.map(voucher => (
+                  <ListItem key={voucher.id} disablePadding sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <LocalOfferIcon color="secondary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`Rabattgutschein: ${voucher.code}`}
+                      secondary={`Angewendet: ${voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)} € (${voucher.discountPercentage}%)`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
                   </ListItem>

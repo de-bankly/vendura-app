@@ -1,5 +1,7 @@
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PercentIcon from '@mui/icons-material/Percent';
 import { Box, Paper, Typography, alpha, useTheme, Chip, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
@@ -11,6 +13,7 @@ import { formatCurrency } from '../../utils/formatters';
 
 const AppliedVoucher = ({ voucher, onRemoveVoucher, disabled = false }) => {
   const theme = useTheme();
+  const isDiscountVoucher = voucher.type === 'DISCOUNT_CARD';
 
   return (
     <motion.div
@@ -26,15 +29,18 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher, disabled = false }) => {
         elevation={0}
         sx={{
           p: 2,
-          bgcolor: alpha(theme.palette.info.main, 0.08),
+          bgcolor: alpha(
+            isDiscountVoucher ? theme.palette.secondary.main : theme.palette.info.main,
+            0.08
+          ),
           borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+          border: `1px solid ${alpha(isDiscountVoucher ? theme.palette.secondary.main : theme.palette.info.main, 0.3)}`,
           transition: theme.transitions.create(['box-shadow', 'border-color', 'transform'], {
             duration: theme.transitions.duration.short,
           }),
           '&:hover': {
             boxShadow: disabled ? 'none' : theme.shadows[2],
-            borderColor: theme.palette.info.main,
+            borderColor: isDiscountVoucher ? theme.palette.secondary.main : theme.palette.info.main,
           },
           opacity: disabled ? 0.7 : 1,
         }}
@@ -49,35 +55,70 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher, disabled = false }) => {
                 width: 32,
                 height: 32,
                 borderRadius: '50%',
-                bgcolor: alpha(theme.palette.info.main, 0.12),
-                color: theme.palette.info.main,
+                bgcolor: alpha(
+                  isDiscountVoucher ? theme.palette.secondary.main : theme.palette.info.main,
+                  0.12
+                ),
+                color: isDiscountVoucher ? theme.palette.secondary.main : theme.palette.info.main,
                 mr: 1.5,
               }}
             >
-              <CardGiftcardIcon fontSize="small" />
+              {isDiscountVoucher ? (
+                <LocalOfferIcon fontSize="small" />
+              ) : (
+                <CardGiftcardIcon fontSize="small" />
+              )}
             </Box>
             <Box>
               <Typography variant="subtitle2" fontWeight={600}>
                 {voucher.code}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Restguthaben: {formatCurrency(voucher.balance)}
-              </Typography>
+              {isDiscountVoucher ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Rabatt: {voucher.discountPercentage}%
+                  </Typography>
+                  {voucher.remainingUsages !== undefined && (
+                    <Typography variant="caption" color="text.secondary">
+                      Nutzungen: {voucher.remainingUsages}
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  Restguthaben: {formatCurrency(voucher.balance)}
+                </Typography>
+              )}
             </Box>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Chip
-              size="small"
-              label={`-${formatCurrency(voucher.value)}`}
-              sx={{
-                mr: 1,
-                fontWeight: 600,
-                fontSize: theme.typography.pxToRem(12),
-                bgcolor: alpha(theme.palette.error.main, 0.1),
-                color: theme.palette.error.main,
-              }}
-            />
+            {isDiscountVoucher ? (
+              <Chip
+                size="small"
+                icon={<PercentIcon fontSize="small" />}
+                label={`${voucher.discountPercentage}%`}
+                sx={{
+                  mr: 1,
+                  fontWeight: 600,
+                  fontSize: theme.typography.pxToRem(12),
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  color: theme.palette.secondary.main,
+                }}
+              />
+            ) : (
+              <Chip
+                size="small"
+                label={`-${formatCurrency(voucher.value)}`}
+                sx={{
+                  mr: 1,
+                  fontWeight: 600,
+                  fontSize: theme.typography.pxToRem(12),
+                  bgcolor: alpha(theme.palette.error.main, 0.1),
+                  color: theme.palette.error.main,
+                }}
+              />
+            )}
 
             {!disabled && (
               <Tooltip title="Gutschein entfernen" arrow placement="top">
@@ -108,8 +149,11 @@ AppliedVoucher.propTypes = {
   voucher: PropTypes.shape({
     id: PropTypes.string.isRequired,
     code: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
-    balance: PropTypes.number.isRequired,
+    type: PropTypes.string.isRequired,
+    value: PropTypes.number,
+    balance: PropTypes.number,
+    discountPercentage: PropTypes.number,
+    remainingUsages: PropTypes.number,
   }).isRequired,
   onRemoveVoucher: PropTypes.func.isRequired,
   disabled: PropTypes.bool,

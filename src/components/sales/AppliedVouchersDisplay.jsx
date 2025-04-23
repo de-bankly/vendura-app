@@ -159,12 +159,15 @@ const AppliedVouchersDisplay = ({
                   >
                     {voucher.id}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Typography variant="caption" color="text.secondary">
                       Rabatt: {voucher.discountPercentage}%
                     </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Wert: {voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)} €
+                    </Typography>
                     {voucher.remainingUsages !== undefined && (
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+                      <Typography variant="caption" color="text.secondary">
                         Verbleibende Nutzungen: {voucher.remainingUsages}
                       </Typography>
                     )}
@@ -173,6 +176,13 @@ const AppliedVouchersDisplay = ({
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Chip
+                  icon={<EuroIcon fontSize="small" />}
+                  label={`${voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)} €`}
+                  color="secondary"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
                 <Chip
                   icon={<PercentIcon fontSize="small" />}
                   label={`${voucher.discountPercentage}%`}

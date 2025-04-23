@@ -360,6 +360,7 @@ const SalesScreen = () => {
             depositCredit,
             paymentMethod,
             cashReceived,
+            cardDetails,
             productDiscount,
             transactionId:
               paymentResult.transactionId ||
@@ -483,6 +484,7 @@ const SalesScreen = () => {
         depositCredit,
         paymentMethod,
         cashReceived,
+        cardDetails,
         productDiscount,
         transactionId: `TR-${Date.now().toString().slice(-6)}`,
         date: new Date().toLocaleDateString('de-DE', {

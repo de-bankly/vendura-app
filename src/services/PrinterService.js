@@ -63,8 +63,11 @@ class PrinterService {
     const {
       voucherDiscount = 0,
       depositCredit = 0,
+      productDiscount = 0,
+      giftCardPayment = 0,
       paymentMethod = 'cash',
       cashReceived = 0,
+      cardDetails = {},
       total = 0,
     } = options;
 
@@ -81,6 +84,22 @@ class PrinterService {
       formattedItems.push({
         name: 'Gutschein Rabatt',
         price: `-${voucherDiscount.toFixed(2)} €`,
+      });
+    }
+
+    // Add product discount information if applicable
+    if (productDiscount > 0) {
+      formattedItems.push({
+        name: 'Produkt Rabatt',
+        price: `-${productDiscount.toFixed(2)} €`,
+      });
+    }
+
+    // Add gift card payment information if applicable
+    if (giftCardPayment > 0) {
+      formattedItems.push({
+        name: 'Gutscheinzahlung',
+        price: `-${giftCardPayment.toFixed(2)} €`,
       });
     }
 
@@ -101,6 +120,46 @@ class PrinterService {
             ? 'Kartenzahlung'
             : 'Sonstige',
     });
+
+    // For cash payments, add received amount
+    if (paymentMethod === 'cash') {
+      const parsedCashReceived = parseFloat(cashReceived);
+      if (!isNaN(parsedCashReceived) && parsedCashReceived > 0) {
+        formattedItems.push({
+          name: 'Gegeben',
+          price: `${parsedCashReceived.toFixed(2)} €`,
+        });
+      }
+    }
+
+    // For card payments, add masked card information
+    if (paymentMethod === 'card' && cardDetails) {
+      if (cardDetails.cardNumber) {
+        // Mask card number - show only last 4 digits
+        const maskedCardNumber = cardDetails.cardNumber.replace(/\s/g, '');
+        if (maskedCardNumber.length >= 4) {
+          const lastFourDigits = maskedCardNumber.slice(-4);
+          formattedItems.push({
+            name: 'Kartennummer',
+            price: `**** **** **** ${lastFourDigits}`,
+          });
+        }
+      }
+
+      if (cardDetails.cardHolderName) {
+        formattedItems.push({
+          name: 'Karteninhaber',
+          price: cardDetails.cardHolderName,
+        });
+      }
+
+      if (cardDetails.expirationDate) {
+        formattedItems.push({
+          name: 'Gültig bis',
+          price: cardDetails.expirationDate,
+        });
+      }
+    }
 
     // Add change information for cash payments
     if (paymentMethod === 'cash' && parseFloat(cashReceived) > total) {
@@ -156,8 +215,11 @@ class PrinterService {
           items: this.formatReceiptItems(cartItems, {
             voucherDiscount: receiptData.voucherDiscount || 0,
             depositCredit: receiptData.depositCredit || 0,
+            productDiscount: receiptData.productDiscount || 0,
+            giftCardPayment: receiptData.giftCardPayment || 0,
             paymentMethod: receiptData.paymentMethod || 'cash',
             cashReceived: receiptData.cashReceived || 0,
+            cardDetails: receiptData.cardDetails || {},
             total: receiptData.total || 0,
           }),
           title: receiptData.title || 'KAUFBELEG',
