@@ -86,8 +86,6 @@ export const applyRuntimeConfig = async () => {
   Object.entries(runtimeConfig).forEach(([key, value]) => {
     import.meta.env[key] = value;
   });
-
-  console.log(`Runtime configuration applied for ${getEnvironment()} environment`);
 };
 
 export default {

@@ -5,7 +5,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // Add 10 second timeout
+  timeout: 20000, // Add 20 second timeout
   // Enable withCredentials for authentication requests
   withCredentials: true,
 });
@@ -33,7 +33,11 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
-      window.location = '/login';
+      localStorage.removeItem('user');
+
+      // Use history API for consistent navigation behavior with the router
+      window.history.pushState({}, '', '/login');
+      window.location.reload();
     }
 
     // Check for network errors

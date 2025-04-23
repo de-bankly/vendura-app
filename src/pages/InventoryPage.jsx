@@ -1,5 +1,6 @@
-import { Box, Container } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography, useTheme } from '@mui/material';
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
 import {
   ErrorDisplay,
@@ -10,11 +11,26 @@ import {
 } from '../components/inventory';
 import { useInventoryProducts } from '../hooks';
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
 /**
  * InventoryPage displays a comprehensive view of all products in inventory
  * with filtering, sorting, and search capabilities.
  */
 const InventoryPage = () => {
+  const theme = useTheme();
   // State for view mode
   const [viewMode, setViewMode] = useState('list');
 
@@ -47,34 +63,82 @@ const InventoryPage = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 8 }}>
-      {/* Header with title and action buttons */}
-      <InventoryHeader onRefresh={handleRefresh} />
+    <Box sx={{ py: 3 }}>
+      {/* Header Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Container maxWidth="xl">
+          <InventoryHeader onRefresh={handleRefresh} />
+        </Container>
+      </motion.div>
 
-      {/* Error Message */}
-      <ErrorDisplay message={error} />
+      <Container maxWidth="xl">
+        {/* Error Message */}
+        <ErrorDisplay message={error} />
 
-      {/* Search and Filter Bar */}
-      <InventorySearchFilters
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        selectedCategory={selectedCategory}
-        onCategoryChange={handleCategoryChange}
-        categories={categories}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        onFilterToggle={handleFilterToggle}
-      />
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          {/* Search and Filter Section */}
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                mb: 3,
+                bgcolor: theme.palette.background.paper,
+                borderRadius: 2,
+              }}
+            >
+              <InventorySearchFilters
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                selectedCategory={selectedCategory}
+                onCategoryChange={handleCategoryChange}
+                categories={categories}
+                viewMode={viewMode}
+                onViewModeChange={handleViewModeChange}
+                onFilterToggle={handleFilterToggle}
+              />
+            </Paper>
+          </motion.div>
 
-      {/* Product Content */}
-      <Box sx={{ position: 'relative', minHeight: '60vh' }}>
-        <InventoryProductContent
-          loading={loading}
-          products={products}
-          viewMode={viewMode}
-          emptyMessage="Versuchen Sie andere Suchbegriffe oder Filter"
-        />
-      </Box>
+          {/* Product Content Section */}
+          <motion.div variants={itemVariants}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 3,
+                    minHeight: '60vh',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 2,
+                      fontWeight: 600,
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    Produktübersicht
+                  </Typography>
+
+                  <InventoryProductContent
+                    loading={loading}
+                    products={products}
+                    viewMode={viewMode}
+                    emptyMessage="Versuchen Sie andere Suchbegriffe oder Filter"
+                  />
+                </Paper>
+              </Grid>
+            </Grid>
+          </motion.div>
+        </motion.div>
+      </Container>
 
       {/* Filter Drawer */}
       <InventoryFilterDrawer
@@ -83,7 +147,7 @@ const InventoryPage = () => {
         filters={filters}
         onFilterChange={handleFilterChange}
       />
-    </Container>
+    </Box>
   );
 };
 

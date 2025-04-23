@@ -2,6 +2,7 @@ import AuthService from './AuthService';
 import BarcodeService from './BarcodeService';
 import BrandService from './BrandService';
 import CartService from './CartService';
+import DepositService from './DepositService';
 import GiftCardService from './GiftCardService';
 import GiftCardTransactionService from './GiftCardTransactionService';
 import GiftCardPaymentService from './GiftCardPaymentService';
@@ -15,12 +16,15 @@ import SupplierOrderService from './SupplierOrderService';
 import SupplierService from './SupplierService';
 import TransactionService from './TransactionService';
 import UserService from './UserService';
+import CartMementoService from './cart';
 
 export {
   AuthService,
   BarcodeService,
   BrandService,
   CartService,
+  CartMementoService,
+  DepositService,
   GiftCardService,
   GiftCardTransactionService,
   GiftCardPaymentService,

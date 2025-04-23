@@ -64,7 +64,7 @@ const Table = ({
   // Reset pagination when data or search term changes
   useEffect(() => {
     setPage(1);
-  }, [data.length, searchTerm]);
+  }, [data?.length, searchTerm]);
 
   // Memoize handler functions with useCallback
   const handleRequestSort = useCallback(
@@ -91,6 +91,8 @@ const Table = ({
 
   // Memoize filtered data
   const filteredData = useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
+
     return data.filter(row => {
       if (!searchTerm) return true;
       return columns.some(column => {

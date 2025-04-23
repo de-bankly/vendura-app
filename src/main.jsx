@@ -15,7 +15,7 @@ import ErrorBoundary from './components/error/ErrorBoundary';
 
 // Import AuthProvider and ToastProvider
 import { AuthProvider } from './contexts/AuthContext';
-import ToastProvider from './components/ui/feedback/ToastProvider';
+import { ToastProvider } from './components/ui/feedback';
 import router from './routes/router';
 import theme from './style/theme';
 

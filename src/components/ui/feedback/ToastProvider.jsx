@@ -1,6 +1,6 @@
-import { Box } from '@mui/material';
+import { useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 import Toast from './Toast';
 
@@ -27,6 +27,7 @@ export const useToast = () => {
  */
 const ToastProvider = ({ children, maxToasts = 3 }) => {
   const [toasts, setToasts] = useState([]);
+  const theme = useTheme();
 
   // Generate a unique ID for each toast
   const generateId = useCallback(() => {
@@ -37,6 +38,8 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
   const showToast = useCallback(
     options => {
       const id = options.id || generateId();
+      // Set default autoHideDuration to 5000ms if not provided
+      const autoHideDuration = options.autoHideDuration || 5000;
 
       // Add new toast to the list
       setToasts(prevToasts => {
@@ -54,14 +57,19 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
             message: options.message || '',
             severity: options.severity || 'info',
             title: options.title,
-            autoHideDuration: options.autoHideDuration || 6000,
+            autoHideDuration,
             anchorOrigin: options.anchorOrigin || { vertical: 'bottom', horizontal: 'left' },
             action: options.action,
-            variant: options.variant || 'filled',
+            variant: options.variant || 'standard',
             sx: options.sx || {},
           },
         ];
       });
+
+      // Set a timer to automatically hide the toast after autoHideDuration
+      setTimeout(() => {
+        hideToast(id);
+      }, autoHideDuration);
 
       return id;
     },
@@ -91,6 +99,33 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
     [hideToast]
   );
 
+  // Clean up any "hanging" toasts (if they've been visible for more than 10 seconds)
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+
+      setToasts(prevToasts => {
+        // Check for toasts that might be "stuck"
+        const updatedToasts = prevToasts.map(toast => {
+          // Extract time from ID to determine when it was created
+          const idParts = toast.id.split('-');
+          if (idParts.length >= 2) {
+            const creationTime = parseInt(idParts[1], 10);
+            // If a toast has been visible for more than 15 seconds, close it
+            if (now - creationTime > 15000 && toast.open) {
+              return { ...toast, open: false };
+            }
+          }
+          return toast;
+        });
+
+        return updatedToasts;
+      });
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
   // Context value
   const contextValue = {
     showToast,
@@ -102,16 +137,13 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
       {children}
 
       {/* Render all active toasts */}
-      <Box
-        sx={{
-          position: 'fixed',
-          zIndex: 2000,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-        }}
-      >
-        {toasts.map(toast => (
+      {toasts.map((toast, index) => {
+        // Calculate stacking position and bottom offset for multiple toasts
+        const stackIndex = toasts.length - index;
+        // Calculate how far from the bottom each toast should be positioned
+        const bottomPosition = index * 80; // Each toast roughly takes 80px of space
+
+        return (
           <Toast
             key={toast.id}
             open={toast.open}
@@ -120,17 +152,25 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
             severity={toast.severity}
             title={toast.title}
             autoHideDuration={toast.autoHideDuration}
-            anchorOrigin={toast.anchorOrigin}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: toast.anchorOrigin?.horizontal || 'left',
+            }}
             action={toast.action}
             variant={toast.variant}
-            TransitionProps={{ onExited: () => removeToast(toast.id) }}
+            TransitionProps={{
+              onExited: () => removeToast(toast.id),
+              style: { zIndex: 2000 + stackIndex },
+            }}
             sx={{
-              pointerEvents: 'auto',
+              minWidth: '280px',
+              maxWidth: '400px',
+              bottom: theme.spacing(3 + bottomPosition / 8), // Convert to theme spacing units
               ...toast.sx,
             }}
           />
-        ))}
-      </Box>
+        );
+      })}
     </ToastContext.Provider>
   );
 };

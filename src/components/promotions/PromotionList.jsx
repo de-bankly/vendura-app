@@ -14,6 +14,9 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  useTheme,
+  alpha,
+  Skeleton,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import PropTypes from 'prop-types';
@@ -25,6 +28,8 @@ import deLocale from 'date-fns/locale/de';
  * PromotionList component for displaying and managing promotions
  */
 const PromotionList = ({ promotions, loading, error, onAddClick, onEditClick, onDeleteClick }) => {
+  const theme = useTheme();
+
   // Format date with German locale
   const formatDate = date => {
     if (!date) return '-';
@@ -43,10 +48,83 @@ const PromotionList = ({ promotions, loading, error, onAddClick, onEditClick, on
     });
   };
 
-  if (loading) {
+  // Check if promotion is active
+  const isPromotionActive = promotion => {
+    const now = new Date();
+    const beginDate = new Date(promotion.begin);
+    const endDate = new Date(promotion.end);
+    return promotion.active && now >= beginDate && now <= endDate;
+  };
+
+  // Get promotion status
+  const getPromotionStatus = promotion => {
+    const now = new Date();
+    const beginDate = new Date(promotion.begin);
+    const endDate = new Date(promotion.end);
+
+    if (!promotion.active) {
+      return { label: 'Inaktiv', color: 'default' };
+    }
+    if (now < beginDate) {
+      return { label: 'Bevorstehend', color: 'warning' };
+    }
+    if (now > endDate) {
+      return { label: 'Abgelaufen', color: 'error' };
+    }
+    return { label: 'Aktiv', color: 'success' };
+  };
+
+  if (loading && promotions.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
+      <Box sx={{ width: '100%' }}>
+        <Box sx={{ height: 40, mb: 3 }}>
+          <Skeleton variant="text" width="30%" height={40} />
+        </Box>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow
+                sx={{
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  '& th': {
+                    fontWeight: 'bold',
+                  },
+                }}
+              >
+                <TableCell>Produkt</TableCell>
+                <TableCell>Rabatt</TableCell>
+                <TableCell>Gültig von</TableCell>
+                <TableCell>Gültig bis</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Aktionen</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(5)].map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton variant="text" width="100%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="60%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="80%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="80%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="rectangular" width={70} height={24} />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Skeleton variant="rectangular" width={80} height={30} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     );
   }
@@ -63,22 +141,26 @@ const PromotionList = ({ promotions, loading, error, onAddClick, onEditClick, on
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h6">Aktionen & Rabatte</Typography>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={onAddClick}>
-          Neue Aktion
-        </Button>
       </Box>
 
       {promotions.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="textSecondary">
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography color="text.secondary">
             Keine Aktionen gefunden. Erstellen Sie eine neue Aktion, um Rabatte anzubieten.
           </Typography>
-        </Paper>
+        </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
+              <TableRow
+                sx={{
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  '& th': {
+                    fontWeight: 'bold',
+                  },
+                }}
+              >
                 <TableCell>Produkt</TableCell>
                 <TableCell>Rabatt</TableCell>
                 <TableCell>Gültig von</TableCell>
@@ -88,41 +170,65 @@ const PromotionList = ({ promotions, loading, error, onAddClick, onEditClick, on
               </TableRow>
             </TableHead>
             <TableBody>
-              {promotions.map(promotion => (
-                <TableRow key={promotion.id}>
-                  <TableCell>{promotion.productName || '-'}</TableCell>
-                  <TableCell>{formatPrice(promotion.discount)}</TableCell>
-                  <TableCell>{formatDate(promotion.begin)}</TableCell>
-                  <TableCell>{formatDate(promotion.end)}</TableCell>
-                  <TableCell>
-                    {promotion.active ? (
-                      <Chip label="Aktiv" color="success" size="small" />
-                    ) : (
-                      <Chip label="Inaktiv" color="default" size="small" />
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Bearbeiten">
-                      <IconButton
+              {promotions.map(promotion => {
+                const status = getPromotionStatus(promotion);
+
+                return (
+                  <TableRow
+                    key={promotion.id}
+                    sx={{
+                      '&:nth-of-type(odd)': {
+                        backgroundColor:
+                          theme.palette.mode === 'light'
+                            ? alpha(theme.palette.background.default, 0.5)
+                            : alpha(theme.palette.background.paper, 0.1),
+                      },
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={500}>
+                        {promotion.productName || '-'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={formatPrice(promotion.discount)}
                         size="small"
                         color="primary"
-                        onClick={() => onEditClick(promotion)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Löschen">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => onDeleteClick(promotion.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(promotion.begin)}</TableCell>
+                    <TableCell>{formatDate(promotion.end)}</TableCell>
+                    <TableCell>
+                      <Chip label={status.label} color={status.color} size="small" />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Bearbeiten">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => onEditClick(promotion)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Löschen">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => onDeleteClick(promotion.id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

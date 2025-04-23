@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
@@ -23,6 +23,7 @@ const InventoryManagementPage = lazy(() => import('../pages/InventoryManagementP
 const ProductManagementPage = lazy(() => import('../pages/admin/ProductManagementPage'));
 const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagementPage'));
 const PromotionManagementScreen = lazy(() => import('../pages/PromotionManagementScreen'));
+const PfandautomatPage = lazy(() => import('../pages/PfandautomatPage'));
 
 // Error handling
 const RouterErrorBoundary = lazy(() =>
@@ -42,7 +43,11 @@ const reactBrowserRouter = createBrowserRouter([
   },
   {
     path: '/',
-    element: <TopNavLayout />,
+    element: (
+      <ProtectedRoute>
+        <TopNavLayout />
+      </ProtectedRoute>
+    ),
     errorElement: <RouterErrorBoundary />,
     children: [
       {
@@ -78,6 +83,14 @@ const reactBrowserRouter = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <PromotionManagementScreen />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'deposit',
+        element: (
+          <ProtectedRoute>
+            <PfandautomatPage />
           </ProtectedRoute>
         ),
       },
@@ -147,6 +160,11 @@ const reactBrowserRouter = createBrowserRouter([
         element: <NotFound />,
       },
     ],
+  },
+  // Catch-all route to redirect to login
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
   },
 ]);
 

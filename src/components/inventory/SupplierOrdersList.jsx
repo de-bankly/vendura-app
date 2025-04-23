@@ -3,6 +3,7 @@ import {
   Delete as DeleteIcon,
   Check as CheckIcon,
   LocalShipping as ShippingIcon,
+  Inventory2 as InventoryIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -21,6 +22,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  alpha,
+  useTheme,
+  Tooltip,
+  Divider,
 } from '@mui/material';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
@@ -29,6 +34,7 @@ import React, { useState } from 'react';
 import { SupplierOrderService } from '../../services';
 
 const SupplierOrdersList = ({ orders, onRefresh }) => {
+  const theme = useTheme();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [statusAction, setStatusAction] = useState(null);
@@ -45,19 +51,19 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
     switch (status) {
       case 'PLACED':
         color = 'info';
-        label = 'Placed';
+        label = 'Bestellt';
         break;
       case 'SHIPPED':
         color = 'warning';
-        label = 'Shipped';
+        label = 'Versandt';
         break;
       case 'DELIVERED':
         color = 'success';
-        label = 'Delivered';
+        label = 'Geliefert';
         break;
       case 'CANCELLED':
         color = 'error';
-        label = 'Cancelled';
+        label = 'Storniert';
         break;
       default:
         color = 'default';
@@ -116,14 +122,14 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
     if (!selectedOrder) return '';
 
     if (statusAction === 'delete') {
-      return `Are you sure you want to delete order ${selectedOrder.id}? This action cannot be undone.`;
+      return `Möchten Sie die Bestellung ${selectedOrder.id} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`;
     } else if (statusAction && statusAction.type === 'status') {
       let message = '';
 
       if (statusAction.status === 'SHIPPED') {
-        message = `Mark order ${selectedOrder.id} as shipped?`;
+        message = `Bestellung ${selectedOrder.id} als versendet markieren?`;
       } else if (statusAction.status === 'DELIVERED') {
-        message = `Mark order ${selectedOrder.id} as delivered? This will update inventory stock levels.`;
+        message = `Bestellung ${selectedOrder.id} als geliefert markieren? Dies wird die Lagerbestände aktualisieren.`;
       }
 
       return message;
@@ -134,74 +140,129 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
 
   if (!orders || orders.length === 0) {
     return (
-      <Paper sx={{ p: 3, textAlign: 'center' }}>
-        <Typography>No supplier orders found.</Typography>
-      </Paper>
+      <Box
+        sx={{
+          p: 4,
+          textAlign: 'center',
+          bgcolor: alpha(theme.palette.info.light, 0.05),
+          borderRadius: 2,
+          border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}`,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mb: 2,
+          }}
+        >
+          <InventoryIcon
+            sx={{
+              fontSize: '3rem',
+              color: alpha(theme.palette.info.main, 0.4),
+            }}
+          />
+        </Box>
+        <Typography variant="h6" color="text.primary" fontWeight={500}>
+          Keine Lieferantenbestellungen gefunden
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Es sind keine Bestellungen vorhanden. Erstellen Sie eine neue Bestellung mit der
+          Schaltfläche oben.
+        </Typography>
+      </Box>
     );
   }
 
   return (
     <>
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          boxShadow: 'none',
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
+          overflow: 'hidden',
+        }}
+      >
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
             <TableRow>
-              <TableCell>Order #</TableCell>
-              <TableCell>Supplier</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Expected Delivery</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Items</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Bestell-Nr.</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Lieferant</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Datum</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Erwartete Lieferung</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Positionen</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                Aktionen
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {orders.map(order => (
-              <TableRow key={order.id}>
+              <TableRow
+                key={order.id}
+                hover
+                sx={{
+                  '&:last-child td, &:last-child th': { border: 0 },
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.02),
+                  },
+                }}
+              >
                 <TableCell>{order.id}</TableCell>
                 <TableCell>{order.supplier ? order.supplier.legalName : '—'}</TableCell>
                 <TableCell>{formatDate(order.timestamp)}</TableCell>
                 <TableCell>{formatDate(order.expectedDeliveryDate)}</TableCell>
                 <TableCell>{getStatusChip(order.orderStatus)}</TableCell>
-                <TableCell>{order.positions ? order.positions.length : 0} items</TableCell>
+                <TableCell>{order.positions ? order.positions.length : 0} Artikel</TableCell>
                 <TableCell align="right">
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     {order.orderStatus === 'PLACED' && (
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleStatusChange(order, 'SHIPPED')}
-                        title="Mark as Shipped"
-                      >
-                        <ShippingIcon />
-                      </IconButton>
+                      <Tooltip title="Als versandt markieren">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleStatusChange(order, 'SHIPPED')}
+                          sx={{ mx: 0.5 }}
+                        >
+                          <ShippingIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
 
                     {order.orderStatus === 'SHIPPED' && (
-                      <IconButton
-                        size="small"
-                        color="success"
-                        onClick={() => handleStatusChange(order, 'DELIVERED')}
-                        title="Mark as Delivered"
-                      >
-                        <CheckIcon />
-                      </IconButton>
+                      <Tooltip title="Als geliefert markieren">
+                        <IconButton
+                          size="small"
+                          color="success"
+                          onClick={() => handleStatusChange(order, 'DELIVERED')}
+                          sx={{ mx: 0.5 }}
+                        >
+                          <CheckIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
 
                     {order.orderStatus !== 'DELIVERED' && (
                       <>
-                        <IconButton size="small" color="info" title="Edit Order">
-                          <EditIcon />
-                        </IconButton>
+                        <Tooltip title="Bearbeiten">
+                          <IconButton size="small" color="info" sx={{ mx: 0.5 }}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
 
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(order)}
-                          title="Delete Order"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        <Tooltip title="Löschen">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(order)}
+                            sx={{ mx: 0.5 }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </>
                     )}
                   </Box>
@@ -212,19 +273,41 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
         </Table>
       </TableContainer>
 
-      <Dialog open={confirmDialogOpen} onClose={handleCancelAction}>
-        <DialogTitle>Confirm Action</DialogTitle>
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCancelAction}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Aktion bestätigen</DialogTitle>
+        <Divider />
         <DialogContent>
           <Typography>{getConfirmDialogContent()}</Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelAction}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={handleCancelAction}
+            variant="outlined"
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+            }}
+          >
+            Abbrechen
+          </Button>
           <Button
             onClick={handleConfirmAction}
             variant="contained"
             color={statusAction === 'delete' ? 'error' : 'primary'}
+            sx={{
+              borderRadius: 1.5,
+              textTransform: 'none',
+            }}
           >
-            Confirm
+            Bestätigen
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,5 +1,13 @@
 import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
-import { Box, Paper, InputAdornment, Alert as MuiAlert, Grid } from '@mui/material';
+import {
+  Box,
+  Paper,
+  InputAdornment,
+  Alert as MuiAlert,
+  Grid,
+  Switch,
+  FormControlLabel,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
@@ -43,6 +51,17 @@ const UserForm = ({
       onChange({
         ...formData,
         roles: e.target.value,
+      });
+    },
+    [formData, onChange]
+  );
+
+  const handleSwitchChange = useCallback(
+    e => {
+      const { name, checked } = e.target;
+      onChange({
+        ...formData,
+        [name]: checked,
       });
     },
     [formData, onChange]
@@ -169,6 +188,46 @@ const UserForm = ({
             />
           </FormField>
 
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <FormField
+                label="Account Status"
+                helperText="Whether the user's account is active or not"
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      name="active"
+                      checked={formData.active}
+                      onChange={handleSwitchChange}
+                      color="success"
+                    />
+                  }
+                  label={formData.active ? 'Active' : 'Inactive'}
+                />
+              </FormField>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormField
+                label="Account Lock"
+                helperText="Whether the user's account is locked or not"
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      name="locked"
+                      checked={formData.locked}
+                      onChange={handleSwitchChange}
+                      color="error"
+                    />
+                  }
+                  label={formData.locked ? 'Locked' : 'Unlocked'}
+                />
+              </FormField>
+            </Grid>
+          </Grid>
+
           <FormField
             label="Roles"
             helperText={
@@ -236,6 +295,7 @@ UserForm.propTypes = {
     email: PropTypes.string.isRequired,
     password: PropTypes.string,
     active: PropTypes.bool,
+    locked: PropTypes.bool,
     roles: PropTypes.array,
   }).isRequired,
   /** Function called when form data changes */
@@ -248,9 +308,9 @@ UserForm.propTypes = {
   editMode: PropTypes.bool,
   /** Error message to display */
   error: PropTypes.string,
-  /** Whether the form is in a loading state */
+  /** Whether the form is currently loading/submitting */
   loading: PropTypes.bool,
-  /** Function called when cancel button is clicked */
+  /** Function called when form is cancelled */
   onCancel: PropTypes.func.isRequired,
 };
 
