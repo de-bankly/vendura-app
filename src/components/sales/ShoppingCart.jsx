@@ -3,6 +3,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import LockIcon from '@mui/icons-material/Lock';
 import {
   Box,
   Typography,
@@ -15,6 +16,7 @@ import {
   Paper,
   Divider,
   Grid,
+  Chip,
 } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import PropTypes from 'prop-types';
@@ -42,6 +44,7 @@ const ShoppingCart = ({
   receiptReady,
   cartUndoEnabled,
   cartRedoEnabled,
+  cartLocked,
   onAddItem,
   onRemoveItem,
   onDeleteItem,
@@ -103,6 +106,16 @@ const ShoppingCart = ({
           <Typography variant="h6" fontWeight="600">
             Warenkorb
           </Typography>
+          {cartLocked && (
+            <Chip
+              icon={<LockIcon fontSize="small" />}
+              label="Gesperrt"
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ ml: 1.5 }}
+            />
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -110,7 +123,7 @@ const ShoppingCart = ({
             <span>
               <IconButton
                 size="small"
-                disabled={!cartUndoEnabled}
+                disabled={!cartUndoEnabled || cartLocked}
                 onClick={onUndoCartState}
                 sx={{ mr: 0.5 }}
               >
@@ -122,7 +135,7 @@ const ShoppingCart = ({
             <span>
               <IconButton
                 size="small"
-                disabled={!cartRedoEnabled}
+                disabled={!cartRedoEnabled || cartLocked}
                 onClick={onRedoCartState}
                 sx={{ mr: 0.5 }}
               >
@@ -131,7 +144,7 @@ const ShoppingCart = ({
             </span>
           </Tooltip>
 
-          {!cartIsEmpty && (
+          {!cartIsEmpty && !cartLocked && (
             <Tooltip title="Warenkorb leeren">
               <IconButton
                 size="small"
@@ -176,6 +189,7 @@ const ShoppingCart = ({
                   onAddItem={onAddItem}
                   onRemoveItem={onRemoveItem}
                   onDeleteItem={onDeleteItem}
+                  disabled={cartLocked}
                 />
               ))}
             </AnimatePresence>
@@ -211,6 +225,7 @@ const ShoppingCart = ({
                         key={voucher.id}
                         voucher={voucher}
                         onRemoveVoucher={onRemoveVoucher}
+                        disabled={cartLocked}
                       />
                     ))}
                   </AnimatePresence>
@@ -236,12 +251,20 @@ const ShoppingCart = ({
             <Grid container spacing={2}>
               {/* Voucher button */}
               <Grid item xs={6}>
-                <VoucherActionButtons onRedeemVoucher={onRedeemVoucher} cartIsEmpty={cartIsEmpty} />
+                <VoucherActionButtons
+                  onRedeemVoucher={onRedeemVoucher}
+                  cartIsEmpty={cartIsEmpty}
+                  disabled={cartLocked}
+                />
               </Grid>
 
               {/* Deposit button */}
               <Grid item xs={6}>
-                <DepositActionButtons onRedeemDeposit={onRedeemDeposit} cartIsEmpty={cartIsEmpty} />
+                <DepositActionButtons
+                  onRedeemDeposit={onRedeemDeposit}
+                  cartIsEmpty={cartIsEmpty}
+                  disabled={cartLocked}
+                />
               </Grid>
             </Grid>
           )}
@@ -263,6 +286,7 @@ const ShoppingCart = ({
         <CartActionButtons
           receiptReady={receiptReady}
           cartIsEmpty={cartIsEmpty}
+          cartLocked={cartLocked}
           onPayment={onPayment}
           onPrintReceipt={onPrintReceipt}
           onNewTransaction={onNewTransaction}
@@ -283,6 +307,7 @@ ShoppingCart.propTypes = {
   receiptReady: PropTypes.bool.isRequired,
   cartUndoEnabled: PropTypes.bool,
   cartRedoEnabled: PropTypes.bool,
+  cartLocked: PropTypes.bool,
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,
   onDeleteItem: PropTypes.func.isRequired,
@@ -292,7 +317,6 @@ ShoppingCart.propTypes = {
   onNewTransaction: PropTypes.func.isRequired,
   onRemoveVoucher: PropTypes.func.isRequired,
   onRedeemVoucher: PropTypes.func.isRequired,
-  onManageVouchers: PropTypes.func.isRequired,
   onRedeemDeposit: PropTypes.func.isRequired,
   onUndoCartState: PropTypes.func,
   onRedoCartState: PropTypes.func,

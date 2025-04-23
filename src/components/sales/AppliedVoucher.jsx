@@ -9,7 +9,7 @@ import { IconButton } from '../ui/buttons';
 import { slideFromRightVariants } from '../../utils/animations';
 import { formatCurrency } from '../../utils/formatters';
 
-const AppliedVoucher = ({ voucher, onRemoveVoucher }) => {
+const AppliedVoucher = ({ voucher, onRemoveVoucher, disabled = false }) => {
   const theme = useTheme();
 
   return (
@@ -19,7 +19,7 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher }) => {
       exit="exit"
       variants={slideFromRightVariants}
       layout
-      whileHover={{ y: -2 }}
+      whileHover={{ y: disabled ? 0 : -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
       <Paper
@@ -33,9 +33,10 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher }) => {
             duration: theme.transitions.duration.short,
           }),
           '&:hover': {
-            boxShadow: theme.shadows[2],
+            boxShadow: disabled ? 'none' : theme.shadows[2],
             borderColor: theme.palette.info.main,
           },
+          opacity: disabled ? 0.7 : 1,
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -78,22 +79,24 @@ const AppliedVoucher = ({ voucher, onRemoveVoucher }) => {
               }}
             />
 
-            <Tooltip title="Gutschein entfernen" arrow placement="top">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => onRemoveVoucher(voucher.id)}
-                sx={{
-                  p: 0.5,
-                  '&:hover': {
-                    bgcolor: alpha(theme.palette.error.main, 0.1),
-                  },
-                }}
-                aria-label={`Remove voucher ${voucher.code}`}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {!disabled && (
+              <Tooltip title="Gutschein entfernen" arrow placement="top">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => onRemoveVoucher(voucher.id)}
+                  sx={{
+                    p: 0.5,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.error.main, 0.1),
+                    },
+                  }}
+                  aria-label={`Remove voucher ${voucher.code}`}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         </Box>
       </Paper>
@@ -109,6 +112,7 @@ AppliedVoucher.propTypes = {
     balance: PropTypes.number.isRequired,
   }).isRequired,
   onRemoveVoucher: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
 };
 
 export default AppliedVoucher;

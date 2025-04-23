@@ -1,6 +1,7 @@
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { Stack, Box, Typography, alpha, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -10,6 +11,7 @@ import { motion } from 'framer-motion';
 const CartActionButtons = ({
   receiptReady,
   cartIsEmpty,
+  cartLocked,
   onPayment,
   onPrintReceipt,
   onNewTransaction,
@@ -82,7 +84,7 @@ const CartActionButtons = ({
           color="primary"
           fullWidth
           onClick={onPayment}
-          disabled={cartIsEmpty}
+          disabled={cartIsEmpty || cartLocked}
           sx={{
             py: 2,
             borderRadius: 2,
@@ -129,6 +131,24 @@ const CartActionButtons = ({
           Fügen Sie Produkte zum Warenkorb hinzu, um fortzufahren
         </Typography>
       )}
+
+      {cartLocked && (
+        <Typography
+          variant="caption"
+          color="warning.main"
+          sx={{
+            display: 'block',
+            textAlign: 'center',
+            mt: 1,
+            fontWeight: 500,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LockOpenIcon fontSize="small" sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+            Warenkorb ist gesperrt. Starten Sie eine neue Transaktion.
+          </Box>
+        </Typography>
+      )}
     </Box>
   );
 };
@@ -136,6 +156,7 @@ const CartActionButtons = ({
 CartActionButtons.propTypes = {
   receiptReady: PropTypes.bool.isRequired,
   cartIsEmpty: PropTypes.bool.isRequired,
+  cartLocked: PropTypes.bool,
   onPayment: PropTypes.func.isRequired,
   onPrintReceipt: PropTypes.func.isRequired,
   onNewTransaction: PropTypes.func.isRequired,

@@ -36,6 +36,7 @@ const SalesMainContent = ({
   receiptReady,
   cartUndoEnabled,
   cartRedoEnabled,
+  cartLocked,
   onAddToCart,
   onRemoveFromCart,
   onDeleteFromCart,
@@ -89,6 +90,8 @@ const SalesMainContent = ({
               height: '100%', // Take full height of grid item
               display: 'flex',
               flexDirection: 'column',
+              opacity: cartLocked ? 0.6 : 1,
+              pointerEvents: cartLocked ? 'none' : 'auto',
             }}
           >
             <ProductGrid productsByCategory={productsByCategory} onProductSelect={onAddToCart} />
@@ -131,6 +134,7 @@ const SalesMainContent = ({
             onRedeemDeposit={onRedeemDeposit}
             cartUndoEnabled={cartUndoEnabled}
             cartRedoEnabled={cartRedoEnabled}
+            cartLocked={cartLocked}
             onUndoCartState={onUndoCartState}
             onRedoCartState={onRedoCartState}
             productDiscount={productDiscount}

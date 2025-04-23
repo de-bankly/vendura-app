@@ -42,6 +42,7 @@ const SalesScreen = () => {
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [depositCredit, setDepositCredit] = useState(0);
   const [giftCardPayment, setGiftCardPayment] = useState(0);
+  const [cartLocked, setCartLocked] = useState(false);
 
   // Cart state management
   const [cartUndoEnabled, setCartUndoEnabled] = useState(false);
@@ -147,23 +148,47 @@ const SalesScreen = () => {
   // Cart operations
   const handleAddToCart = useCallback(
     product => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um weitere Produkte hinzuzufügen.',
+        });
+        return;
+      }
       CartStateManager.addToCart(cartItems, appliedVouchers, product, setCartItems);
     },
-    [cartItems, appliedVouchers]
+    [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
   const handleRemoveFromCart = useCallback(
     productId => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Änderungen vorzunehmen.',
+        });
+        return;
+      }
       CartStateManager.removeFromCart(cartItems, appliedVouchers, productId, setCartItems);
     },
-    [cartItems, appliedVouchers]
+    [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
   const handleDeleteFromCart = useCallback(
     productId => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Änderungen vorzunehmen.',
+        });
+        return;
+      }
       CartStateManager.deleteFromCart(cartItems, appliedVouchers, productId, setCartItems);
     },
-    [cartItems, appliedVouchers]
+    [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
   const handleClearCart = useCallback(() => {
@@ -178,27 +203,59 @@ const SalesScreen = () => {
   }, []);
 
   const handleUndoCartState = useCallback(() => {
+    if (cartLocked) {
+      showToast({
+        severity: 'warning',
+        message:
+          'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Änderungen vorzunehmen.',
+      });
+      return;
+    }
     CartStateManager.undoCartState(setCartItems, setAppliedVouchers);
-  }, []);
+  }, [cartLocked, showToast]);
 
   const handleRedoCartState = useCallback(() => {
+    if (cartLocked) {
+      showToast({
+        severity: 'warning',
+        message:
+          'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Änderungen vorzunehmen.',
+      });
+      return;
+    }
     CartStateManager.redoCartState(setCartItems, setAppliedVouchers);
-  }, []);
+  }, [cartLocked, showToast]);
 
   // Voucher operations
   const handleApplyVoucher = useCallback(
     voucher => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Gutscheine anzuwenden.',
+        });
+        return;
+      }
       CartStateManager.applyVoucher(cartItems, appliedVouchers, voucher, setAppliedVouchers);
       showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
     },
-    [cartItems, appliedVouchers, showToast]
+    [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
   const handleRemoveVoucher = useCallback(
     voucherId => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Änderungen vorzunehmen.',
+        });
+        return;
+      }
       CartStateManager.removeVoucher(cartItems, appliedVouchers, voucherId, setAppliedVouchers);
     },
-    [cartItems, appliedVouchers]
+    [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
   // Payment operations
@@ -241,6 +298,8 @@ const SalesScreen = () => {
       setSuccessSnackbarOpen,
       setPaymentLoading,
     });
+    // Lock the cart after successful payment
+    setCartLocked(true);
   }, [
     cartItems,
     total,
@@ -270,20 +329,37 @@ const SalesScreen = () => {
     setPaymentMethod('cash');
     setCashReceived('');
     setError(null);
+    setCartLocked(false);
   }, [handleClearCart]);
 
   // Dialog handlers
   const handleRedeemVoucherDialog = useCallback(() => {
+    if (cartLocked) {
+      showToast({
+        severity: 'warning',
+        message:
+          'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Gutscheine einzulösen.',
+      });
+      return;
+    }
     setRedeemVoucherDialogOpen(true);
-  }, []);
+  }, [cartLocked, showToast]);
 
   const handleRedeemVoucherDialogClose = useCallback(() => {
     setRedeemVoucherDialogOpen(false);
   }, []);
 
   const handleVoucherManagementDialog = useCallback(() => {
+    if (cartLocked) {
+      showToast({
+        severity: 'warning',
+        message:
+          'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Gutscheine zu verwalten.',
+      });
+      return;
+    }
     setVoucherManagementDialogOpen(true);
-  }, []);
+  }, [cartLocked, showToast]);
 
   const handleVoucherManagementDialogClose = useCallback(() => {
     setVoucherManagementDialogOpen(false);
@@ -291,8 +367,16 @@ const SalesScreen = () => {
 
   // Deposit handlers
   const handleRedeemDepositDialogOpen = useCallback(() => {
+    if (cartLocked) {
+      showToast({
+        severity: 'warning',
+        message:
+          'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Pfand einzulösen.',
+      });
+      return;
+    }
     setRedeemDepositDialogOpen(true);
-  }, []);
+  }, [cartLocked, showToast]);
 
   const handleRedeemDepositDialogClose = useCallback(() => {
     setRedeemDepositDialogOpen(false);
@@ -300,6 +384,14 @@ const SalesScreen = () => {
 
   const handleDepositRedeemed = useCallback(
     depositReceipt => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Pfand einzulösen.',
+        });
+        return;
+      }
       handleDepositRedemption({
         depositReceipt,
         appliedDeposits,
@@ -309,7 +401,7 @@ const SalesScreen = () => {
         showToast,
       });
     },
-    [appliedDeposits, showToast]
+    [appliedDeposits, cartLocked, showToast]
   );
 
   // --- Render ---
@@ -342,8 +434,9 @@ const SalesScreen = () => {
             giftCardPayment={giftCardPayment}
             total={total}
             receiptReady={receiptReady}
-            cartUndoEnabled={cartUndoEnabled}
-            cartRedoEnabled={cartRedoEnabled}
+            cartUndoEnabled={cartUndoEnabled && !cartLocked}
+            cartRedoEnabled={cartRedoEnabled && !cartLocked}
+            cartLocked={cartLocked}
             onAddToCart={handleAddToCart}
             onRemoveFromCart={handleRemoveFromCart}
             onDeleteFromCart={handleDeleteFromCart}

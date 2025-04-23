@@ -23,7 +23,7 @@ import { Chip } from '../ui/feedback';
 import { listItemVariants } from '../../utils/animations';
 import { formatCurrency } from '../../utils/formatters';
 
-const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
+const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem, disabled = false }) => {
   const theme = useTheme();
 
   // Determine if we should show discount information
@@ -70,13 +70,14 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
               ? alpha(theme.palette.primary.main, 0.04)
               : theme.palette.background.paper,
           '&:hover': {
-            boxShadow: theme.shadows[3],
+            boxShadow: disabled ? 'none' : theme.shadows[3],
             borderColor: isPfandProduct
               ? theme.palette.success.main
               : isConnectedProduct
                 ? theme.palette.primary.main
                 : theme.palette.primary.light,
           },
+          opacity: disabled ? 0.7 : 1,
         }}
       >
         <Box sx={{ p: 2, display: 'flex', gap: 2 }}>
@@ -228,18 +229,71 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
           </Box>
 
           {/* Right: Action buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <ButtonGroup
-              orientation="vertical"
-              size="small"
-              variant="outlined"
-              sx={{
-                '.MuiButtonGroup-grouped': {
-                  minWidth: 'unset',
-                },
-                borderColor: alpha(theme.palette.divider, 0.5),
-              }}
-            >
+          {!disabled && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ButtonGroup
+                orientation="vertical"
+                size="small"
+                variant="outlined"
+                sx={{
+                  '.MuiButtonGroup-grouped': {
+                    minWidth: 'unset',
+                  },
+                  borderColor: alpha(theme.palette.divider, 0.5),
+                }}
+              >
+                {isConnectedProduct || isPfandProduct ? (
+                  <Tooltip
+                    title={
+                      isPfandProduct
+                        ? 'Pfand kann nicht einzeln gelöscht werden'
+                        : 'Verbundene Produkte können nicht einzeln gelöscht werden'
+                    }
+                    arrow
+                  >
+                    <span>
+                      <IconButton icon={<AddIcon />} size="small" color="primary" disabled={true} />
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <IconButton
+                    icon={<AddIcon />}
+                    size="small"
+                    color="primary"
+                    onClick={() => onAddItem(item)}
+                    disabled={disabled}
+                  />
+                )}
+
+                {isConnectedProduct || isPfandProduct ? (
+                  <Tooltip
+                    title={
+                      isPfandProduct
+                        ? 'Pfand kann nicht einzeln gelöscht werden'
+                        : 'Verbundene Produkte können nicht einzeln gelöscht werden'
+                    }
+                    arrow
+                  >
+                    <span>
+                      <IconButton
+                        icon={<RemoveIcon />}
+                        size="small"
+                        color="primary"
+                        disabled={true}
+                      />
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <IconButton
+                    icon={<RemoveIcon />}
+                    size="small"
+                    color="primary"
+                    onClick={() => onRemoveItem(item.id)}
+                    disabled={disabled}
+                  />
+                )}
+              </ButtonGroup>
+
               {isConnectedProduct || isPfandProduct ? (
                 <Tooltip
                   title={
@@ -248,126 +302,29 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem }) => {
                       : 'Verbundene Produkte können nicht einzeln gelöscht werden'
                   }
                   arrow
-                  placement="left"
                 >
                   <span>
                     <IconButton
+                      icon={<DeleteIcon />}
                       size="small"
-                      disabled
-                      sx={{
-                        color: alpha(theme.palette.text.disabled, 0.5),
-                        borderRadius: 0,
-                        bgcolor: 'background.paper',
-                        borderColor: 'transparent',
-                      }}
-                      aria-label={`Cannot delete ${item.name}`}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                      color="error"
+                      disabled={true}
+                      sx={{ ml: 1 }}
+                    />
                   </span>
                 </Tooltip>
               ) : (
                 <IconButton
+                  icon={<DeleteIcon />}
                   size="small"
+                  color="error"
                   onClick={() => onDeleteItem(item.id)}
-                  sx={{
-                    color: 'error.main',
-                    '&:hover': {
-                      color: 'error.dark',
-                      bgcolor: alpha(theme.palette.error.main, 0.08),
-                    },
-                    borderRadius: 0,
-                    bgcolor: 'background.paper',
-                  }}
-                  aria-label={`Delete ${item.name}`}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                  disabled={disabled}
+                  sx={{ ml: 1 }}
+                />
               )}
-
-              {isConnectedProduct || isPfandProduct ? (
-                <Tooltip
-                  title={
-                    isPfandProduct
-                      ? 'Pfand kann nicht einzeln entfernt werden'
-                      : 'Verbundene Produkte können nicht einzeln entfernt werden'
-                  }
-                  arrow
-                  placement="left"
-                >
-                  <span>
-                    <IconButton
-                      size="small"
-                      disabled
-                      sx={{
-                        color: alpha(theme.palette.text.disabled, 0.5),
-                        borderRadius: 0,
-                        bgcolor: 'background.paper',
-                        borderColor: 'transparent',
-                      }}
-                      aria-label={`Cannot remove ${item.name}`}
-                    >
-                      <RemoveIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              ) : (
-                <IconButton
-                  size="small"
-                  onClick={() => onRemoveItem(item.id)}
-                  sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                      color: 'primary.main',
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                    },
-                    borderRadius: 0,
-                    bgcolor: 'background.paper',
-                  }}
-                  aria-label={`Remove one ${item.name}`}
-                >
-                  <RemoveIcon fontSize="small" />
-                </IconButton>
-              )}
-
-              {isPfandProduct ? (
-                <Tooltip title="Pfandmenge kann nicht geändert werden" arrow placement="left">
-                  <span>
-                    <IconButton
-                      size="small"
-                      disabled
-                      sx={{
-                        color: alpha(theme.palette.text.disabled, 0.5),
-                        borderRadius: 0,
-                        bgcolor: 'background.paper',
-                        borderColor: 'transparent',
-                      }}
-                      aria-label={`Cannot add ${item.name}`}
-                    >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              ) : (
-                <IconButton
-                  size="small"
-                  onClick={() => onAddItem(item)}
-                  sx={{
-                    color: 'success.main',
-                    '&:hover': {
-                      color: 'success.dark',
-                      bgcolor: alpha(theme.palette.success.main, 0.08),
-                    },
-                    borderRadius: 0,
-                    bgcolor: 'background.paper',
-                  }}
-                  aria-label={`Add one ${item.name}`}
-                >
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              )}
-            </ButtonGroup>
-          </Box>
+            </Box>
+          )}
         </Box>
       </Paper>
     </motion.div>
@@ -379,6 +336,7 @@ CartItem.propTypes = {
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,
   onDeleteItem: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
 };
 
 export default CartItem;
