@@ -52,6 +52,25 @@ const ProductCard = ({ product, onAddToCart }) => {
   // Only show Bundle badge if there are connected products that are not Pfand
   const showBundleBadge = hasNonPfandConnectedProducts;
 
+  // Check if product is out of stock
+  const isOutOfStock = product.stockQuantity <= 0;
+
+  // Check if any connected products (except Pfand) are out of stock
+  const hasOutOfStockConnectedProducts =
+    hasConnectedProducts &&
+    product.connectedProducts.some(p => p?.category?.name !== 'Pfand' && p.stockQuantity <= 0);
+
+  // Product should be visually marked as unavailable if either:
+  // 1. The main product itself is out of stock, OR
+  // 2. It's a bundle with unavailable parts (incomplete bundles are treated as completely unavailable)
+  const isUnavailable = isOutOfStock || (showBundleBadge && hasOutOfStockConnectedProducts);
+
+  // Bundle is unavailable if any essential (non-Pfand) connected products are out of stock
+  const isBundleUnavailable = hasOutOfStockConnectedProducts;
+
+  // Check if product is marked to be discontinued
+  const isBeingDiscontinued = product.toBeDiscontinued === true;
+
   // Format price with german locale
   const formatPrice = price => {
     return price.toLocaleString('de-DE', {
@@ -193,11 +212,48 @@ const ProductCard = ({ product, onAddToCart }) => {
           duration: theme.transitions.duration.standard,
         }),
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 6,
+          transform: isUnavailable ? 'none' : 'translateY(-4px)',
+          boxShadow: isUnavailable ? 2 : 6,
         },
+        opacity: isUnavailable ? 0.75 : 1,
+        filter: isUnavailable ? 'grayscale(40%)' : 'none',
       }}
     >
+      {/* Out of Stock Overlay */}
+      {isUnavailable && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: alpha(theme.palette.background.paper, 0.5),
+            zIndex: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: alpha(theme.palette.error.main, 0.9),
+              color: theme.palette.error.contrastText,
+              py: 0.5,
+              px: 2,
+              borderRadius: 1,
+              transform: 'rotate(-15deg)',
+              border: `2px solid ${theme.palette.error.dark}`,
+              boxShadow: theme.shadows[3],
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Nicht verfügbar
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       {/* Product Image */}
       <Box
         sx={{
@@ -261,18 +317,83 @@ const ProductCard = ({ product, onAddToCart }) => {
 
       {/* Badges group container to improve organization */}
       <Box sx={{ position: 'absolute', top: 0, right: 0, zIndex: 2 }}>
-        {/* Discount badge */}
-        {hasDiscount && (
+        {/* Out of Stock badge */}
+        {isOutOfStock && (
           <Box
             sx={{
-              bgcolor: 'error.main',
-              color: 'error.contrastText',
+              bgcolor: theme.palette.error.dark,
+              color: theme.palette.error.contrastText,
               py: 0.3,
               px: 1,
               borderBottomLeftRadius: 8,
               display: 'flex',
               alignItems: 'center',
-              mb: showBundleBadge || (hasPfand && !showBundleBadge) ? 0.5 : 0,
+              mb: 0.5,
+            }}
+          >
+            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
+              AUSVERKAUFT
+            </Typography>
+          </Box>
+        )}
+
+        {/* Clearance sale badge for products to be discontinued */}
+        {isBeingDiscontinued && !isOutOfStock && (
+          <Box
+            sx={{
+              bgcolor: theme.palette.warning.dark,
+              color: theme.palette.warning.contrastText,
+              py: 0.3,
+              px: 1,
+              borderBottomLeftRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              mb: 0.5,
+            }}
+          >
+            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
+              ABVERKAUF
+            </Typography>
+          </Box>
+        )}
+
+        {/* Combined Bundle Badge - Shows different styling based on bundle status */}
+        {showBundleBadge && !isOutOfStock && (
+          <Box
+            sx={{
+              bgcolor: isBundleUnavailable
+                ? theme.palette.warning.dark
+                : theme.palette.primary.main,
+              color: isBundleUnavailable
+                ? theme.palette.warning.contrastText
+                : theme.palette.primary.contrastText,
+              py: 0.3,
+              px: 1,
+              borderBottomLeftRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              mb: hasDiscount || (hasPfand && !showBundleBadge) ? 0.5 : 0,
+            }}
+          >
+            <LinkIcon fontSize="small" sx={{ mr: 0.3, fontSize: '0.9rem' }} />
+            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
+              {isBundleUnavailable ? 'BUNDLE UNVOLLSTÄNDIG' : 'BUNDLE'}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Discount badge */}
+        {hasDiscount && !isOutOfStock && (
+          <Box
+            sx={{
+              bgcolor: theme.palette.error.main,
+              color: theme.palette.error.contrastText,
+              py: 0.3,
+              px: 1,
+              borderBottomLeftRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              mb: hasPfand && !showBundleBadge ? 0.5 : 0,
             }}
           >
             <LocalOfferIcon fontSize="small" sx={{ mr: 0.3, fontSize: '0.9rem' }} />
@@ -282,28 +403,8 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Box>
         )}
 
-        {/* Bundle badge */}
-        {showBundleBadge && (
-          <Box
-            sx={{
-              bgcolor: theme.palette.primary.main,
-              color: theme.palette.primary.contrastText,
-              py: 0.3,
-              px: 1,
-              borderBottomLeftRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <LinkIcon fontSize="small" sx={{ mr: 0.3, fontSize: '0.9rem' }} />
-            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
-              BUNDLE
-            </Typography>
-          </Box>
-        )}
-
         {/* Pfand badge - only shown if there's Pfand but no other connected products */}
-        {hasPfand && !showBundleBadge && (
+        {hasPfand && !showBundleBadge && !isOutOfStock && (
           <Box
             sx={{
               bgcolor: theme.palette.success.main,
@@ -468,24 +569,42 @@ const ProductCard = ({ product, onAddToCart }) => {
           )}
         </Box>
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart Button - Disabled only if individual product is unavailable */}
         <Button
           fullWidth
-          variant="contained"
-          color="primary"
+          variant={isUnavailable ? 'outlined' : 'contained'}
+          color={isUnavailable ? 'error' : 'primary'}
           size="small"
           onClick={() => onAddToCart(product)}
           startIcon={<AddShoppingCartIcon fontSize="small" />}
+          disabled={isUnavailable}
           sx={{
             borderRadius: '6px',
             textTransform: 'none',
             fontWeight: 'bold',
-            boxShadow: theme.shadows[2],
+            boxShadow: isUnavailable ? 0 : theme.shadows[2],
             py: 0.75,
           }}
         >
-          In den Warenkorb
+          {isUnavailable ? 'Nicht verfügbar' : 'In den Warenkorb'}
         </Button>
+
+        {/* Stock information */}
+        {!isOutOfStock && (
+          <Typography
+            variant="caption"
+            align="center"
+            sx={{
+              mt: 0.5,
+              color: product.stockQuantity <= 5 ? 'warning.main' : 'text.secondary',
+              fontWeight: product.stockQuantity <= 5 ? 'medium' : 'normal',
+            }}
+          >
+            {product.stockQuantity <= 5
+              ? `Nur noch ${product.stockQuantity} auf Lager!`
+              : `${product.stockQuantity} auf Lager`}
+          </Typography>
+        )}
       </Box>
     </Paper>
   );

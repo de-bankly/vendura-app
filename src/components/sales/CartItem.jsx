@@ -237,7 +237,8 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem, disabled = fals
                 variant="outlined"
                 sx={{
                   '.MuiButtonGroup-grouped': {
-                    minWidth: 'unset',
+                    minWidth: '32px',
+                    minHeight: '32px',
                   },
                   borderColor: alpha(theme.palette.divider, 0.5),
                 }}
@@ -252,17 +253,26 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem, disabled = fals
                     arrow
                   >
                     <span>
-                      <IconButton icon={<AddIcon />} size="small" color="primary" disabled={true} />
+                      <IconButton
+                        size="medium"
+                        color="primary"
+                        disabled={true}
+                        sx={{ width: '32px', height: '32px' }}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
                     </span>
                   </Tooltip>
                 ) : (
                   <IconButton
-                    icon={<AddIcon />}
-                    size="small"
+                    size="medium"
                     color="primary"
                     onClick={() => onAddItem(item)}
                     disabled={disabled}
-                  />
+                    sx={{ width: '32px', height: '32px' }}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
                 )}
 
                 {isConnectedProduct || isPfandProduct ? (
@@ -276,21 +286,25 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem, disabled = fals
                   >
                     <span>
                       <IconButton
-                        icon={<RemoveIcon />}
-                        size="small"
+                        size="medium"
                         color="primary"
                         disabled={true}
-                      />
+                        sx={{ width: '32px', height: '32px' }}
+                      >
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
                     </span>
                   </Tooltip>
                 ) : (
                   <IconButton
-                    icon={<RemoveIcon />}
-                    size="small"
+                    size="medium"
                     color="primary"
                     onClick={() => onRemoveItem(item.id)}
                     disabled={disabled}
-                  />
+                    sx={{ width: '32px', height: '32px' }}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </IconButton>
                 )}
               </ButtonGroup>
 
@@ -305,23 +319,25 @@ const CartItem = ({ item, onAddItem, onRemoveItem, onDeleteItem, disabled = fals
                 >
                   <span>
                     <IconButton
-                      icon={<DeleteIcon />}
-                      size="small"
+                      size="medium"
                       color="error"
                       disabled={true}
-                      sx={{ ml: 1 }}
-                    />
+                      sx={{ ml: 1, width: '32px', height: '32px' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
                   </span>
                 </Tooltip>
               ) : (
                 <IconButton
-                  icon={<DeleteIcon />}
-                  size="small"
+                  size="medium"
                   color="error"
                   onClick={() => onDeleteItem(item.id)}
                   disabled={disabled}
-                  sx={{ ml: 1 }}
-                />
+                  sx={{ ml: 1, width: '32px', height: '32px' }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
               )}
             </Box>
           )}

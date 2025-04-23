@@ -235,6 +235,23 @@ class ProductService {
 
     price = latestPriceEntry?.price ?? 0;
 
+    // Determine if this product should be discontinued and sold out
+    // For now we'll use a simple rule: products with a low stock (<=5) and no recent price changes
+    // (older than 3 months) are marked as to be discontinued
+    let toBeDiscontinued = false;
+    if (stockQuantity <= 5 && stockQuantity > 0) {
+      // Only apply to low stock, not out of stock items
+      // Check if the price history is old
+      if (latestPriceEntry?.timestamp) {
+        const lastPriceChangeDate = new Date(latestPriceEntry.timestamp);
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        // If the last price change was more than 3 months ago, mark as to be discontinued
+        toBeDiscontinued = lastPriceChangeDate < threeMonthsAgo;
+      }
+    }
+
     return {
       id: product.id,
       name: product.name,
@@ -243,6 +260,7 @@ class ProductService {
       price: price,
       stockQuantity: stockQuantity,
       lowStockThreshold: 5, // Default value
+      toBeDiscontinued: toBeDiscontinued, // New property to mark products that should be discontinued
       category: product.productCategory
         ? {
             id: product.productCategory.id,
@@ -303,6 +321,28 @@ class ProductService {
       }
       grouped[categoryName].push(product);
     });
+
+    // Sort products in each category with out-of-stock and discontinued products at the end
+    Object.keys(grouped).forEach(category => {
+      grouped[category].sort((a, b) => {
+        // First priority: sort out-of-stock products to the end
+        const aOutOfStock = a.stockQuantity <= 0;
+        const bOutOfStock = b.stockQuantity <= 0;
+
+        if (aOutOfStock && !bOutOfStock) return 1;
+        if (!aOutOfStock && bOutOfStock) return -1;
+
+        // Second priority: sort discontinued products to end
+        if (a.toBeDiscontinued && !b.toBeDiscontinued) return 1;
+        if (!a.toBeDiscontinued && b.toBeDiscontinued) return -1;
+
+        // Third priority: alphabetical sort by name
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB, 'de');
+      });
+    });
+
     return grouped;
   }
 

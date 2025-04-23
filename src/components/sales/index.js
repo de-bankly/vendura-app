@@ -17,7 +17,6 @@ import AppliedVouchersDisplay from './AppliedVouchersDisplay';
 import CartActionButtons from './CartActionButtons';
 
 // Import new components
-import SalesHeader from './SalesHeader';
 import CartHeader from './CartHeader';
 import SalesMainContent from './SalesMainContent';
 import DialogManager from './DialogManager';
@@ -46,7 +45,6 @@ export {
   GiftCardPaymentSection,
   AppliedVouchersDisplay,
   CartActionButtons,
-  SalesHeader,
   CartHeader,
   SalesMainContent,
   DialogManager,

@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 
 // Import components and utilities
 import {
-  SalesHeader,
   SalesMainContent,
   DialogManager,
   calculateVoucherDiscount,
@@ -67,19 +66,36 @@ const SalesScreen = () => {
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
   // --- Data Fetching ---
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const productData = await ProductService.getProducts({ page: 0, size: 100 });
+      // Show all products regardless of stock quantity
+      const allProducts = productData.content || [];
+      setProducts(allProducts);
+      setProductsByCategory(ProductService.groupByCategory(allProducts));
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError(err.message || 'Fehler beim Laden der Produkte.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
-    const fetchProducts = async () => {
+
+    const loadProducts = async () => {
       try {
         setLoading(true);
         setError(null);
         const productData = await ProductService.getProducts({ page: 0, size: 100 });
         if (isMounted) {
-          const availableProducts = (productData.content || []).filter(
-            product => product.stockQuantity > 0
-          );
-          setProducts(availableProducts);
-          setProductsByCategory(ProductService.groupByCategory(availableProducts));
+          // Show all products regardless of stock quantity
+          const allProducts = productData.content || [];
+          setProducts(allProducts);
+          setProductsByCategory(ProductService.groupByCategory(allProducts));
         }
       } catch (err) {
         if (isMounted) {
@@ -93,7 +109,7 @@ const SalesScreen = () => {
       }
     };
 
-    fetchProducts();
+    loadProducts();
     return () => {
       isMounted = false;
     };
@@ -155,7 +171,7 @@ const SalesScreen = () => {
         });
         return;
       }
-      CartStateManager.addToCart(cartItems, appliedVouchers, product, setCartItems);
+      CartStateManager.addToCart(cartItems, appliedVouchers, product, setCartItems, showToast);
     },
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
@@ -280,7 +296,7 @@ const SalesScreen = () => {
   }, []);
 
   const handlePaymentSubmit = useCallback(async () => {
-    processPayment({
+    const paymentResult = await processPayment({
       cartItems,
       total,
       subtotal,
@@ -296,8 +312,21 @@ const SalesScreen = () => {
       setPaymentModalOpen,
       setPaymentLoading,
     });
+
     // Lock the cart after successful payment
     setCartLocked(true);
+
+    // Reload product inventory after successful payment
+    if (paymentResult && paymentResult.success) {
+      // Short delay to ensure backend processing is complete
+      setTimeout(() => {
+        fetchProducts();
+        showToast({
+          severity: 'info',
+          message: 'Produktbestände wurden aktualisiert.',
+        });
+      }, 500);
+    }
   }, [
     cartItems,
     total,
@@ -310,6 +339,7 @@ const SalesScreen = () => {
     appliedDeposits,
     depositCredit,
     showToast,
+    fetchProducts,
   ]);
 
   const handlePrintReceipt = useCallback(() => {
@@ -323,7 +353,10 @@ const SalesScreen = () => {
     setCashReceived('');
     setError(null);
     setCartLocked(false);
-  }, [handleClearCart]);
+
+    // Reload products for the new transaction
+    fetchProducts();
+  }, [handleClearCart, fetchProducts]);
 
   // Dialog handlers
   const handleRedeemVoucherDialog = useCallback(() => {
@@ -410,10 +443,6 @@ const SalesScreen = () => {
       }}
     >
       <Container maxWidth="xl" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <motion.div initial="hidden" animate="visible" variants={containerVariants}>
-          <SalesHeader />
-        </motion.div>
-
         <Box sx={{ flexGrow: 1, overflow: 'hidden', mb: 2 }}>
           <SalesMainContent
             loading={loading}

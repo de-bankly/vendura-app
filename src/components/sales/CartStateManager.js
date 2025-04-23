@@ -3,7 +3,51 @@ import { CartService } from '../../services';
 /**
  * Handles adding a product to cart with background state saving
  */
-export const addToCart = (cartItems, appliedVouchers, product, setCartItems) => {
+export const addToCart = (cartItems, appliedVouchers, product, setCartItems, showToast) => {
+  // Check stock availability for the product
+  if (product.stockQuantity <= 0) {
+    if (showToast) {
+      showToast({
+        severity: 'error',
+        message: `${product.name} ist nicht mehr auf Lager.`,
+      });
+    }
+    return cartItems; // Return unchanged cart items
+  }
+
+  // Check if this product is already in the cart
+  const existingItem = cartItems.find(item => item.id === product.id);
+  const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+  // Check if adding one more would exceed available stock
+  if (currentQuantity >= product.stockQuantity) {
+    if (showToast) {
+      showToast({
+        severity: 'warning',
+        message: `Kann ${product.name} nicht hinzufügen. Nur noch ${product.stockQuantity} auf Lager.`,
+      });
+    }
+    return cartItems; // Return unchanged cart items
+  }
+
+  // Check if the product has out-of-stock connected products (for bundles)
+  const hasOutOfStockConnectedProducts =
+    product.connectedProducts &&
+    product.connectedProducts.some(p => p?.category?.name !== 'Pfand' && p.stockQuantity <= 0);
+
+  // If the product is part of a bundle but some connected products are out of stock,
+  // treat the entire bundle as out of stock and prevent purchase
+  if (hasOutOfStockConnectedProducts) {
+    if (showToast) {
+      showToast({
+        severity: 'error',
+        message: `${product.name} ist als Bundle nicht verfügbar, da Teile des Bundles nicht auf Lager sind.`,
+      });
+    }
+    return cartItems; // Return unchanged cart items
+  }
+
+  // If all stock checks pass, proceed with adding to cart normally (including all connected products)
   const updatedItems = CartService.addToCart([...cartItems], product);
   setCartItems(updatedItems);
 

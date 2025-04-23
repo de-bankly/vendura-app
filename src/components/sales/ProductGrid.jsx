@@ -1,5 +1,7 @@
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 import {
   Box,
   Grid,
@@ -43,23 +45,79 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
     }));
   }, [productsByCategory]);
 
+  // Get promotional products
+  const promotionalProducts = useMemo(() => {
+    return Object.values(productsByCategory)
+      .flat()
+      .filter(product => product.isOnSale || product.discountPercentage > 0);
+  }, [productsByCategory]);
+
+  // Get bundle products
+  const bundleProducts = useMemo(() => {
+    return Object.values(productsByCategory)
+      .flat()
+      .filter(product => {
+        // Identifiziere Bundles: Produkte mit verbundenen Produkten, die keine Pfand-Produkte sind
+        const hasConnectedProducts =
+          product.connectedProducts && product.connectedProducts.length > 0;
+        const hasNonPfandConnectedProducts =
+          hasConnectedProducts &&
+          product.connectedProducts.some(p => p?.category?.name !== 'Pfand');
+
+        return hasNonPfandConnectedProducts;
+      });
+  }, [productsByCategory]);
+
   // Memoize filtered products
   const filteredProducts = useMemo(() => {
     const search = searchTerm.toLowerCase();
     let categoryProducts = [];
 
     if (selectedCategory === 0) {
-      categoryProducts = Object.values(productsByCategory).flat();
+      // Get all products and sort them with out-of-stock and to-be-discontinued products at the end
+      categoryProducts = Object.values(productsByCategory)
+        .flat()
+        .sort((a, b) => {
+          // First priority: sort out-of-stock products to the end
+          const aOutOfStock = a.stockQuantity <= 0;
+          const bOutOfStock = b.stockQuantity <= 0;
+
+          if (aOutOfStock && !bOutOfStock) return 1;
+          if (!aOutOfStock && bOutOfStock) return -1;
+
+          // Second priority: sort discontinued products to end
+          if (a.toBeDiscontinued && !b.toBeDiscontinued) return 1;
+          if (!a.toBeDiscontinued && b.toBeDiscontinued) return -1;
+
+          // Third priority: alphabetical sort by name
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB, 'de');
+        });
+    } else if (selectedCategory === 1) {
+      // "Aktionen" tab selected
+      categoryProducts = promotionalProducts;
+    } else if (selectedCategory === 2) {
+      // "Bundles" tab selected
+      categoryProducts = bundleProducts;
     } else {
-      const categoryName = categories[selectedCategory - 1]?.name;
+      const categoryName = categories[selectedCategory - 3]?.name;
       categoryProducts = productsByCategory[categoryName] || [];
+      // Products are already sorted with out-of-stock and to-be-discontinued products at the end in ProductService.groupByCategory
     }
 
     if (search) {
       return categoryProducts.filter(product => product?.name?.toLowerCase().includes(search));
     }
     return categoryProducts;
-  }, [searchTerm, selectedCategory, categories, productsByCategory]);
+  }, [
+    searchTerm,
+    selectedCategory,
+    categories,
+    productsByCategory,
+    promotionalProducts,
+    bundleProducts,
+  ]);
 
   return (
     <Box
@@ -143,6 +201,43 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             sx={{ px: 2 }} // Adjust padding if needed
           />
 
+          {/* Special Tab: Aktionen */}
+          <Tab
+            key="aktionen"
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <LocalOfferIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                <Typography variant="body2">Aktionen</Typography>
+                <Chip
+                  size="small"
+                  label={promotionalProducts.length}
+                  sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                />
+              </Box>
+            }
+            value={1}
+            sx={{ px: 2 }}
+          />
+
+          {/* Special Tab: Bundles */}
+          <Tab
+            key="bundles"
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Inventory2Icon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                <Typography variant="body2">Bundles</Typography>
+                <Chip
+                  size="small"
+                  label={bundleProducts.length}
+                  sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                />
+              </Box>
+            }
+            value={2}
+            sx={{ px: 2 }}
+          />
+
+          {/* Regular category tabs now start at index 3 */}
           {categories.map((category, index) => (
             <Tab
               key={category.name}
@@ -157,7 +252,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                   />
                 </Box>
               }
-              value={index + 1}
+              value={index + 3}
               sx={{ px: 2 }} // Adjust padding if needed
             />
           ))}
