@@ -835,7 +835,7 @@ const Home = () => {
                               color: theme.palette.secondary.main,
                             }}
                           >
-                            {sale.cashierId ? sale.cashierId.charAt(0) : 'S'}
+                            <ReceiptLongIcon fontSize="small" />
                           </Avatar>
                           <Box sx={{ width: '100%' }}>
                             <Box
