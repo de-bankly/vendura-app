@@ -15,6 +15,8 @@ import ErrorBoundary from './components/error/ErrorBoundary';
 
 // Import AuthProvider
 import { AuthProvider } from './contexts/AuthContext';
+// Import ToastProvider
+import { ToastProvider } from './components/ui/feedback';
 import router from './routes/router';
 import theme from './style/theme';
 
@@ -40,7 +42,9 @@ const initializeApp = async () => {
           <CssBaseline />
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <AuthProvider>
-              <RouterProvider router={router} />
+              <ToastProvider>
+                <RouterProvider router={router} />
+              </ToastProvider>
             </AuthProvider>
           </LocalizationProvider>
         </ThemeProvider>

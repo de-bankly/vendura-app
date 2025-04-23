@@ -9,8 +9,6 @@ import {
   InputAdornment,
   CircularProgress,
   useTheme,
-  Checkbox,
-  FormControlLabel,
   Divider,
 } from '@mui/material';
 import { useState } from 'react';
@@ -25,7 +23,6 @@ const LoginForm = ({ onSubmit }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const theme = useTheme();
   const errorAlertId = 'login-error-alert';
 
