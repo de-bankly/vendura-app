@@ -434,17 +434,6 @@ const PaymentDialog = ({
             checked={paymentMethod === 'card'}
             onChange={handlePaymentMethodChange}
           />
-
-          {depositCredit > 0 && (
-            <PaymentMethodOption
-              value="deposit"
-              label="Pfandbeleg einlösen"
-              icon={ReceiptIcon}
-              description={`Pfandguthaben: ${depositCredit.toFixed(2)} €`}
-              checked={paymentMethod === 'deposit'}
-              onChange={handlePaymentMethodChange}
-            />
-          )}
         </Box>
 
         {/* Rest of the payment form - cash received, card details, etc. */}
