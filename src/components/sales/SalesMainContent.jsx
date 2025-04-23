@@ -82,20 +82,21 @@ const SalesMainContent = ({
       {/* Product Grid */}
       <Grid item xs={12} md={7} lg={8} sx={{ height: '100%' }}>
         <motion.div variants={itemVariants} style={{ height: '100%' }}>
-          <Paper
-            elevation={0}
+          <Box
             sx={{
-              borderRadius: theme.shape.borderRadius,
-              border: `1px solid ${theme.palette.divider}`,
-              height: '100%', // Take full height of grid item
+              height: '100%',
               display: 'flex',
               flexDirection: 'column',
               opacity: cartLocked ? 0.6 : 1,
               pointerEvents: cartLocked ? 'none' : 'auto',
+              borderRadius: 2,
+              overflow: 'hidden',
+              boxShadow: theme.shadows[1],
+              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             <ProductGrid productsByCategory={productsByCategory} onProductSelect={onAddToCart} />
-          </Paper>
+          </Box>
         </motion.div>
       </Grid>
 
@@ -110,6 +111,7 @@ const SalesMainContent = ({
             bgcolor: 'background.default',
             borderRadius: 2,
             overflow: 'hidden',
+            border: `1px solid ${theme.palette.divider}`,
           }}
         >
           <ShoppingCart
