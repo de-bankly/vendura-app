@@ -33,8 +33,6 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import BottleAltIcon from '@mui/icons-material/WineBarOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AddIcon from '@mui/icons-material/Add';
-import SavingsIcon from '@mui/icons-material/Savings';
 import BarcodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import { DepositService, ProductService } from '../../services';
@@ -632,96 +630,6 @@ const PfandautomatView = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {receiptGenerated && receiptData && !showReceiptDialog && (
-            <motion.div
-              variants={itemVariants}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card
-                elevation={2}
-                sx={{
-                  borderRadius: theme.shape.borderRadius,
-                  border: `1px solid ${theme.palette.divider}`,
-                  overflow: 'hidden',
-                  position: 'relative',
-                }}
-              >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    borderRadius: '0 0 0 8px',
-                    bgcolor: theme.palette.success.main,
-                    color: 'white',
-                    px: 1,
-                    py: 0.5,
-                    fontSize: '0.75rem',
-                    fontWeight: 'medium',
-                  }}
-                >
-                  <CheckCircleIcon
-                    fontSize="inherit"
-                    sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
-                  />
-                  Neu
-                </Box>
-
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: alpha(theme.palette.success.main, 0.08),
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <ReceiptIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
-                  <Typography variant="h6" fontWeight="medium">
-                    Letzter Pfandbon
-                  </Typography>
-                </Box>
-
-                <CardContent>
-                  <Box sx={{ my: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          Beleg-Nr.:
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {receiptData.id || '000000000'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          Gesamtbetrag:
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium" color="success.main">
-                          {receiptData.total?.toFixed(2) || '0.00'} €
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-
-                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                    <Button
-                      variant="outlined"
-                      size="medium"
-                      startIcon={<PrintIcon />}
-                      onClick={() => setShowReceiptDialog(true)}
-                      fullWidth
-                      sx={{ mt: 1 }}
-                    >
-                      Bon anzeigen
-                    </Button>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
         </Grid>
       </Grid>
 
