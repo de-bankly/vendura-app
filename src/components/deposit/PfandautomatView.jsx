@@ -697,6 +697,21 @@ const PfandautomatView = () => {
               transition={{ delay: 0.2 }}
             >
               <DepositReceipt receipt={receiptData} />
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  bgcolor: alpha(theme.palette.info.light, 0.1),
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <InfoOutlinedIcon color="info" sx={{ mr: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Der Pfandbon wurde automatisch gedruckt. Bitte lösen Sie ihn an der Kasse ein.
+                </Typography>
+              </Box>
             </motion.div>
           )}
         </DialogContent>
@@ -704,21 +719,6 @@ const PfandautomatView = () => {
           <Button onClick={() => setShowReceiptDialog(false)} variant="outlined">
             Schließen
           </Button>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PrintIcon />}
-              onClick={() => {
-                if (receiptData) {
-                  printDepositReceipt(receiptData);
-                }
-              }}
-              disabled={isPrinting}
-            >
-              {isPrinting ? <CircularProgress size={24} color="inherit" /> : 'Erneut drucken'}
-            </Button>
-          </motion.div>
         </DialogActions>
       </Dialog>
     </Container>
