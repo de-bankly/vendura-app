@@ -81,14 +81,15 @@ export const processPayment = async ({
     setReceiptReady(true);
     setPaymentModalOpen(false);
 
-    return response;
+    // Make sure the response includes a success flag for downstream handling
+    return { ...response, success: true };
   } catch (error) {
     console.error('Payment error:', error);
     showToast({
       message: getUserFriendlyErrorMessage(error, 'Zahlungsfehler'),
       severity: 'error',
     });
-    throw error;
+    return { success: false, error };
   } finally {
     setPaymentLoading(false);
   }

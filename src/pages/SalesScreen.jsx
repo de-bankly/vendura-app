@@ -26,9 +26,10 @@ import {
 } from '../components/sales';
 
 // Import services
-import { ProductService, CartService } from '../services';
+import { ProductService, CartService, printerService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
+import usePrinter from '../hooks/usePrinter';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -48,6 +49,14 @@ const SalesScreen = () => {
     enableScanner,
     isEnabled: isScannerEnabled,
   } = useBarcodeScan();
+  const {
+    printReceipt,
+    isLoading: isPrinterLoading,
+    error: printerError,
+    checkStatus: checkPrinterStatus,
+    isConnected: isPrinterConnected,
+    statusChecked: printerStatusChecked,
+  } = usePrinter({ checkStatusOnMount: false });
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -302,33 +311,96 @@ const SalesScreen = () => {
   }, []);
 
   const handlePaymentSubmit = useCallback(async () => {
-    const paymentResult = await processPayment({
-      cartItems,
-      total,
-      subtotal,
-      paymentMethod,
-      cashReceived,
-      cardDetails,
-      appliedVouchers,
-      voucherDiscount,
-      appliedDeposits,
-      depositCredit,
-      showToast,
-      setReceiptReady,
-      setPaymentModalOpen,
-      setPaymentLoading,
-    });
+    try {
+      const paymentResult = await processPayment({
+        cartItems,
+        total,
+        subtotal,
+        paymentMethod,
+        cashReceived,
+        cardDetails,
+        appliedVouchers,
+        voucherDiscount,
+        appliedDeposits,
+        depositCredit,
+        showToast,
+        setReceiptReady,
+        setPaymentModalOpen,
+        setPaymentLoading,
+      });
 
-    setCartLocked(true);
+      setCartLocked(true);
+      console.log('Payment result received:', paymentResult);
 
-    if (paymentResult && paymentResult.success) {
-      setTimeout(() => {
-        fetchProducts();
-        showToast({
-          severity: 'info',
-          message: 'Produktbestände wurden aktualisiert.',
-        });
-      }, 500);
+      if (paymentResult && paymentResult.success) {
+        console.log('Payment successful, preparing to print receipt');
+        // Print receipt automatically
+        try {
+          // Only check status if it hasn't been checked yet
+          if (!printerStatusChecked) {
+            const isConnected = await checkPrinterStatus();
+            if (!isConnected) {
+              showToast({
+                severity: 'warning',
+                message: 'Drucker ist nicht verbunden. Versuche trotzdem den Beleg zu drucken...',
+              });
+            }
+          }
+
+          // Create receipt data with all necessary transaction information
+          const receiptData = {
+            cartItems,
+            total,
+            subtotal,
+            voucherDiscount,
+            depositCredit,
+            paymentMethod,
+            cashReceived,
+            transactionId:
+              paymentResult.transactionId ||
+              paymentResult.id ||
+              `TR-${Date.now().toString().slice(-6)}`,
+            date: new Date().toLocaleDateString('de-DE', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          };
+
+          console.log('Printing receipt with data:', JSON.stringify(receiptData));
+          const printResult = await printReceipt(receiptData);
+          console.log('Print result:', printResult);
+
+          showToast({
+            severity: 'success',
+            message: 'Beleg wurde automatisch gedruckt.',
+          });
+        } catch (err) {
+          console.error('Error printing receipt:', err);
+          showToast({
+            severity: 'error',
+            message: `Fehler beim Drucken: ${err.message}`,
+          });
+        }
+
+        setTimeout(() => {
+          fetchProducts();
+          showToast({
+            severity: 'info',
+            message: 'Produktbestände wurden aktualisiert.',
+          });
+        }, 500);
+      } else {
+        console.error('Payment failed or was cancelled:', paymentResult?.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Payment submission error:', error);
+      showToast({
+        severity: 'error',
+        message: `Zahlungsfehler: ${error.message || 'Unbekannter Fehler'}`,
+      });
     }
   }, [
     cartItems,
@@ -343,11 +415,105 @@ const SalesScreen = () => {
     depositCredit,
     showToast,
     fetchProducts,
+    printReceipt,
+    checkPrinterStatus,
+    printerStatusChecked,
   ]);
 
-  const handlePrintReceipt = useCallback(() => {
-    alert('Rechnung wird gedruckt...');
-  }, []);
+  const handleCheckPrinterStatus = useCallback(async () => {
+    try {
+      const isConnected = await checkPrinterStatus();
+      if (isConnected) {
+        showToast({
+          severity: 'success',
+          message: 'Drucker ist verbunden und bereit.',
+        });
+      } else {
+        showToast({
+          severity: 'warning',
+          message: 'Drucker ist nicht verbunden. Bitte überprüfen Sie die Verbindung.',
+        });
+      }
+      return isConnected;
+    } catch (err) {
+      console.error('Error checking printer status:', err);
+      showToast({
+        severity: 'error',
+        message: `Fehler bei der Druckerprüfung: ${err.message}`,
+      });
+      return false;
+    }
+  }, [checkPrinterStatus, showToast]);
+
+  const handlePrintReceipt = useCallback(async () => {
+    try {
+      // Only check status if it hasn't been checked yet
+      if (!printerStatusChecked) {
+        console.log('Printer status not checked yet, checking now...');
+        const isConnected = await checkPrinterStatus();
+        if (!isConnected) {
+          showToast({
+            severity: 'warning',
+            message: 'Drucker ist nicht verbunden. Versuche trotzdem zu drucken...',
+          });
+        } else {
+          console.log('Printer is connected and ready');
+        }
+      } else {
+        console.log(
+          'Printer status already checked:',
+          isPrinterConnected ? 'connected' : 'not connected'
+        );
+      }
+
+      // Use the same format for manual receipt printing
+      const receiptData = {
+        cartItems,
+        total,
+        subtotal,
+        voucherDiscount,
+        depositCredit,
+        paymentMethod,
+        cashReceived,
+        transactionId: `TR-${Date.now().toString().slice(-6)}`,
+        date: new Date().toLocaleDateString('de-DE', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      };
+
+      console.log('Manually printing receipt with data:', JSON.stringify(receiptData));
+      const printResult = await printReceipt(receiptData);
+      console.log('Manual print result:', printResult);
+
+      showToast({
+        severity: 'success',
+        message: 'Beleg wird gedruckt...',
+      });
+    } catch (err) {
+      console.error('Error manually printing receipt:', err);
+      showToast({
+        severity: 'error',
+        message: `Fehler beim Drucken: ${err.message}`,
+      });
+    }
+  }, [
+    cartItems,
+    total,
+    subtotal,
+    voucherDiscount,
+    depositCredit,
+    paymentMethod,
+    cashReceived,
+    printReceipt,
+    showToast,
+    checkPrinterStatus,
+    printerStatusChecked,
+    isPrinterConnected,
+  ]);
 
   const handleNewTransaction = useCallback(() => {
     handleClearCart();
