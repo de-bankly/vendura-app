@@ -10,12 +10,12 @@ import { useState, useEffect, useCallback } from 'react';
  * @param {React.RefObject} options.inputRef Optional ref to input that should receive focus
  * @returns {Object} Barcode state and controls
  */
-export function useBarcode({ 
-  onScan, 
+export function useBarcode({
+  onScan,
   timeout = 100, // Long timeout for detecting consecutive scans
   endCharacter = 'Enter',
   isEnabled = true,
-  inputRef = null
+  inputRef = null,
 }) {
   const [barcode, setBarcode] = useState('');
   const [lastScanTime, setLastScanTime] = useState(0);
@@ -43,12 +43,15 @@ export function useBarcode({
   useEffect(() => {
     if (!isEnabled) return;
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       const currentTime = new Date().getTime();
-      
+
       // Typical barcode scanners send characters very quickly
-      if ((currentTime - lastScanTime > timeout && !isScanning) || 
-          (isScanning && currentTime - lastScanTime > 500)) { // Reset scanning state if too much time passed
+      if (
+        (currentTime - lastScanTime > timeout && !isScanning) ||
+        (isScanning && currentTime - lastScanTime > 500)
+      ) {
+        // Reset scanning state if too much time passed
         // New scan is starting
         setBarcode(event.key);
         setIsScanning(true);
@@ -62,7 +65,7 @@ export function useBarcode({
           setBarcode(prev => prev + event.key);
         }
       }
-      
+
       setLastScanTime(currentTime);
     };
 
@@ -70,11 +73,20 @@ export function useBarcode({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [barcode, isScanning, lastScanTime, timeout, endCharacter, handleScan, resetBarcode, isEnabled]);
+  }, [
+    barcode,
+    isScanning,
+    lastScanTime,
+    timeout,
+    endCharacter,
+    handleScan,
+    resetBarcode,
+    isEnabled,
+  ]);
 
-  return { 
-    barcode, 
-    isScanning, 
-    resetBarcode 
+  return {
+    barcode,
+    isScanning,
+    resetBarcode,
   };
-} 
+}

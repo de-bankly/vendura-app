@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { useBarcode } from '../hooks/useBarcode';
 import { ProductService } from '../services';
+import { useToast } from '../components/ui/feedback/ToastProvider';
 
 const BarcodeContext = createContext();
 
@@ -14,6 +15,7 @@ export const BarcodeProvider = ({ children }) => {
   const [isEnabled, setIsEnabled] = useState(true);
   const [activeField, setActiveField] = useState(null);
   const inputRef = useRef(null);
+  const { showToast } = useToast();
 
   const handleScan = useCallback(async (barcode) => {
     if (isProcessing) return;
@@ -30,19 +32,30 @@ export const BarcodeProvider = ({ children }) => {
       }
       
       // Otherwise look up product by barcode
-      const product = await ProductService.getProductByBarcode(barcode);
-      
-      if (product) {
+      try {
+        const product = await ProductService.getProductById(barcode);
         setScannedProduct(product);
-      } else {
-        setError(`Produkt mit Barcode ${barcode} nicht gefunden.`);
+        
+      } catch (lookupError) {
+        // Always use a specific product not found message for 404 errors
+        const errorMsg = `Produkt nicht gefunden.`;
+        setError(errorMsg);
+        showToast({ 
+          severity: 'error', 
+          message: errorMsg 
+        });
       }
     } catch (err) {
-      setError(`Fehler beim Scannen: ${err.message}`);
+      const errorMsg = `Fehler beim Scannen: ${err.message}`;
+      setError(errorMsg);
+      showToast({ 
+        severity: 'error', 
+        message: errorMsg 
+      });
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, activeField]);
+  }, [isProcessing, activeField, showToast]);
 
   // Barcode hook usage
   const { barcode, isScanning, resetBarcode } = useBarcode({ 

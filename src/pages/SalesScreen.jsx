@@ -75,12 +75,12 @@ const itemVariants = {
 const SalesScreen = () => {
   const theme = useTheme();
   const { showToast } = useToast();
-  const { 
-    scannedProduct, 
-    error: scanError, 
-    resetScan, 
-    enableScanner, 
-    isEnabled: isScannerEnabled 
+  const {
+    scannedProduct,
+    error: scanError,
+    resetScan,
+    enableScanner,
+    isEnabled: isScannerEnabled,
   } = useBarcodeScan();
 
   // --- State Declarations ---
@@ -402,7 +402,7 @@ const SalesScreen = () => {
   useEffect(() => {
     // Enable scanner when component mounts
     enableScanner();
-    
+
     // No need to disable the scanner when the component unmounts,
     // as it might be used by other components
   }, [enableScanner]);
@@ -412,13 +412,13 @@ const SalesScreen = () => {
     if (scannedProduct) {
       // Use the existing addToCart function to handle the scanned product
       addToCart(scannedProduct);
-      
+
       // Show success toast
       showToast({
         message: `${scannedProduct.name} wurde hinzugefügt`,
-        type: 'success'
+        type: 'success',
       });
-      
+
       // Reset scan to prepare for next one
       resetScan();
     }
@@ -429,7 +429,7 @@ const SalesScreen = () => {
     if (scanError) {
       showToast({
         message: scanError,
-        type: 'error'
+        type: 'error',
       });
     }
   }, [scanError, showToast]);
@@ -753,7 +753,7 @@ const SalesScreen = () => {
             <Typography variant="body1" gutterBottom>
               Scannen Sie ein Produkt mit dem Barcodescanner oder geben Sie den Barcode manuell ein.
             </Typography>
-            
+
             {isScannerEnabled ? (
               <Alert severity="info" sx={{ mt: 2 }}>
                 Scanner ist aktiv. Produkte werden automatisch zum Warenkorb hinzugefügt.
