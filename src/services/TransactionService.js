@@ -26,9 +26,6 @@ class TransactionService {
 
     // Load cache from localStorage on service initialization
     this.loadCacheFromStorage();
-
-    // Invalidiere den Cache einmalig, um die neue Sortierparameter zu erzwingen
-    this.invalidateCache();
   }
 
   /**
@@ -39,18 +36,25 @@ class TransactionService {
       // Erstelle eine Kopie des Cache-Objekts ohne zirkuläre Referenzen
       const cacheToSave = {
         latestSales: this.cache.latestSales,
-        // Nur die IDs und Timestamps speichern, nicht alle Daten für saleDetails
+        // Speichere auch die Daten für saleDetails, nicht nur die Timestamps
         saleDetails: Object.fromEntries(
           Object.entries(this.cache.saleDetails).map(([id, entry]) => [
             id,
-            { timestamp: entry.timestamp },
+            {
+              data: entry.data,
+              timestamp: entry.timestamp,
+            },
           ])
         ),
-        // Nur die IDs und Timestamps speichern, nicht alle Daten für productTransactions
+        // Speichere auch die Daten für productTransactions, nicht nur die Timestamps
         productTransactions: Object.fromEntries(
           Object.entries(this.cache.productTransactions).map(([id, entry]) => [
             id,
-            { timestamp: entry.timestamp, params: entry.params },
+            {
+              data: entry.data,
+              timestamp: entry.timestamp,
+              params: entry.params,
+            },
           ])
         ),
       };
@@ -85,14 +89,34 @@ class TransactionService {
           console.log('Cached latestSales data loaded from localStorage');
         }
 
-        // Für die anderen Cache-Typen nur die Metadaten importieren
-        // Die tatsächlichen Daten werden bei Bedarf nachgeladen
+        // Lade die vollständigen saleDetails-Daten inklusive der eigentlichen Daten
         if (parsedCache.saleDetails) {
-          this.cache.saleDetails = parsedCache.saleDetails;
+          // Für jedes saleDetail prüfen, ob es noch gültig ist und Daten hat
+          const validSaleDetails = {};
+
+          Object.entries(parsedCache.saleDetails).forEach(([id, entry]) => {
+            if (entry.timestamp && entry.data && this.isCacheValid(entry)) {
+              validSaleDetails[id] = entry;
+              console.log(`Cached sale detail data loaded for ID ${id}`);
+            }
+          });
+
+          this.cache.saleDetails = validSaleDetails;
         }
 
+        // Lade die vollständigen productTransactions-Daten inklusive der eigentlichen Daten
         if (parsedCache.productTransactions) {
-          this.cache.productTransactions = parsedCache.productTransactions;
+          // Für jede productTransaction prüfen, ob sie noch gültig ist und Daten hat
+          const validProductTransactions = {};
+
+          Object.entries(parsedCache.productTransactions).forEach(([id, entry]) => {
+            if (entry.timestamp && entry.data && this.isCacheValid(entry)) {
+              validProductTransactions[id] = entry;
+              console.log(`Cached product transaction data loaded for ID ${id}`);
+            }
+          });
+
+          this.cache.productTransactions = validProductTransactions;
         }
       }
     } catch (error) {
