@@ -147,18 +147,20 @@ const SalesScreen = () => {
   }, [cartItems, cartService]);
 
   useEffect(() => {
-    const calculatedDiscount = calculateVoucherDiscount(subtotal, appliedVouchers);
+    const afterProductDiscountTotal = subtotal - productDiscount;
+
+    const calculatedDiscount = calculateVoucherDiscount(afterProductDiscountTotal, appliedVouchers);
     setVoucherDiscount(calculatedDiscount);
 
-    const afterDiscountTotal = subtotal - calculatedDiscount;
+    const afterDiscountTotal = afterProductDiscountTotal - calculatedDiscount;
     const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
     setGiftCardPayment(calculatedGiftCardPayment);
-  }, [subtotal, appliedVouchers]);
+  }, [subtotal, productDiscount, appliedVouchers]);
 
   const total = useMemo(() => {
-    const calculatedTotal = subtotal - voucherDiscount - depositCredit - giftCardPayment;
+    const calculatedTotal = subtotal - depositCredit - giftCardPayment - voucherDiscount;
     return calculatedTotal > 0 ? calculatedTotal : 0;
-  }, [subtotal, voucherDiscount, depositCredit, giftCardPayment]);
+  }, [subtotal, depositCredit, giftCardPayment, voucherDiscount]);
 
   const change = useMemo(() => {
     if (paymentMethod !== 'cash' || !cashReceived) return 0;
@@ -323,6 +325,7 @@ const SalesScreen = () => {
         voucherDiscount,
         appliedDeposits,
         depositCredit,
+        productDiscount,
         showToast,
         setReceiptReady,
         setPaymentModalOpen,
@@ -353,9 +356,11 @@ const SalesScreen = () => {
             total,
             subtotal,
             voucherDiscount,
+            giftCardPayment,
             depositCredit,
             paymentMethod,
             cashReceived,
+            productDiscount,
             transactionId:
               paymentResult.transactionId ||
               paymentResult.id ||
@@ -411,8 +416,10 @@ const SalesScreen = () => {
     cardDetails,
     appliedVouchers,
     voucherDiscount,
+    giftCardPayment,
     appliedDeposits,
     depositCredit,
+    productDiscount,
     showToast,
     fetchProducts,
     printReceipt,
@@ -472,9 +479,11 @@ const SalesScreen = () => {
         total,
         subtotal,
         voucherDiscount,
+        giftCardPayment,
         depositCredit,
         paymentMethod,
         cashReceived,
+        productDiscount,
         transactionId: `TR-${Date.now().toString().slice(-6)}`,
         date: new Date().toLocaleDateString('de-DE', {
           day: '2-digit',
@@ -505,9 +514,11 @@ const SalesScreen = () => {
     total,
     subtotal,
     voucherDiscount,
+    giftCardPayment,
     depositCredit,
     paymentMethod,
     cashReceived,
+    productDiscount,
     printReceipt,
     showToast,
     checkPrinterStatus,

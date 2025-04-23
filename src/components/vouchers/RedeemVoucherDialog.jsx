@@ -77,9 +77,11 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
           return;
         }
       } else if (voucherData.type === 'DISCOUNT_CARD') {
-        setError('Rabattgutscheine können hier nicht eingelöst werden');
-        setLoading(false);
-        return;
+        if (!voucherData.remainingUsages || voucherData.remainingUsages <= 0) {
+          setError('Dieser Rabattgutschein hat keine Nutzungen mehr übrig');
+          setLoading(false);
+          return;
+        }
       }
 
       // Check expiration
@@ -99,6 +101,13 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
           : 'Keine Ablaufzeit',
         type: voucherData.type,
       };
+
+      // Add discount card specific properties
+      if (voucherData.type === 'DISCOUNT_CARD') {
+        voucher.discountPercentage = voucherData.discountPercentage || 0;
+        voucher.remainingUsages = voucherData.remainingUsages || 0;
+        voucher.maximumUsages = voucherData.maximumUsages || 0;
+      }
 
       setValidatedVoucher(voucher);
 
@@ -159,26 +168,46 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
     setError(null);
 
     try {
-      // Apply the gift card payment using GiftCardService
-      const paymentInfo = GiftCardService.applyGiftCardPayment(
-        voucherCode,
-        redemptionAmount,
-        cartTotal || redemptionAmount
-      );
+      let redeemedVoucher;
 
-      // Format the redeemed voucher data
-      const redeemedVoucher = {
-        ...validatedVoucher,
-        id: voucherCode,
-        redeemedAmount: redemptionAmount,
-        type: 'GIFT_CARD',
-        // Add amount property explicitly for price calculation
-        amount: redemptionAmount, // This is the key property needed for cart calculations
-        value: redemptionAmount, // Keep this for backward compatibility
-      };
+      if (validatedVoucher.type === 'GIFT_CARD') {
+        // Apply the gift card payment using GiftCardService
+        const paymentInfo = GiftCardService.applyGiftCardPayment(
+          voucherCode,
+          redemptionAmount,
+          cartTotal || redemptionAmount
+        );
+
+        // Format the redeemed voucher data
+        redeemedVoucher = {
+          ...validatedVoucher,
+          id: voucherCode,
+          redeemedAmount: redemptionAmount,
+          type: 'GIFT_CARD',
+          // Add amount property explicitly for price calculation
+          amount: redemptionAmount, // This is the key property needed for cart calculations
+          value: redemptionAmount, // Keep this for backward compatibility
+        };
+      } else if (validatedVoucher.type === 'DISCOUNT_CARD') {
+        // Apply discount card
+        const discountInfo = GiftCardService.applyDiscountCard(
+          voucherCode,
+          validatedVoucher.discountPercentage || 0,
+          cartTotal
+        );
+
+        // Format the redeemed discount voucher
+        redeemedVoucher = {
+          ...validatedVoucher,
+          id: voucherCode,
+          type: 'DISCOUNT_CARD',
+          discountPercentage: validatedVoucher.discountPercentage || 0,
+          remainingUsages: (validatedVoucher.remainingUsages || 1) - 1,
+        };
+      }
 
       setRedeemed(true);
-      if (onVoucherRedeemed) {
+      if (onVoucherRedeemed && redeemedVoucher) {
         // Pass the voucher with the actual redeemed amount
         onVoucherRedeemed(redeemedVoucher);
       }
@@ -462,113 +491,132 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
                     Einzulösender Betrag:
                   </Typography>
 
-                  <Box
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      borderRadius: 2,
-                      bgcolor: alpha(theme.palette.background.default, 0.6),
-                      border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <TextField
-                        value={redemptionAmount.toFixed(2)}
-                        onChange={handleManualAmountInput}
-                        variant="outlined"
-                        type="number"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <EuroIcon fontSize="small" />
-                            </InputAdornment>
-                          ),
-                          inputProps: {
-                            min: 0,
-                            max:
-                              cartTotal > 0
-                                ? Math.min(validatedVoucher.remainingValue, cartTotal)
-                                : validatedVoucher.remainingValue,
-                            step: 0.01,
-                          },
-                          sx: {
-                            borderRadius: 1.5,
-                          },
-                        }}
+                  {validatedVoucher.type === 'GIFT_CARD' ? (
+                    <>
+                      <Box
                         sx={{
-                          width: '160px',
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                          },
-                        }}
-                      />
-                      <Button
-                        variant={useFullAmount ? 'contained' : 'outlined'}
-                        color="primary"
-                        onClick={handleUseFullAmountToggle}
-                        sx={{
+                          p: 2,
+                          mb: 2,
                           borderRadius: 2,
-                          boxShadow: useFullAmount ? 2 : 0,
+                          bgcolor: alpha(theme.palette.background.default, 0.6),
+                          border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
                         }}
                       >
-                        Gesamtes Guthaben
-                      </Button>
-                    </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                          <TextField
+                            value={redemptionAmount.toFixed(2)}
+                            onChange={handleManualAmountInput}
+                            variant="outlined"
+                            type="number"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <EuroIcon fontSize="small" />
+                                </InputAdornment>
+                              ),
+                              inputProps: {
+                                min: 0,
+                                max: Math.min(
+                                  validatedVoucher.remainingValue,
+                                  cartTotal || validatedVoucher.remainingValue
+                                ),
+                                step: 0.01,
+                              },
+                              sx: {
+                                borderRadius: 1.5,
+                              },
+                            }}
+                            sx={{
+                              width: '160px',
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              },
+                            }}
+                          />
+                          <Button
+                            variant={useFullAmount ? 'contained' : 'outlined'}
+                            color="primary"
+                            onClick={handleUseFullAmountToggle}
+                            sx={{
+                              borderRadius: 2,
+                              boxShadow: useFullAmount ? 2 : 0,
+                            }}
+                          >
+                            Gesamtes Guthaben
+                          </Button>
+                        </Box>
 
-                    <Slider
-                      value={redemptionAmount}
-                      onChange={handleRedemptionAmountChange}
-                      min={0}
-                      max={
-                        cartTotal > 0
-                          ? Math.min(validatedVoucher.remainingValue, cartTotal)
-                          : validatedVoucher.remainingValue
-                      }
-                      step={0.01}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={value => `${value.toFixed(2)} €`}
-                      marks={[
-                        { value: 0, label: '0 €' },
-                        {
-                          value:
+                        <Slider
+                          value={redemptionAmount}
+                          onChange={handleRedemptionAmountChange}
+                          min={0}
+                          max={
                             cartTotal > 0
                               ? Math.min(validatedVoucher.remainingValue, cartTotal)
-                              : validatedVoucher.remainingValue,
-                          label: `${(cartTotal > 0 ? Math.min(validatedVoucher.remainingValue, cartTotal) : validatedVoucher.remainingValue).toFixed(2)} €`,
-                        },
-                      ]}
-                      sx={{
-                        color: theme.palette.primary.main,
-                        '& .MuiSlider-thumb': {
-                          height: 20,
-                          width: 20,
-                        },
-                        '& .MuiSlider-valueLabel': {
-                          backgroundColor: theme.palette.primary.main,
-                        },
-                      }}
-                    />
-                  </Box>
-
-                  {cartTotal > 0 && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.info.main, 0.08),
-                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        Aktueller Warenkorb:
+                              : validatedVoucher.remainingValue
+                          }
+                          step={0.01}
+                          valueLabelDisplay="auto"
+                          valueLabelFormat={value => `${value.toFixed(2)} €`}
+                          marks={[
+                            { value: 0, label: '0 €' },
+                            {
+                              value:
+                                cartTotal > 0
+                                  ? Math.min(validatedVoucher.remainingValue, cartTotal)
+                                  : validatedVoucher.remainingValue,
+                              label: `${(cartTotal > 0 ? Math.min(validatedVoucher.remainingValue, cartTotal) : validatedVoucher.remainingValue).toFixed(2)} €`,
+                            },
+                          ]}
+                          sx={{
+                            color: theme.palette.primary.main,
+                            '& .MuiSlider-thumb': {
+                              height: 20,
+                              width: 20,
+                            },
+                            '& .MuiSlider-valueLabel': {
+                              backgroundColor: theme.palette.primary.main,
+                            },
+                          }}
+                        />
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Rabatt:</strong> {validatedVoucher.discountPercentage}%
                       </Typography>
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        {cartTotal.toFixed(2)} €
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Verbleibende Nutzungen:</strong> {validatedVoucher.remainingUsages}
                       </Typography>
-                    </Box>
+                      {cartTotal > 0 && (
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 2,
+                            bgcolor: alpha(theme.palette.success.main, 0.1),
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Typography variant="body2" gutterBottom>
+                            <strong>Warenkorb:</strong> {cartTotal.toFixed(2)} €
+                          </Typography>
+                          <Typography variant="body2" gutterBottom>
+                            <strong>Rabatt:</strong>{' '}
+                            {((cartTotal * validatedVoucher.discountPercentage) / 100).toFixed(2)} €
+                          </Typography>
+                          <Divider sx={{ my: 1 }} />
+                          <Typography variant="body1" fontWeight="bold" color="success.main">
+                            <strong>Neuer Preis:</strong>{' '}
+                            {(
+                              cartTotal -
+                              (cartTotal * validatedVoucher.discountPercentage) / 100
+                            ).toFixed(2)}{' '}
+                            €
+                          </Typography>
+                        </Box>
+                      )}
+                    </>
                   )}
                 </Box>
               </Paper>
@@ -600,25 +648,30 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
 
         {validatedVoucher && !redeemed && (
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Button
-              onClick={handleRedeemVoucher}
-              variant="contained"
-              color="primary"
-              startIcon={<CheckCircleIcon />}
-              disabled={loading || redemptionAmount <= 0}
-              sx={{
-                px: 3,
-                py: 1.2,
-                borderRadius: 2,
-                boxShadow: 3,
-                minWidth: 200,
-                '&:hover': {
-                  boxShadow: 5,
-                },
-              }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Gutschein einlösen'}
-            </Button>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleRedeemVoucher}
+                fullWidth
+                disabled={
+                  !validatedVoucher ||
+                  (validatedVoucher.type === 'GIFT_CARD' && redemptionAmount <= 0)
+                }
+                sx={{
+                  py: 1.2,
+                  mt: 2,
+                  borderRadius: 2,
+                  boxShadow: 2,
+                }}
+              >
+                {validatedVoucher?.type === 'DISCOUNT_CARD'
+                  ? `${validatedVoucher.discountPercentage}% Rabatt anwenden`
+                  : `${redemptionAmount.toFixed(2)} € Gutschein einlösen`}
+              </Button>
+            )}
           </motion.div>
         )}
       </DialogActions>

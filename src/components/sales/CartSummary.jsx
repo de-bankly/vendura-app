@@ -2,6 +2,7 @@ import { Box, Divider, Stack, Typography, alpha, useTheme, Paper } from '@mui/ma
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import DiscountIcon from '@mui/icons-material/Discount';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
@@ -21,7 +22,8 @@ const CartSummary = ({
   const originalTotal = subtotal + productDiscount;
 
   // Determine if we have any discounts at all
-  const hasAnyDiscount = voucherDiscount > 0 || productDiscount > 0;
+  const hasAnyDiscount =
+    voucherDiscount > 0 || productDiscount > 0 || depositCredit > 0 || giftCardPayment > 0;
 
   // Calculate total savings
   const totalSavings = productDiscount + voucherDiscount + depositCredit + giftCardPayment;
@@ -84,19 +86,11 @@ const CartSummary = ({
           <SummaryItem label="Zwischensumme" value={subtotal} bold={hasAnyDiscount} />
         )}
 
-        <SummaryItem
-          label="Gutschein-Rabatt"
-          value={-voucherDiscount}
-          color="error.main"
-          icon={DiscountIcon}
-          hideZero
-          bold
-        />
-
+        {/* Display in the correct order: 1. deposit, 2. giftcard amounts, 3. giftcard discount, 4. cash */}
         <SummaryItem
           label="Pfand-Guthaben"
           value={-depositCredit}
-          color={Math.abs(depositCredit - total) < 0.01 ? 'success.main' : 'error.main'}
+          color={depositCredit > 0 ? 'error.main' : 'text.primary'}
           icon={ReceiptIcon}
           hideZero
           bold
@@ -105,6 +99,15 @@ const CartSummary = ({
         <SummaryItem
           label="Gutschein-Zahlung"
           value={-giftCardPayment}
+          color="error.main"
+          icon={CreditCardIcon}
+          hideZero
+          bold
+        />
+
+        <SummaryItem
+          label="Gutschein-Rabatt"
+          value={-voucherDiscount}
           color="error.main"
           icon={DiscountIcon}
           hideZero

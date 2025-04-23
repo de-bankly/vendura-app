@@ -17,16 +17,16 @@ export const calculateVoucherDiscount = (subtotal, vouchers) => {
   const discountPercentage = parseFloat(discountVoucher.discountPercentage) || 0;
 
   // Calculate the actual discount amount, ensuring it's a valid number
-  return subtotal * (discountPercentage / 100);
+  return Math.round(subtotal * (discountPercentage / 100) * 100) / 100;
 };
 
 /**
  * Calculates the gift card payment amount
- * @param {number} afterDiscountTotal - The total after discounts
+ * @param {number} afterProductDiscountTotal - The total after product-specific discounts
  * @param {Array} vouchers - Array of voucher objects
  * @returns {number} The gift card payment amount
  */
-export const calculateGiftCardPayment = (afterDiscountTotal, vouchers) => {
+export const calculateGiftCardPayment = (afterProductDiscountTotal, vouchers) => {
   if (!vouchers || vouchers.length === 0) return 0;
 
   // Get gift card vouchers
@@ -44,6 +44,6 @@ export const calculateGiftCardPayment = (afterDiscountTotal, vouchers) => {
     }
   }
 
-  // Make sure the total doesn't exceed the amount due
-  return Math.min(totalGiftCardPayment, afterDiscountTotal);
+  // Make sure the total doesn't exceed the amount due and round to 2 decimal places
+  return Math.round(Math.min(totalGiftCardPayment, afterProductDiscountTotal) * 100) / 100;
 };
