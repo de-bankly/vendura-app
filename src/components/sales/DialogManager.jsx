@@ -1,7 +1,7 @@
 import React from 'react';
 import { Slide, Snackbar, Alert } from '@mui/material';
 import { PaymentDialog } from './index';
-import { RedeemVoucherDialog, VoucherManagementDialog } from '../vouchers';
+import { RedeemVoucherDialog } from '../vouchers';
 import { RedeemDepositDialog } from '../deposit';
 
 // Transition for dialog
@@ -37,10 +37,6 @@ const DialogManager = ({
   redeemVoucherDialogOpen,
   onRedeemVoucherDialogClose,
   onVoucherRedeemed,
-
-  // Voucher management dialog props
-  voucherManagementDialogOpen,
-  onVoucherManagementDialogClose,
 
   // Deposit dialog props
   redeemDepositDialogOpen,
@@ -108,12 +104,6 @@ const DialogManager = ({
         onClose={onRedeemDepositDialogClose}
         onDepositRedeemed={onDepositRedeemed}
         appliedDepositIds={appliedDepositIds}
-      />
-
-      {/* Voucher Management Dialog */}
-      <VoucherManagementDialog
-        open={voucherManagementDialogOpen}
-        onClose={onVoucherManagementDialogClose}
       />
     </>
   );

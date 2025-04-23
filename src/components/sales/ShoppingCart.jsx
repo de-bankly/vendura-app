@@ -51,7 +51,6 @@ const ShoppingCart = ({
   onNewTransaction,
   onRemoveVoucher,
   onRedeemVoucher,
-  onManageVouchers,
   onRedeemDeposit,
   onUndoCartState,
   onRedoCartState,

@@ -28,8 +28,7 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
-
-import { validateVoucher, redeemVoucher } from '../../utils/voucherUtils';
+import GiftCardService from '../../services/GiftCardService';
 
 /**
  * Dialog component for redeeming vouchers
@@ -57,11 +56,50 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
       return;
     }
 
+    // Format validation
+    if (!GiftCardService.validateGiftCardFormat(voucherCode)) {
+      setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 16-19 Ziffern');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const voucher = await validateVoucher(voucherCode);
+      // Get voucher details using GiftCardService
+      const voucherData = await GiftCardService.getTransactionalInformation(voucherCode);
+
+      // Additional validations
+      if (voucherData.type === 'GIFT_CARD') {
+        if (!voucherData.remainingBalance || voucherData.remainingBalance <= 0) {
+          setError('Dieser Gutschein hat kein Guthaben mehr');
+          setLoading(false);
+          return;
+        }
+      } else if (voucherData.type === 'DISCOUNT_CARD') {
+        setError('Rabattgutscheine können hier nicht eingelöst werden');
+        setLoading(false);
+        return;
+      }
+
+      // Check expiration
+      if (voucherData.expirationDate && new Date(voucherData.expirationDate) < new Date()) {
+        setError('Dieser Gutschein ist abgelaufen');
+        setLoading(false);
+        return;
+      }
+
+      // Format the voucher data to match component expectations
+      const voucher = {
+        code: voucherCode,
+        value: voucherData.initialBalance || 0,
+        remainingValue: voucherData.remainingBalance || 0,
+        expiresAt: voucherData.expirationDate
+          ? new Date(voucherData.expirationDate).toLocaleDateString('de-DE')
+          : 'Keine Ablaufzeit',
+        type: voucherData.type,
+      };
+
       setValidatedVoucher(voucher);
 
       // Set initial redemption amount based on cart total or voucher value
@@ -74,7 +112,7 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
         setUseFullAmount(true);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Fehler bei der Validierung des Gutscheins');
       setValidatedVoucher(null);
     } finally {
       setLoading(false);
@@ -94,16 +132,24 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
       return;
     }
     setUseFullAmount(true);
-    setRedemptionAmount(validatedVoucher?.remainingValue || 0);
+    const maxAmount =
+      cartTotal > 0
+        ? Math.min(validatedVoucher?.remainingValue || 0, cartTotal)
+        : validatedVoucher?.remainingValue || 0;
+    setRedemptionAmount(maxAmount);
   };
 
   // Handle manual amount input
   const handleManualAmountInput = event => {
     const value = parseFloat(event.target.value);
     if (!isNaN(value) && value >= 0) {
-      const cappedValue = Math.min(value, validatedVoucher?.remainingValue || 0);
+      const maxAmount =
+        cartTotal > 0
+          ? Math.min(validatedVoucher?.remainingValue || 0, cartTotal)
+          : validatedVoucher?.remainingValue || 0;
+      const cappedValue = Math.min(value, maxAmount);
       setRedemptionAmount(cappedValue);
-      setUseFullAmount(cappedValue === validatedVoucher?.remainingValue);
+      setUseFullAmount(cappedValue === maxAmount);
     }
   };
 
@@ -113,17 +159,31 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
     setError(null);
 
     try {
-      const redeemedVoucher = await redeemVoucher(voucherCode, redemptionAmount);
+      // Apply the gift card payment using GiftCardService
+      const paymentInfo = GiftCardService.applyGiftCardPayment(
+        voucherCode,
+        redemptionAmount,
+        cartTotal || redemptionAmount
+      );
+
+      // Format the redeemed voucher data
+      const redeemedVoucher = {
+        ...validatedVoucher,
+        id: voucherCode,
+        redeemedAmount: redemptionAmount,
+        type: 'GIFT_CARD',
+        // Add amount property explicitly for price calculation
+        amount: redemptionAmount, // This is the key property needed for cart calculations
+        value: redemptionAmount, // Keep this for backward compatibility
+      };
+
       setRedeemed(true);
       if (onVoucherRedeemed) {
         // Pass the voucher with the actual redeemed amount
-        onVoucherRedeemed({
-          ...redeemedVoucher,
-          value: redeemedVoucher.redeemedAmount, // Use the redeemed amount as the value for discount calculation
-        });
+        onVoucherRedeemed(redeemedVoucher);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Fehler beim Einlösen des Gutscheins');
     } finally {
       setLoading(false);
     }
@@ -425,7 +485,10 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
                           ),
                           inputProps: {
                             min: 0,
-                            max: validatedVoucher.remainingValue,
+                            max:
+                              cartTotal > 0
+                                ? Math.min(validatedVoucher.remainingValue, cartTotal)
+                                : validatedVoucher.remainingValue,
                             step: 0.01,
                           },
                           sx: {
@@ -456,15 +519,22 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
                       value={redemptionAmount}
                       onChange={handleRedemptionAmountChange}
                       min={0}
-                      max={validatedVoucher.remainingValue}
+                      max={
+                        cartTotal > 0
+                          ? Math.min(validatedVoucher.remainingValue, cartTotal)
+                          : validatedVoucher.remainingValue
+                      }
                       step={0.01}
                       valueLabelDisplay="auto"
                       valueLabelFormat={value => `${value.toFixed(2)} €`}
                       marks={[
                         { value: 0, label: '0 €' },
                         {
-                          value: validatedVoucher.remainingValue,
-                          label: `${validatedVoucher.remainingValue.toFixed(2)} €`,
+                          value:
+                            cartTotal > 0
+                              ? Math.min(validatedVoucher.remainingValue, cartTotal)
+                              : validatedVoucher.remainingValue,
+                          label: `${(cartTotal > 0 ? Math.min(validatedVoucher.remainingValue, cartTotal) : validatedVoucher.remainingValue).toFixed(2)} €`,
                         },
                       ]}
                       sx={{
