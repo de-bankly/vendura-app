@@ -48,7 +48,7 @@ const ProductForm = ({
     category: null,
     brand: null,
     supplier: null,
-    standalone: true,
+    standalone: false,
     connectedProducts: [],
   },
   mode = 'create',
@@ -62,7 +62,7 @@ const ProductForm = ({
     category: initialData?.category || '',
     brand: initialData?.brand || '',
     supplier: initialData?.supplier || '',
-    standalone: initialData?.standalone !== false, // Default to true unless explicitly set to false
+    standalone: initialData?.standalone || false,
     connectedProducts: initialData?.connectedProducts || [],
   });
 
@@ -102,7 +102,7 @@ const ProductForm = ({
         category: initialData?.category || '',
         brand: initialData?.brand || '',
         supplier: initialData?.supplier || '',
-        standalone: initialData?.standalone !== false, // Default to true unless explicitly set to false
+        standalone: initialData?.standalone || false,
         connectedProducts: initialData?.connectedProducts || [],
       });
 
@@ -344,6 +344,11 @@ const ProductForm = ({
       defaultSupplier: formData.supplier, // Backend expects 'defaultSupplier', not 'supplier'
     };
 
+    // Convert empty ID string to null
+    if (submitData.id === '') {
+      submitData.id = null;
+    }
+
     // Only add price history for new products or when price changed in edit mode
     if (
       mode === 'create' ||
@@ -389,7 +394,7 @@ const ProductForm = ({
               {mode === 'create' && (
                 <TextField
                   name="id"
-                  label="ID (optional)"
+                  label="ID / EAN Barcode (optional)"
                   fullWidth
                   variant="outlined"
                   value={formData.id}
@@ -426,7 +431,6 @@ const ProductForm = ({
                 <Grid item xs={10}>
                   <Select
                     name="category"
-                    label="Kategorie"
                     value={formData.category}
                     onChange={handleSelectChange}
                     options={formatCategoryOptions()}
@@ -449,7 +453,6 @@ const ProductForm = ({
                 <Grid item xs={10}>
                   <Select
                     name="brand"
-                    label="Marke"
                     value={formData.brand}
                     onChange={handleSelectChange}
                     options={formatBrandOptions()}
@@ -472,7 +475,6 @@ const ProductForm = ({
                 <Grid item xs={10}>
                   <Select
                     name="supplier"
-                    label="Lieferant"
                     value={formData.supplier}
                     onChange={handleSelectChange}
                     options={formatSupplierOptions()}
@@ -504,7 +506,7 @@ const ProductForm = ({
                     color="primary"
                   />
                 }
-                label="Dieses Produkt kann einzeln verkauft werden"
+                label="Standalone Produkt (Lagerbestand wird bei Verkauf nicht verändert)"
               />
 
               {/* Connected Products Dropdown */}
@@ -516,7 +518,6 @@ const ProductForm = ({
                   </Typography>
                   <Select
                     name="connectedProduct"
-                    label="Verbundenes Produkt hinzufügen"
                     onChange={e => handleConnectedProductSelect(e.target.value)}
                     options={formatProductOptions()}
                     placeholder="Produkt auswählen"
