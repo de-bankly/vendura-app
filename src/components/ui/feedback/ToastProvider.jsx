@@ -1,10 +1,10 @@
 import { useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import Toast from './Toast';
 
-// Create context for toast notifications
 const ToastContext = createContext({
   showToast: () => {},
   hideToast: () => {},
@@ -29,21 +29,16 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
   const [toasts, setToasts] = useState([]);
   const theme = useTheme();
 
-  // Generate a unique ID for each toast
   const generateId = useCallback(() => {
     return `toast-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   }, []);
 
-  // Show a new toast notification
   const showToast = useCallback(
     options => {
       const id = options.id || generateId();
-      // Set default autoHideDuration to 5000ms if not provided
       const autoHideDuration = options.autoHideDuration || 5000;
 
-      // Add new toast to the list
       setToasts(prevToasts => {
-        // If we've reached the maximum number of toasts, remove the oldest one
         const updatedToasts = [...prevToasts];
         if (updatedToasts.length >= maxToasts) {
           updatedToasts.shift();
@@ -66,7 +61,6 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
         ];
       });
 
-      // Set a timer to automatically hide the toast after autoHideDuration
       setTimeout(() => {
         hideToast(id);
       }, autoHideDuration);
@@ -76,42 +70,35 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
     [generateId, maxToasts]
   );
 
-  // Function to remove toast from state after exit animation
   const removeToast = useCallback(id => {
     setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
   }, []);
 
-  // Hide a toast notification (triggers exit animation)
   const hideToast = useCallback(id => {
     setToasts(prevToasts =>
       prevToasts.map(toast => (toast.id === id ? { ...toast, open: false } : toast))
     );
   }, []);
 
-  // Handle toast close event (triggered by Snackbar onClose)
   const handleClose = useCallback(
     id => (event, reason) => {
       if (reason === 'clickaway') {
         return;
       }
-      hideToast(id); // Start hiding animation
+      hideToast(id);
     },
     [hideToast]
   );
 
-  // Clean up any "hanging" toasts (if they've been visible for more than 10 seconds)
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
 
       setToasts(prevToasts => {
-        // Check for toasts that might be "stuck"
         const updatedToasts = prevToasts.map(toast => {
-          // Extract time from ID to determine when it was created
           const idParts = toast.id.split('-');
           if (idParts.length >= 2) {
             const creationTime = parseInt(idParts[1], 10);
-            // If a toast has been visible for more than 15 seconds, close it
             if (now - creationTime > 15000 && toast.open) {
               return { ...toast, open: false };
             }
@@ -126,59 +113,106 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
     return () => clearInterval(cleanupInterval);
   }, []);
 
-  // Context value
   const contextValue = {
     showToast,
     hideToast,
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const toastVariants = {
+    initial: {
+      x: -100,
+      opacity: 0,
+    },
+    animate: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 },
+      },
+    },
+    exit: {
+      x: -100,
+      opacity: 0,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 },
+      },
+    },
   };
 
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
 
-      {/* Render all active toasts */}
-      {toasts.map((toast, index) => {
-        // Calculate stacking position and bottom offset for multiple toasts
-        const stackIndex = toasts.length - index;
-        // Calculate how far from the bottom each toast should be positioned
-        const bottomPosition = index * 80; // Each toast roughly takes 80px of space
-
-        return (
-          <Toast
-            key={toast.id}
-            open={toast.open}
-            onClose={handleClose(toast.id)}
-            message={toast.message}
-            severity={toast.severity}
-            title={toast.title}
-            autoHideDuration={toast.autoHideDuration}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: toast.anchorOrigin?.horizontal || 'left',
-            }}
-            action={toast.action}
-            variant={toast.variant}
-            TransitionProps={{
-              onExited: () => removeToast(toast.id),
-              style: { zIndex: 2000 + stackIndex },
-            }}
-            sx={{
-              minWidth: '280px',
-              maxWidth: '400px',
-              bottom: theme.spacing(3 + bottomPosition / 8), // Convert to theme spacing units
-              ...toast.sx,
-            }}
-          />
-        );
-      })}
+      <motion.div
+        style={{
+          position: 'fixed',
+          bottom: theme.spacing(3),
+          left: theme.spacing(3),
+          zIndex: 2000,
+          display: 'flex',
+          flexDirection: 'column-reverse',
+          alignItems: 'flex-start',
+          gap: theme.spacing(2),
+          pointerEvents: 'none',
+        }}
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <AnimatePresence mode="popLayout">
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              layout
+              initial="initial"
+              animate={toast.open ? 'animate' : 'exit'}
+              exit="exit"
+              variants={toastVariants}
+              style={{
+                pointerEvents: 'auto',
+                width: '100%',
+              }}
+              onAnimationComplete={definition => {
+                if (definition === 'exit') {
+                  removeToast(toast.id);
+                }
+              }}
+            >
+              <Toast
+                open={true}
+                onClose={handleClose(toast.id)}
+                message={toast.message}
+                severity={toast.severity}
+                title={toast.title}
+                autoHideDuration={toast.autoHideDuration}
+                action={toast.action}
+                variant={toast.variant}
+                sx={{
+                  position: 'static',
+                  width: { xs: 'calc(100vw - 32px)', sm: '320px' },
+                  ...toast.sx,
+                }}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
     </ToastContext.Provider>
   );
 };
 
 ToastProvider.propTypes = {
-  /** The children to render */
   children: PropTypes.node.isRequired,
-  /** The maximum number of toasts to show at once */
   maxToasts: PropTypes.number,
 };
 

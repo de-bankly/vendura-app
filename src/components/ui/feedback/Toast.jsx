@@ -31,7 +31,6 @@ const Toast = ({
     }
   };
 
-  // Get severity-based color from theme
   const getSeverityColor = () => {
     switch (severity) {
       case 'success':
@@ -55,7 +54,8 @@ const Toast = ({
       onClose={handleClose}
       anchorOrigin={anchorOrigin}
       sx={{
-        // Position is controlled by the ToastProvider
+        width: { xs: 'calc(100% - 32px)', sm: '320px' },
+        maxWidth: '100%',
         left: { xs: '16px', sm: '24px' },
         right: 'auto',
         ...sx,
@@ -68,18 +68,19 @@ const Toast = ({
       {...props}
     >
       <Paper
-        elevation={3}
+        elevation={6}
         sx={{
+          width: '100%',
           overflow: 'hidden',
           borderRadius: theme.shape.borderRadius * 1.5,
-          backgroundColor: theme.palette.background.paper,
-          boxShadow: theme.shadows[4],
+          backgroundColor: theme.palette.common.white,
+          boxShadow: `0 6px 16px 0 ${alpha(theme.palette.common.black, 0.12)}, 0 3px 6px -4px ${alpha(theme.palette.common.black, 0.12)}`,
           transition: 'all 0.2s ease-in-out',
-          border: `1px solid ${alpha(color.main, 0.12)}`,
+          border: `2px solid ${color.main}`,
           transform: 'translateY(0)',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: theme.shadows[6],
+            boxShadow: `0 8px 24px 0 ${alpha(theme.palette.common.black, 0.15)}, 0 3px 8px -4px ${alpha(theme.palette.common.black, 0.15)}`,
           },
         }}
       >
@@ -97,8 +98,9 @@ const Toast = ({
             backgroundColor: 'transparent',
             '& .MuiAlert-icon': {
               color: color.main,
-              opacity: 0.9,
+              opacity: 1,
               marginRight: theme.spacing(1.5),
+              fontSize: '1.25rem',
             },
             '& .MuiAlert-message': {
               padding: theme.spacing(1, 0),
@@ -108,11 +110,16 @@ const Toast = ({
               marginRight: 0,
               padding: 0,
               alignSelf: 'center',
+              color: theme.palette.text.secondary,
             },
           }}
         >
-          {title && <Box sx={{ fontWeight: 600, mb: 0.5, fontSize: '0.875rem' }}>{title}</Box>}
-          <Box sx={{ fontSize: '0.8125rem' }}>{message}</Box>
+          {title && (
+            <Box sx={{ fontWeight: 700, mb: 0.5, fontSize: '0.9rem', color: color.main }}>
+              {title}
+            </Box>
+          )}
+          <Box sx={{ fontSize: '0.8125rem', color: theme.palette.text.primary }}>{message}</Box>
         </MuiAlert>
       </Paper>
     </Snackbar>
