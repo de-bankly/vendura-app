@@ -61,23 +61,53 @@ const Home = () => {
     fromCache: false,
     nextRefresh: null,
   });
+  const [inventoryCacheStatus, setInventoryCacheStatus] = useState({
+    fromCache: false,
+    nextRefresh: null,
+  });
 
   // Refresh-Intervall
   const refreshIntervalRef = useRef(null);
   const REFRESH_INTERVAL = 5 * 60000; // 5 Minuten
 
   // Fetch inventory status
-  const fetchInventoryStatus = useCallback(async (forceRefresh = false) => {
-    try {
-      setIsLoading(true);
-      const data = await InventoryManagementService.getInventoryStatus();
-      setInventoryStatus(data);
-    } catch (error) {
-      console.error('Error fetching inventory status:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const fetchInventoryStatus = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        setIsLoading(true);
+
+        // Hole Daten mit möglichem Cache
+        const response = await InventoryManagementService.getInventoryStatus(forceRefresh);
+
+        // Extrahiere die tatsächlichen Daten
+        const data = response.data || response;
+        const isFromCache = response.isFromCache === true;
+
+        // Berechne den Zeitpunkt der nächsten automatischen Aktualisierung
+        const nextRefresh = new Date(Date.now() + REFRESH_INTERVAL);
+
+        // Aktualisiere den Inventory-Cache-Status
+        setInventoryCacheStatus({
+          fromCache: isFromCache,
+          nextRefresh,
+        });
+
+        // Setze die extrahierten Inventardaten
+        setInventoryStatus(data);
+
+        // Aktualisiere den Zeitstempel für die letzte Aktualisierung
+        // Nur wenn die Daten nicht aus dem Cache kamen, oder bei forciertem Refresh
+        if (!isFromCache || forceRefresh) {
+          setLastRefreshed(new Date());
+        }
+      } catch (error) {
+        console.error('Error fetching inventory status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [REFRESH_INTERVAL]
+  );
 
   // Fetch latest sales data
   const fetchSalesData = useCallback(
@@ -217,10 +247,14 @@ const Home = () => {
     const loadInitialData = async () => {
       try {
         // Prüfe, ob wir schon aktuelle Daten im localStorage haben
-        const cachedData = await TransactionService.getLatestSales({ page: 0, size: 10 }, false);
+        const cachedSalesData = await TransactionService.getLatestSales(
+          { page: 0, size: 10 },
+          false
+        );
+        const cachedInventoryData = await InventoryManagementService.getInventoryStatus(false);
 
         // Wenn wir Daten aus dem Cache bekommen haben, können wir diese verwenden
-        if (cachedData.isFromCache) {
+        if (cachedSalesData.isFromCache) {
           // Löse die existierenden Daten mit fetchSalesData aus, aber ohne forceRefresh
           fetchSalesData(false);
         } else {
@@ -228,8 +262,14 @@ const Home = () => {
           fetchSalesData(true);
         }
 
-        // Hole in jedem Fall die Inventardaten
-        fetchInventoryStatus();
+        // Wenn wir Inventardaten aus dem Cache bekommen haben, können wir diese verwenden
+        if (cachedInventoryData.isFromCache) {
+          // Verwende existierende Daten ohne forceRefresh
+          fetchInventoryStatus(false);
+        } else {
+          // Wenn keine Daten im Cache, erzwinge ein Refresh
+          fetchInventoryStatus(true);
+        }
       } catch (error) {
         console.error('Error loading initial data:', error);
         // Bei Fehler: Erzwinge Refresh für beide Datenquellen
@@ -244,6 +284,7 @@ const Home = () => {
     // Starte das Refresh-Intervall
     refreshIntervalRef.current = setInterval(() => {
       fetchSalesData();
+      fetchInventoryStatus();
     }, REFRESH_INTERVAL);
 
     // Cleanup beim Unmount der Komponente
@@ -558,7 +599,46 @@ const Home = () => {
                           sx={{ fontSize: '1rem', mr: 1, color: theme.palette.primary.main }}
                         />
                         Inventarstatus
+                        <Tooltip
+                          title={
+                            inventoryCacheStatus.fromCache
+                              ? 'Daten aus dem Cache'
+                              : 'Daten vom Server'
+                          }
+                        >
+                          <Badge
+                            color={inventoryCacheStatus.fromCache ? 'success' : 'primary'}
+                            variant="dot"
+                            sx={{ ml: 1 }}
+                          >
+                            <StorageIcon
+                              fontSize="small"
+                              color="action"
+                              sx={{ fontSize: '0.8rem' }}
+                            />
+                          </Badge>
+                        </Tooltip>
                       </Typography>
+
+                      {inventoryCacheStatus.nextRefresh && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            display: 'block',
+                            mb: 1,
+                            fontSize: '0.65rem',
+                            opacity: 0.7,
+                            textAlign: 'right',
+                          }}
+                        >
+                          Nächste Aktualisierung:{' '}
+                          {inventoryCacheStatus.nextRefresh.toLocaleTimeString('de-DE', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Typography>
+                      )}
 
                       {isLoading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
