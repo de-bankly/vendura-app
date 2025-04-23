@@ -29,7 +29,6 @@ const NotFound = () => {
   // Common navigation links to suggest to users
   const navigationSuggestions = [
     { text: 'Home Page', path: '/', icon: <HomeIcon fontSize="small" /> },
-    { text: 'Component Showcase', path: '/showcase', icon: <HelpOutlineIcon fontSize="small" /> },
     { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon fontSize="small" /> },
   ];
 
@@ -89,7 +88,7 @@ const NotFound = () => {
               left: 0,
               right: 0,
               height: '4px',
-              background: 'linear-gradient(90deg, #2563EB, #3B82F6, #60A5FA)',
+              background: 'linear-gradient(90deg, #0F172A, #334155, #64748B)',
             },
             background: `radial-gradient(circle at 90% 10%, ${alpha(theme.palette.primary.light, 0.05)} 0%, transparent 60%)`,
           }}
@@ -109,9 +108,9 @@ const NotFound = () => {
                 <SentimentDissatisfiedIcon
                   sx={{
                     fontSize: 100,
-                    color: 'warning.main',
+                    color: 'primary.main',
                     mb: 2,
-                    filter: 'drop-shadow(0 4px 6px rgba(245, 158, 11, 0.3))',
+                    filter: 'drop-shadow(0 4px 6px rgba(15, 23, 42, 0.3))',
                   }}
                 />
               </motion.div>
@@ -122,13 +121,13 @@ const NotFound = () => {
                   sx={{
                     fontSize: { xs: '5rem', md: '8rem' },
                     fontWeight: 800,
-                    background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
+                    background: 'linear-gradient(135deg, #0F172A, #334155)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     lineHeight: 1,
                     letterSpacing: '-0.05em',
                     mb: 2,
-                    textShadow: '0 10px 30px rgba(37, 99, 235, 0.2)',
+                    textShadow: '0 10px 30px rgba(15, 23, 42, 0.2)',
                   }}
                 >
                   404
@@ -145,13 +144,13 @@ const NotFound = () => {
                     color: theme.palette.text.primary,
                   }}
                 >
-                  Page Not Found
+                  Seite nicht gefunden
                 </Typography>
               </motion.div>
 
               <motion.div variants={itemVariants}>
                 <Typography variant="body1" color="text.secondary" paragraph>
-                  We couldn't find the page you're looking for:{' '}
+                  Die von Ihnen gesuchte Seite konnte nicht gefunden werden:{' '}
                   <Box
                     component="span"
                     sx={{
@@ -201,7 +200,7 @@ const NotFound = () => {
                       },
                     }}
                   >
-                    What happened?
+                    Was ist passiert?
                   </Typography>
                 </motion.div>
 
@@ -215,8 +214,8 @@ const NotFound = () => {
                       pl: 2,
                     }}
                   >
-                    The page you requested either doesn't exist, has been moved, or you might have
-                    mistyped the URL.
+                    Die angeforderte Seite existiert nicht, wurde verschoben oder Sie haben
+                    möglicherweise die URL falsch eingegeben.
                   </Typography>
                 </motion.div>
 
@@ -240,7 +239,7 @@ const NotFound = () => {
                       },
                     }}
                   >
-                    What can you do?
+                    Was können Sie tun?
                   </Typography>
                 </motion.div>
 
@@ -254,8 +253,8 @@ const NotFound = () => {
                       pl: 2,
                     }}
                   >
-                    Check the URL for typos, use the navigation menu, or try one of the suggested
-                    links below.
+                    Überprüfen Sie die URL auf Tippfehler, verwenden Sie das Navigationsmenü oder
+                    probieren Sie einen der unten vorgeschlagenen Links aus.
                   </Typography>
                 </motion.div>
               </Grid>
@@ -281,7 +280,7 @@ const NotFound = () => {
                       },
                     }}
                   >
-                    Try these pages instead:
+                    Versuchen Sie stattdessen diese Seiten:
                   </Typography>
                 </motion.div>
 
@@ -334,11 +333,11 @@ const NotFound = () => {
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       borderWidth: '1.5px',
-                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.15)',
+                      boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
                     },
                   }}
                 >
-                  Go Back
+                  Zurück
                 </Button>
               </motion.div>
 
@@ -357,16 +356,16 @@ const NotFound = () => {
                     px: 3,
                     py: 1.2,
                     fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
-                    background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
+                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
+                    background: 'linear-gradient(135deg, #0F172A, #020617)',
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                      boxShadow: '0 6px 20px rgba(37, 99, 235, 0.35)',
+                      background: 'linear-gradient(135deg, #334155, #0F172A)',
+                      boxShadow: '0 6px 20px rgba(15, 23, 42, 0.35)',
                     },
                   }}
                 >
-                  Return to Home
+                  Zur Startseite
                 </Button>
               </motion.div>
             </Box>
