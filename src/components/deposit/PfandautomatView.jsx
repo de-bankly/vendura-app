@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -91,10 +91,134 @@ const PfandautomatView = () => {
   const [receiptData, setReceiptData] = useState(null);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [itemAdded, setItemAdded] = useState(false);
-  const { pendingDepositItems, clearPendingDepositItems } = useBarcodeScan();
+  const {
+    pendingDepositItems,
+    clearPendingDepositItems,
+    scannedValue,
+    resetScan,
+    enableScanner,
+    error: scanError,
+  } = useBarcodeScan();
   const { printDepositReceipt, isLoading: isPrinting, error: printerError } = usePrinter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Enable scanner when component mounts
+  useEffect(() => {
+    console.log('PfandautomatView: Enabling barcode scanner');
+    enableScanner();
+    // Optional: Disable scanner when unmounting
+    return () => {
+      // Consider if disabling is always desired
+      // disableScanner();
+    };
+  }, [enableScanner]);
+
+  // Listen for barcode scan values
+  const handlePfandProductLookup = useCallback(async code => {
+    console.log(`PfandautomatView: Looking up potential Pfand product: ${code}`);
+    setIsLoading(true);
+    try {
+      // Fetch the product by its barcode/id
+      const product = await ProductService.getProductById(code, true);
+
+      if (!product) {
+        console.log(`PfandautomatView: No product found with code ${code}`);
+        setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
+        return false;
+      }
+
+      // Check if this is a Pfand product directly
+      const isPfandProduct = product.category && product.category.name === 'Pfand';
+
+      if (isPfandProduct) {
+        console.log(`PfandautomatView: Found direct Pfand product: ${product.name || product.id}`);
+        // Add it to scanned items
+        addToScannedItems(product);
+        return true;
+      }
+
+      // Not a direct Pfand product, check for connected Pfand products
+      const pfandProducts = product.connectedProducts
+        ? product.connectedProducts.filter(cp => cp.category && cp.category.name === 'Pfand')
+        : [];
+
+      if (pfandProducts.length > 0) {
+        console.log(`PfandautomatView: Found ${pfandProducts.length} connected Pfand products`);
+        // Add all connected Pfand products
+        pfandProducts.forEach(pfandProduct => {
+          addToScannedItems(pfandProduct);
+        });
+        return true;
+      }
+
+      // No Pfand product found
+      console.log(
+        `PfandautomatView: ${code} is not a Pfand product and has no connected Pfand products`
+      );
+      setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
+      return false;
+    } catch (err) {
+      console.error(`PfandautomatView: Error looking up product ${code}:`, err);
+      setError(`Fehler beim Produkt-Lookup: ${err.message}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Helper to add product to scanned items
+  const addToScannedItems = useCallback(product => {
+    setScannedItems(prev => {
+      // Check if product already exists
+      const existingItemIndex = prev.findIndex(item => item.product.id === product.id);
+
+      if (existingItemIndex !== -1) {
+        // If it exists, increase quantity
+        const newItems = [...prev];
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + 1,
+        };
+        return newItems;
+      } else {
+        // If it doesn't exist, add new item
+        return [...prev, { product, quantity: 1 }];
+      }
+    });
+
+    // Show animation for added item
+    setItemAdded(true);
+    setTimeout(() => setItemAdded(false), 1500);
+  }, []);
+
+  // Listen for barcode scan values
+  useEffect(() => {
+    if (scannedValue) {
+      console.log(`PfandautomatView: Received scanned value: ${scannedValue}`);
+
+      // Process the scan - only look for Pfand products
+      (async () => {
+        try {
+          await handlePfandProductLookup(scannedValue);
+        } catch (err) {
+          console.error('PfandautomatView: Error during Pfand lookup:', err);
+          setError(`Fehler beim Scannen: ${err.message}`);
+        } finally {
+          // Reset scan state in context
+          resetScan();
+        }
+      })();
+    }
+  }, [scannedValue, resetScan, handlePfandProductLookup]);
+
+  // Handle scan errors
+  useEffect(() => {
+    if (scanError) {
+      setError(scanError);
+      resetScan();
+    }
+  }, [scanError, resetScan]);
 
   // Process pendingDepositItems from BarcodeContext
   useEffect(() => {

@@ -26,7 +26,7 @@ import {
 } from '../components/sales';
 
 // Import services
-import { ProductService, CartService, printerService } from '../services';
+import { ProductService, CartService, printerService, DepositService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
 import usePrinter from '../hooks/usePrinter';
@@ -42,13 +42,7 @@ const containerVariants = {
 const SalesScreen = () => {
   const theme = useTheme();
   const { showToast } = useToast();
-  const {
-    scannedProduct,
-    error: scanError,
-    resetScan,
-    enableScanner,
-    isEnabled: isScannerEnabled,
-  } = useBarcodeScan();
+  const { scannedValue, error: scanError, resetScan, enableScanner } = useBarcodeScan();
   const {
     printReceipt,
     isLoading: isPrinterLoading,
@@ -596,28 +590,154 @@ const SalesScreen = () => {
         });
         return;
       }
+      // Check if the deposit receipt is already applied
+      if (appliedDeposits.some(d => d.id === depositReceipt.id)) {
+        showToast({
+          severity: 'info',
+          message: 'Dieser Pfandbon wurde bereits eingelöst.',
+        });
+        return;
+      }
+
       handleDepositRedemption({
         depositReceipt,
         appliedDeposits,
         setAppliedDeposits,
         setDepositCredit,
-        setRedeemDepositDialogOpen,
+        setRedeemDepositDialogOpen, // This might not be needed here, but kept for consistency with manual redemption
         showToast,
       });
     },
-    [appliedDeposits, cartLocked, showToast]
+    [appliedDeposits, cartLocked, showToast, handleDepositRedemption] // Added handleDepositRedemption dependency
   );
 
   useEffect(() => {
     enableScanner();
+    // Optional: Disable scanner when component unmounts
+    return () => {
+      // Consider if disabling is always desired. Maybe only if it was enabled by this component?
+      // disableScanner();
+    };
   }, [enableScanner]);
 
+  // Helper function for product lookup to avoid code duplication
+  const handleProductLookup = useCallback(
+    async code => {
+      console.log(`SalesScreen: Fetching product with barcode ${code}.`);
+      try {
+        // Get product with stock calculation
+        const product = await ProductService.getProductById(code, true);
+        if (product && product.id) {
+          console.log(`SalesScreen: Found product ${product.name || product.id}. Adding to cart.`);
+          handleAddToCart(product);
+          return true;
+        } else {
+          // API returned success but no product?
+          console.warn(`SalesScreen: Product lookup for ${code} returned empty.`);
+          showToast({
+            severity: 'warning',
+            message: `Produkt mit Code ${code} nicht gefunden.`,
+          });
+          return false;
+        }
+      } catch (err) {
+        console.error(`SalesScreen: Error fetching product ${code}:`, err);
+        // Handle product lookup errors
+        const errorMsg =
+          err.response?.status === 404
+            ? `Produkt mit Code ${code} nicht gefunden.`
+            : `Fehler beim Abrufen des Produkts: ${err.message}`;
+        showToast({ severity: 'error', message: errorMsg });
+        throw err; // Re-throw to handle in the calling function
+      }
+    },
+    [ProductService, handleAddToCart, showToast]
+  ); // Add dependencies
+
+  // Add handleProductLookup to useEffect dependencies
   useEffect(() => {
-    if (scannedProduct) {
-      handleAddToCart(scannedProduct);
-      resetScan();
+    // Check if there is a new scanned value
+    if (scannedValue) {
+      // Use an async IIFE to handle the async checks
+      (async () => {
+        let processed = false; // Flag to ensure scan is processed only once
+        try {
+          // Attempt to fetch as deposit receipt
+          console.log(`SalesScreen: Checking if ${scannedValue} is a deposit receipt.`);
+          const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
+          // Check if depositReceipt is valid (not null/undefined and has an id)
+          if (depositReceipt && depositReceipt.id) {
+            console.log(`SalesScreen: ${scannedValue} is a deposit receipt. Redeeming.`);
+            handleDepositRedeemed(depositReceipt);
+            showToast({
+              severity: 'success',
+              message: `Pfandbon ${depositReceipt.id} erfolgreich gescannt und eingelöst.`,
+            });
+            processed = true;
+          } else {
+            // This case might not be reachable if getDepositReceiptById throws 404
+            console.log(
+              `SalesScreen: ${scannedValue} is not a deposit receipt (API returned non-error empty). Checking as product.`
+            );
+            // Try as product if deposit receipt returned empty result
+            await handleProductLookup(scannedValue);
+            processed = true;
+          }
+        } catch (err) {
+          console.log(`SalesScreen: Deposit receipt error:`, err);
+          // Verbesserte Erkennung von 404 Fehlern
+          // Check if the error indicates "Not Found", either by status code or message content
+          if (
+            err.response?.status === 404 ||
+            err.message?.toLowerCase().includes('not found') ||
+            err.message?.toLowerCase().includes('nicht gefunden')
+          ) {
+            console.log(
+              `SalesScreen: ${scannedValue} is not a deposit receipt (404). Checking as product.`
+            );
+            // Not a deposit receipt, try fetching as a product
+            try {
+              await handleProductLookup(scannedValue);
+              processed = true;
+            } catch (productErr) {
+              // Log this but don't show another toast - already handled in handleProductLookup
+              console.error(`SalesScreen: Product lookup failed:`, productErr);
+              processed = true;
+            }
+          } else {
+            // Handle other potential errors during deposit check (e.g., network issues)
+            console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
+            showToast({
+              severity: 'error',
+              message: `Fehler beim Überprüfen des Pfandbons: ${err.message}`,
+            });
+            // Auch bei anderen Fehlern Produkt versuchen
+            try {
+              console.log(`SalesScreen: Attempting product lookup after deposit error.`);
+              await handleProductLookup(scannedValue);
+              processed = true;
+            } catch (productErr) {
+              console.error(`SalesScreen: Product lookup also failed:`, productErr);
+              processed = true; // Mark as processed even on error
+            }
+          }
+        } finally {
+          // Always reset the scan state in the context after processing
+          console.log(
+            `SalesScreen: Resetting scan state for ${scannedValue}. Processed: ${processed}`
+          );
+          resetScan();
+        }
+      })();
     }
-  }, [scannedProduct, handleAddToCart, resetScan]);
+  }, [
+    scannedValue,
+    handleDepositRedeemed,
+    resetScan,
+    showToast,
+    DepositService,
+    handleProductLookup,
+  ]);
 
   useEffect(() => {
     if (scanError) {
