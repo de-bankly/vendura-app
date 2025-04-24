@@ -1,4 +1,3 @@
-import ClearAllIcon from '@mui/icons-material/ClearAll';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -18,7 +17,7 @@ import {
   Grid,
   Chip,
 } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -30,7 +29,20 @@ import VoucherActionButtons from './VoucherActionButtons';
 import CartActionButtons from './CartActionButtons';
 import { DepositActionButtons } from './';
 
-// Extracted Cart Header Component
+/**
+ * @component CartHeader
+ * @description Displays the header section of the shopping cart, including title, item count, lock status, and action buttons (undo, redo, clear).
+ * @param {object} props - The component props.
+ * @param {number} props.itemCount - The total number of items in the cart.
+ * @param {boolean} props.cartLocked - Indicates if the cart is locked.
+ * @param {boolean} props.cartIsEmpty - Indicates if the cart is empty.
+ * @param {boolean} props.cartUndoEnabled - Indicates if the undo action is available.
+ * @param {boolean} props.cartRedoEnabled - Indicates if the redo action is available.
+ * @param {function} props.onUndoCartState - Callback function for the undo action.
+ * @param {function} props.onRedoCartState - Callback function for the redo action.
+ * @param {function} props.onClearCart - Callback function to clear the cart.
+ * @returns {React.ReactElement} The rendered CartHeader component.
+ */
 const CartHeader = React.memo(
   ({
     itemCount,
@@ -154,26 +166,49 @@ CartHeader.propTypes = {
 CartHeader.displayName = 'CartHeader';
 
 /**
- * ShoppingCart component for displaying and managing cart items
+ * @component ShoppingCart
+ * @description Main component for displaying and managing the shopping cart, including items, vouchers, summary, and actions.
+ * @param {object} props - The component props.
+ * @param {Array<object>} props.cartItems - Array of items currently in the cart.
+ * @param {Array<object>} props.appliedVouchers - Array of vouchers applied to the cart.
+ * @param {number} props.subtotal - The subtotal amount before discounts and credits.
+ * @param {number} props.voucherDiscount - The total discount amount from applied vouchers.
+ * @param {number} [props.depositCredit=0] - The total credit amount from redeemed deposits.
+ * @param {number} [props.giftCardPayment=0] - The amount paid using gift cards.
+ * @param {number} props.total - The final total amount after all deductions.
+ * @param {number} [props.productDiscount=0] - The total discount amount from product-specific promotions.
+ * @param {boolean} props.receiptReady - Indicates if the receipt is ready for printing/finalization.
+ * @param {boolean} props.cartUndoEnabled - Indicates if the undo action is available for the cart state.
+ * @param {boolean} props.cartRedoEnabled - Indicates if the redo action is available for the cart state.
+ * @param {boolean} props.cartLocked - Indicates if the cart is locked (e.g., during payment).
+ * @param {function} props.onAddItem - Callback function to add an item quantity.
+ * @param {function} props.onRemoveItem - Callback function to remove an item quantity.
+ * @param {function} props.onDeleteItem - Callback function to delete an item completely.
+ * @param {function} props.onClearCart - Callback function to clear all items from the cart.
+ * @param {function} props.onPayment - Callback function to initiate the payment process.
+ * @param {function} props.onPrintReceipt - Callback function to print the receipt.
+ * @param {function} props.onNewTransaction - Callback function to start a new transaction.
+ * @param {function} props.onRemoveVoucher - Callback function to remove an applied voucher.
+ * @param {function} props.onRedeemVoucher - Callback function to redeem a voucher.
+ * @param {function} props.onRedeemDeposit - Callback function to redeem deposit items.
+ * @param {function} props.onUndoCartState - Callback function to undo the last cart state change.
+ * @param {function} props.onRedoCartState - Callback function to redo the last undone cart state change.
+ * @returns {React.ReactElement} The rendered ShoppingCart component.
  */
 const ShoppingCart = React.memo(
   ({
-    // Cart State
     cartItems,
     appliedVouchers,
-    // Calculated Values
     subtotal,
     voucherDiscount,
     depositCredit,
     giftCardPayment,
     total,
     productDiscount,
-    // UI State
     receiptReady,
     cartUndoEnabled,
     cartRedoEnabled,
     cartLocked,
-    // Callbacks
     onAddItem,
     onRemoveItem,
     onDeleteItem,
@@ -205,7 +240,6 @@ const ShoppingCart = React.memo(
           borderRadius: 2,
         }}
       >
-        {/* Use extracted CartHeader component */}
         <CartHeader
           itemCount={itemCount}
           cartLocked={cartLocked}
@@ -217,7 +251,6 @@ const ShoppingCart = React.memo(
           onClearCart={onClearCart}
         />
 
-        {/* Cart items */}
         <Box
           sx={{
             flexGrow: 1,
@@ -243,7 +276,6 @@ const ShoppingCart = React.memo(
                 ))}
               </AnimatePresence>
 
-              {/* Applied vouchers */}
               {appliedVouchers.length > 0 && (
                 <Box sx={{ mt: 3 }}>
                   <Typography
@@ -285,7 +317,6 @@ const ShoppingCart = React.memo(
           )}
         </Box>
 
-        {/* Cart summary and actions */}
         <Box
           sx={{
             p: 2.5,
@@ -294,11 +325,9 @@ const ShoppingCart = React.memo(
             flexShrink: 0,
           }}
         >
-          {/* Action Buttons Section */}
           <Box sx={{ mb: 3 }}>
             {!receiptReady && (
               <Grid container spacing={2}>
-                {/* Voucher button */}
                 <Grid item xs={6}>
                   <VoucherActionButtons
                     onRedeemVoucher={onRedeemVoucher}
@@ -306,8 +335,6 @@ const ShoppingCart = React.memo(
                     disabled={cartLocked}
                   />
                 </Grid>
-
-                {/* Deposit button */}
                 <Grid item xs={6}>
                   <DepositActionButtons
                     onRedeemDeposit={onRedeemDeposit}
@@ -321,7 +348,6 @@ const ShoppingCart = React.memo(
 
           <Divider />
 
-          {/* Cart summary */}
           <CartSummary
             subtotal={subtotal}
             voucherDiscount={voucherDiscount}
@@ -331,7 +357,6 @@ const ShoppingCart = React.memo(
             productDiscount={productDiscount || 0}
           />
 
-          {/* Action Buttons */}
           <CartActionButtons
             receiptReady={receiptReady}
             cartIsEmpty={cartIsEmpty}
@@ -347,22 +372,18 @@ const ShoppingCart = React.memo(
 );
 
 ShoppingCart.propTypes = {
-  // Cart State
   cartItems: PropTypes.array.isRequired,
   appliedVouchers: PropTypes.array.isRequired,
-  // Calculated Values
   subtotal: PropTypes.number.isRequired,
   voucherDiscount: PropTypes.number.isRequired,
   depositCredit: PropTypes.number,
   giftCardPayment: PropTypes.number,
   total: PropTypes.number.isRequired,
   productDiscount: PropTypes.number,
-  // UI State
   receiptReady: PropTypes.bool.isRequired,
   cartUndoEnabled: PropTypes.bool.isRequired,
   cartRedoEnabled: PropTypes.bool.isRequired,
   cartLocked: PropTypes.bool.isRequired,
-  // Callbacks
   onAddItem: PropTypes.func.isRequired,
   onRemoveItem: PropTypes.func.isRequired,
   onDeleteItem: PropTypes.func.isRequired,
@@ -382,7 +403,5 @@ ShoppingCart.defaultProps = {
   giftCardPayment: 0,
   productDiscount: 0,
 };
-
-ShoppingCart.displayName = 'ShoppingCart';
 
 export default ShoppingCart;

@@ -1,4 +1,4 @@
-import { Box, Divider, Stack, Typography, alpha, useTheme, Paper } from '@mui/material';
+import { Box, Stack, Typography, alpha, useTheme, Paper } from '@mui/material';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import DiscountIcon from '@mui/icons-material/Discount';
 import ReceiptIcon from '@mui/icons-material/Receipt';
@@ -8,6 +8,18 @@ import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
+/**
+ * Displays a summary of the cart totals, including subtotal, discounts, credits, and the final total.
+ *
+ * @param {object} props - The component props.
+ * @param {number} props.subtotal - The subtotal after product discounts but before other deductions.
+ * @param {number} props.voucherDiscount - The amount discounted via vouchers.
+ * @param {number} [props.depositCredit=0] - The amount credited from deposits.
+ * @param {number} [props.giftCardPayment=0] - The amount paid using gift cards.
+ * @param {number} props.total - The final total amount to be paid.
+ * @param {number} [props.productDiscount=0] - The total amount discounted directly from products.
+ * @returns {React.ReactElement} The rendered cart summary component.
+ */
 const CartSummary = ({
   subtotal,
   voucherDiscount,
@@ -18,19 +30,12 @@ const CartSummary = ({
 }) => {
   const theme = useTheme();
 
-  // Calculate the original total before any discounts
   const originalTotal = subtotal + productDiscount;
-
-  // Determine if we have any discounts at all
   const hasAnyDiscount =
     voucherDiscount > 0 || productDiscount > 0 || depositCredit > 0 || giftCardPayment > 0;
-
-  // Calculate total savings
   const totalSavings = productDiscount + voucherDiscount + depositCredit + giftCardPayment;
 
-  // Summary item component for consistent styling
   const SummaryItem = ({ label, value, color, icon: Icon, hideZero = false, bold = false }) => {
-    // Don't render if value is zero and hideZero is true
     if (hideZero && value === 0) return null;
 
     return (
@@ -61,7 +66,6 @@ const CartSummary = ({
 
   return (
     <Stack spacing={3}>
-      {/* Original subtotal and discounts */}
       <Paper
         elevation={0}
         sx={{
@@ -86,7 +90,6 @@ const CartSummary = ({
           <SummaryItem label="Zwischensumme" value={subtotal} bold={hasAnyDiscount} />
         )}
 
-        {/* Display in the correct order: 1. deposit, 2. giftcard amounts, 3. giftcard discount, 4. cash */}
         <SummaryItem
           label="Pfand-Guthaben"
           value={-depositCredit}
@@ -139,7 +142,6 @@ const CartSummary = ({
         )}
       </Paper>
 
-      {/* Total */}
       <Box
         component={motion.div}
         whileHover={{ scale: 1.02 }}

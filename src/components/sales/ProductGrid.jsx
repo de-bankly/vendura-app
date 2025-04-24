@@ -20,24 +20,25 @@ import Chip from '../ui/feedback/Chip';
 import ProductCard from './ProductCard';
 
 /**
- * ProductGrid component for displaying products by category
+ * ProductGrid component for displaying products by category with search and filtering.
+ * @param {object} props - The component props.
+ * @param {object} props.productsByCategory - An object where keys are category names and values are arrays of product objects.
+ * @param {function} props.onProductSelect - Callback function triggered when a product's 'Add to Cart' button is clicked. Receives the product object as an argument.
+ * @returns {React.ReactElement} The rendered ProductGrid component.
  */
 const ProductGrid = ({ productsByCategory, onProductSelect }) => {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(0);
 
-  // Handle search input change
   const handleSearchChange = useCallback(event => {
     setSearchTerm(event.target.value);
   }, []);
 
-  // Handle category tab change
   const handleCategoryChange = useCallback((event, newValue) => {
     setSelectedCategory(newValue);
   }, []);
 
-  // Get all categories with total product count
   const categories = useMemo(() => {
     return Object.entries(productsByCategory).map(([name, products]) => ({
       name,
@@ -45,65 +46,52 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
     }));
   }, [productsByCategory]);
 
-  // Get promotional products
   const promotionalProducts = useMemo(() => {
     return Object.values(productsByCategory)
       .flat()
       .filter(product => product.isOnSale || product.discountPercentage > 0);
   }, [productsByCategory]);
 
-  // Get bundle products
   const bundleProducts = useMemo(() => {
     return Object.values(productsByCategory)
       .flat()
       .filter(product => {
-        // Identifiziere Bundles: Produkte mit verbundenen Produkten, die keine Pfand-Produkte sind
         const hasConnectedProducts =
           product.connectedProducts && product.connectedProducts.length > 0;
         const hasNonPfandConnectedProducts =
           hasConnectedProducts &&
           product.connectedProducts.some(p => p?.category?.name !== 'Pfand');
-
         return hasNonPfandConnectedProducts;
       });
   }, [productsByCategory]);
 
-  // Memoize filtered products
   const filteredProducts = useMemo(() => {
     const search = searchTerm.toLowerCase();
     let categoryProducts = [];
 
     if (selectedCategory === 0) {
-      // Get all products and sort them with out-of-stock and to-be-discontinued products at the end
       categoryProducts = Object.values(productsByCategory)
         .flat()
         .sort((a, b) => {
-          // First priority: sort out-of-stock products to the end
           const aOutOfStock = a.stockQuantity <= 0;
           const bOutOfStock = b.stockQuantity <= 0;
-
           if (aOutOfStock && !bOutOfStock) return 1;
           if (!aOutOfStock && bOutOfStock) return -1;
 
-          // Second priority: sort discontinued products to end
           if (a.toBeDiscontinued && !b.toBeDiscontinued) return 1;
           if (!a.toBeDiscontinued && b.toBeDiscontinued) return -1;
 
-          // Third priority: alphabetical sort by name
           const nameA = (a.name || '').toLowerCase();
           const nameB = (b.name || '').toLowerCase();
           return nameA.localeCompare(nameB, 'de');
         });
     } else if (selectedCategory === 1) {
-      // "Aktionen" tab selected
       categoryProducts = promotionalProducts;
     } else if (selectedCategory === 2) {
-      // "Bundles" tab selected
       categoryProducts = bundleProducts;
     } else {
       const categoryName = categories[selectedCategory - 3]?.name;
       categoryProducts = productsByCategory[categoryName] || [];
-      // Products are already sorted with out-of-stock and to-be-discontinued products at the end in ProductService.groupByCategory
     }
 
     if (search) {
@@ -128,7 +116,6 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           p: 2,
@@ -137,7 +124,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
           justifyContent: 'space-between',
           borderBottom: `1px solid ${theme.palette.divider}`,
           background: theme.palette.background.paper,
-          flexShrink: 0, // Prevent header shrinking
+          flexShrink: 0,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -147,13 +134,12 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
           </Typography>
         </Box>
 
-        {/* Search Box */}
         <Paper
           elevation={0}
           sx={{
             display: 'flex',
             alignItems: 'center',
-            borderRadius: theme.shape.borderRadius, // Use theme token
+            borderRadius: theme.shape.borderRadius,
             pl: theme.spacing(2),
             border: `1px solid ${theme.palette.divider}`,
             transition: theme.transitions.create(['box-shadow', 'border-color']),
@@ -161,7 +147,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
               boxShadow: theme.shadows[1],
               borderColor: theme.palette.primary.light,
             },
-            width: { xs: 150, sm: 220 }, // Responsive width
+            width: { xs: 150, sm: 220 },
           }}
         >
           <InputBase
@@ -169,7 +155,7 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             value={searchTerm}
             onChange={handleSearchChange}
             sx={{ ml: 1, flex: 1 }}
-            inputProps={{ 'aria-label': 'Search products' }} // Accessibility
+            inputProps={{ 'aria-label': 'Search products' }}
           />
           <MuiIconButton sx={{ p: theme.spacing(1) }} aria-label="search">
             <SearchIcon />
@@ -177,31 +163,32 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
         </Paper>
       </Box>
 
-      {/* Category Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
         <Tabs
           value={selectedCategory}
           onChange={handleCategoryChange}
           variant="scrollable"
           scrollButtons="auto"
-          // Rely on theme overrides for Tab styling applied earlier
         >
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2">Alle</Typography> {/* Use consistent variant */}
+                <Typography variant="body2">Alle</Typography>
                 <Chip
                   size="small"
                   label={Object.values(productsByCategory).flat().length}
-                  sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                  sx={{
+                    ml: 1,
+                    height: 20,
+                    fontSize: theme.typography.pxToRem(12),
+                  }}
                 />
               </Box>
             }
             value={0}
-            sx={{ px: 2 }} // Adjust padding if needed
+            sx={{ px: 2 }}
           />
 
-          {/* Special Tab: Aktionen */}
           <Tab
             key="aktionen"
             label={
@@ -211,7 +198,11 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                 <Chip
                   size="small"
                   label={promotionalProducts.length}
-                  sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                  sx={{
+                    ml: 1,
+                    height: 20,
+                    fontSize: theme.typography.pxToRem(12),
+                  }}
                 />
               </Box>
             }
@@ -219,7 +210,6 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             sx={{ px: 2 }}
           />
 
-          {/* Special Tab: Bundles */}
           <Tab
             key="bundles"
             label={
@@ -229,7 +219,11 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
                 <Chip
                   size="small"
                   label={bundleProducts.length}
-                  sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                  sx={{
+                    ml: 1,
+                    height: 20,
+                    fontSize: theme.typography.pxToRem(12),
+                  }}
                 />
               </Box>
             }
@@ -237,40 +231,46 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
             sx={{ px: 2 }}
           />
 
-          {/* Regular category tabs now start at index 3 */}
           {categories.map((category, index) => (
             <Tab
               key={category.name}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography variant="body2">{category.name}</Typography>{' '}
-                  {/* Use consistent variant */}
                   <Chip
                     size="small"
                     label={category.count}
-                    sx={{ ml: 1, height: 20, fontSize: theme.typography.pxToRem(12) }}
+                    sx={{
+                      ml: 1,
+                      height: 20,
+                      fontSize: theme.typography.pxToRem(12),
+                    }}
                   />
                 </Box>
               }
               value={index + 3}
-              sx={{ px: 2 }} // Adjust padding if needed
+              sx={{ px: 2 }}
             />
           ))}
         </Tabs>
       </Box>
 
-      {/* Products Display */}
       <Box
         sx={{
           p: 3,
           flexGrow: 1,
-          overflow: 'auto', // Allow product grid to scroll
+          overflow: 'auto',
           bgcolor: alpha(theme.palette.background.default, 0.5),
         }}
       >
         {filteredProducts.length === 0 ? (
           <Box
-            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+            }}
           >
             <Typography variant="body1" color="text.secondary">
               {searchTerm ? 'Keine Produkte gefunden' : 'Keine Produkte in dieser Kategorie'}
@@ -291,9 +291,9 @@ const ProductGrid = ({ productsByCategory, onProductSelect }) => {
 };
 
 ProductGrid.propTypes = {
-  /** Object with categories as keys and arrays of products */
+  /** An object where keys are category names and values are arrays of product objects. */
   productsByCategory: PropTypes.object.isRequired,
-  /** Callback function when a product is selected */
+  /** Callback function triggered when a product's 'Add to Cart' button is clicked. Receives the product object as an argument. */
   onProductSelect: PropTypes.func.isRequired,
 };
 

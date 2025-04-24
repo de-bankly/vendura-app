@@ -2,7 +2,27 @@ import { TransactionService } from '../../services';
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
 
 /**
- * Processes a payment transaction
+ * Processes a payment transaction by calculating amounts, preparing payment details,
+ * calling the transaction service, and updating the UI.
+ *
+ * @param {object} params - The payment processing parameters.
+ * @param {Array<object>} params.cartItems - Items in the cart.
+ * @param {number} params.total - The final total amount after all discounts and credits.
+ * @param {number} params.subtotal - The subtotal before discounts and credits.
+ * @param {string} params.paymentMethod - The primary payment method ('cash' or 'card').
+ * @param {string|number} params.cashReceived - Amount of cash received (if paymentMethod is 'cash').
+ * @param {object} params.cardDetails - Details for card payment (if paymentMethod is 'card').
+ * @param {string} params.cardDetails.cardNumber - The card number.
+ * @param {Array<object>} params.appliedVouchers - Vouchers applied to the transaction.
+ * @param {number} params.voucherDiscount - Total discount amount from vouchers.
+ * @param {Array<object>} params.appliedDeposits - Deposit receipts applied.
+ * @param {number} params.depositCredit - Total credit amount from deposits.
+ * @param {number} params.productDiscount - Total discount applied directly to products.
+ * @param {function} params.showToast - Function to display toast notifications.
+ * @param {function} params.setReceiptReady - State setter to indicate receipt is ready.
+ * @param {function} params.setPaymentModalOpen - State setter to close the payment modal.
+ * @param {function} params.setPaymentLoading - State setter for loading indicator.
+ * @returns {Promise<object>} An object indicating success or failure, potentially including the transaction response or error.
  */
 export const processPayment = async ({
   cartItems,
@@ -24,40 +44,36 @@ export const processPayment = async ({
   setPaymentLoading(true);
 
   try {
-    // Use subtotal as the starting point for remaining amount calculation
     const roundedSubtotal = Math.round(subtotal * 100) / 100;
     let remainingAmount = roundedSubtotal;
-
-    // Round the final total for consistency if needed elsewhere
     const roundedTotal = Math.round(total * 100) / 100;
-
-    // Prepare payments in the specific order required by the backend
     const payments = [];
 
-    // Deposit wird nicht mehr als Zahlungsmethode im payments-Array gespeichert
-    // da die Pfandinformationen bereits im depositReceipts-Objekt korrekt übergeben werden
     if (appliedDeposits && appliedDeposits.length > 0 && depositCredit > 0) {
-      // Nur den Restbetrag aktualisieren, aber kein Payment-Objekt hinzufügen
       remainingAmount -= Math.round(depositCredit * 100) / 100;
     }
 
-    // 2. Add gift card payments
     if (appliedVouchers && appliedVouchers.length > 0) {
       const giftCardVouchers = appliedVouchers.filter(voucher => voucher.type === 'GIFT_CARD');
       for (const voucher of giftCardVouchers) {
         const voucherAmount = parseFloat(voucher.amount) || 0;
         if (voucherAmount > 0) {
-          payments.push({
-            type: 'GIFTCARD',
-            amount: Math.round(voucherAmount * 100) / 100,
-            giftcardId: voucher.id,
-          });
-          remainingAmount -= Math.round(voucherAmount * 100) / 100;
+          const roundedVoucherAmount = Math.min(
+            Math.round(voucherAmount * 100) / 100,
+            remainingAmount
+          );
+          if (roundedVoucherAmount > 0) {
+            payments.push({
+              type: 'GIFTCARD',
+              amount: roundedVoucherAmount,
+              giftcardId: voucher.id,
+            });
+            remainingAmount -= roundedVoucherAmount;
+          }
         }
       }
     }
 
-    // 3. Add discount card payments
     if (appliedVouchers && appliedVouchers.length > 0 && voucherDiscount > 0) {
       const discountVouchers = appliedVouchers.filter(voucher => voucher.type === 'DISCOUNT_CARD');
       if (discountVouchers.length > 0) {
@@ -78,14 +94,11 @@ export const processPayment = async ({
       }
     }
 
-    // 4. Add cash or card payment
-    if (paymentMethod === 'cash') {
-      // Für Barzahlungen wird immer ein 'handed' Wert benötigt, der >= amount sein muss
-      const parsedCashReceived = Math.round(parseFloat(cashReceived) * 100) / 100;
-      const cashPaymentAmount = Math.max(0, remainingAmount);
+    remainingAmount = Math.max(0, Math.round(remainingAmount * 100) / 100);
 
-      // Wenn kein Bargeld eingegeben wurde oder der Betrag 0 ist,
-      // setzen wir handed = amount, um BackendValidierung zu bestehen
+    if (paymentMethod === 'cash') {
+      const parsedCashReceived = Math.round(parseFloat(cashReceived) * 100) / 100;
+      const cashPaymentAmount = remainingAmount;
       const handedAmount =
         parsedCashReceived > 0 ? parsedCashReceived : Math.max(cashPaymentAmount, 0.01);
 
@@ -106,7 +119,6 @@ export const processPayment = async ({
       });
     }
 
-    // Prepare transaction data for the backend
     const transactionData = {
       cartItems: cartItems.map(item => ({
         id: item.id,
@@ -125,10 +137,8 @@ export const processPayment = async ({
       payments,
     };
 
-    // Submit transaction to backend
     const response = await TransactionService.createSaleTransaction(transactionData);
 
-    // Show success message
     showToast({
       message: 'Zahlung erfolgreich abgeschlossen!',
       severity: 'success',
@@ -144,7 +154,6 @@ export const processPayment = async ({
       },
     });
 
-    // Update UI to show receipt
     setReceiptReady(true);
     setPaymentModalOpen(false);
 

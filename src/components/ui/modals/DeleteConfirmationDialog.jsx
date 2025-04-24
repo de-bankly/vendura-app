@@ -8,6 +8,16 @@ import Dialog from './Dialog';
 
 /**
  * DeleteConfirmationDialog - A reusable dialog for confirming deletion
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Dialog open state.
+ * @param {Function} props.onClose - Callback when dialog is closed.
+ * @param {Function} props.onConfirm - Callback when deletion is confirmed.
+ * @param {string} [props.title='Löschen bestätigen'] - Dialog title.
+ * @param {string} [props.content='Sind Sie sicher, dass Sie dieses Element löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'] - Dialog content text.
+ * @param {string} [props.itemName=''] - Name of the item being deleted (will be inserted into content).
+ * @param {string} [props.confirmButtonText='Löschen'] - Text for the confirm button.
+ * @param {string} [props.cancelButtonText='Abbrechen'] - Text for the cancel button.
+ * @returns {React.ReactElement} The rendered component.
  */
 const DeleteConfirmationDialog = ({
   open,

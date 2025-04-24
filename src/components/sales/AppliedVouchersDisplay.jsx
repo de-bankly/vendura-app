@@ -7,7 +7,14 @@ import EuroIcon from '@mui/icons-material/Euro';
 import PercentIcon from '@mui/icons-material/Percent';
 
 /**
- * Component to display applied vouchers during checkout
+ * Component to display applied vouchers during checkout.
+ *
+ * @param {object} props - The component props.
+ * @param {Array<object>} [props.appliedVouchers=[]] - List of applied vouchers. Each voucher object should have at least an `id` and `type` ('GIFT_CARD' or 'DISCOUNT_CARD'). Other properties depend on the type.
+ * @param {function(string): void} props.onRemoveVoucher - Callback function to remove a voucher by its ID.
+ * @param {number} [props.voucherDiscount=0] - Total discount amount from discount vouchers.
+ * @param {number} [props.giftCardPayment=0] - Total amount paid using gift cards.
+ * @returns {React.ReactElement|null} The rendered component or null if no vouchers are applied.
  */
 const AppliedVouchersDisplay = ({
   appliedVouchers = [],
@@ -34,7 +41,14 @@ const AppliedVouchersDisplay = ({
         bgcolor: theme.palette.success.light + '10',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 2,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <CardGiftcardIcon color="success" sx={{ mr: 1 }} />
           <Typography variant="subtitle1" fontWeight="medium" color="success.main">
@@ -72,7 +86,13 @@ const AppliedVouchersDisplay = ({
                 border: `1px solid ${theme.palette.divider}`,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  overflow: 'hidden',
+                }}
+              >
                 <CardGiftcardIcon color="primary" sx={{ mr: 1, flexShrink: 0 }} />
                 <Box>
                   <Typography
@@ -144,7 +164,13 @@ const AppliedVouchersDisplay = ({
                 border: `1px solid ${theme.palette.divider}`,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  overflow: 'hidden',
+                }}
+              >
                 <LocalOfferIcon color="secondary" sx={{ mr: 1, flexShrink: 0 }} />
                 <Box>
                   <Typography

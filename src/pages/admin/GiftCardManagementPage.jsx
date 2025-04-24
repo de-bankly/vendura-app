@@ -19,7 +19,6 @@ import {
 import { motion } from 'framer-motion';
 import { VoucherManagement } from '../../components/admin';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -34,7 +33,9 @@ const itemVariants = {
 };
 
 /**
- * Gift Card Management page for administrators
+ * @description Gift Card Management page for administrators.
+ * Allows creation and management of gift cards and discount vouchers.
+ * @returns {React.ReactElement} The GiftCardManagementPage component.
  */
 const GiftCardManagementPage = () => {
   const theme = useTheme();
@@ -45,7 +46,9 @@ const GiftCardManagementPage = () => {
     editMode: false,
   });
 
-  // Handle opening the voucher creation dialog for gift cards
+  /**
+   * @description Sets the state to open the voucher dialog for creating a new gift card.
+   */
   const handleCreateGiftCard = () => {
     setDialogConfig({
       type: 'GIFT_CARD',
@@ -54,7 +57,9 @@ const GiftCardManagementPage = () => {
     setOpenDialog(true);
   };
 
-  // Handle opening the voucher creation dialog for discount cards
+  /**
+   * @description Sets the state to open the voucher dialog for creating a new discount card.
+   */
   const handleCreateDiscountCard = () => {
     setDialogConfig({
       type: 'DISCOUNT_CARD',
@@ -63,7 +68,9 @@ const GiftCardManagementPage = () => {
     setOpenDialog(true);
   };
 
-  // Handle dialog close
+  /**
+   * @description Sets the state to close the voucher dialog.
+   */
   const handleCloseDialog = () => {
     setOpenDialog(false);
   };
@@ -71,7 +78,6 @@ const GiftCardManagementPage = () => {
   return (
     <Container maxWidth="xl">
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
-        {/* Header Section */}
         <motion.div variants={itemVariants}>
           <Grid container spacing={3} sx={{ mb: 3, mt: 1 }}>
             <Grid item xs={12}>
@@ -110,7 +116,6 @@ const GiftCardManagementPage = () => {
           </Grid>
         </motion.div>
 
-        {/* Quick Actions Section */}
         <motion.div variants={itemVariants}>
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} md={6}>
@@ -238,7 +243,6 @@ const GiftCardManagementPage = () => {
           </Grid>
         </motion.div>
 
-        {/* Main Content Section */}
         <motion.div variants={itemVariants}>
           <Box
             sx={{

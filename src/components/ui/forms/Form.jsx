@@ -5,6 +5,15 @@ import React, { useCallback } from 'react';
 /**
  * Base Form component that provides a consistent structure for forms
  * with built-in submission handling.
+ *
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} props.children - The content of the form.
+ * @param {Function} [props.onSubmit] - Callback fired when the form is submitted.
+ * @param {boolean} [props.noValidate=true] - If true, the browser's default validation will be disabled.
+ * @param {string} [props.autoComplete='off'] - The autocomplete attribute for the form.
+ * @param {number} [props.spacing=2] - The spacing between form elements in theme spacing units.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @returns {React.ReactElement} The rendered form component.
  */
 const Form = ({
   children,
@@ -17,7 +26,6 @@ const Form = ({
 }) => {
   const theme = useTheme();
 
-  // Handle form submission
   const handleSubmit = useCallback(
     event => {
       event.preventDefault();

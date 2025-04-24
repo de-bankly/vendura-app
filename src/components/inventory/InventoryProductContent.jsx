@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import InventoryProductCard from './InventoryProductCard';
 import InventoryProductList from './InventoryProductList';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -26,12 +25,17 @@ const itemVariants = {
 
 /**
  * InventoryProductContent component for displaying the product list or grid
- * with loading and empty states
+ * with loading and empty states.
+ * @param {object} props - The component props.
+ * @param {boolean} props.loading - Indicates if data is currently loading.
+ * @param {Array<object>} props.products - The array of product objects to display.
+ * @param {'grid' | 'list'} props.viewMode - The current view mode ('grid' or 'list').
+ * @param {string} [props.emptyMessage] - Optional message to display when no products are found.
+ * @returns {React.ReactElement} The rendered component.
  */
 const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) => {
   const theme = useTheme();
 
-  // Loading state
   if (loading) {
     return (
       <Box>
@@ -65,7 +69,6 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
     );
   }
 
-  // Empty state
   if (products.length === 0) {
     return (
       <Paper
@@ -87,7 +90,6 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
     );
   }
 
-  // Grid view
   if (viewMode === 'grid') {
     return (
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
@@ -104,7 +106,6 @@ const InventoryProductContent = ({ loading, products, viewMode, emptyMessage }) 
     );
   }
 
-  // List view
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <InventoryProductList products={products} />

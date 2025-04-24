@@ -1,10 +1,11 @@
 import { Error as ErrorIcon } from '@mui/icons-material';
-import { Container, Typography, Paper, Button, Box } from '@mui/material';
+import { Box, Button, Container, Paper, Typography } from '@mui/material';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 /**
- * Page displayed when user doesn't have sufficient permissions
+ * Page displayed when user doesn't have sufficient permissions.
+ * @returns {React.ReactElement} The UnauthorizedPage component.
  */
 const UnauthorizedPage = () => {
   return (

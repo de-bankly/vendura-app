@@ -11,7 +11,8 @@ import LoginForm from '../components/auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Login page component for cashier platform
+ * Login page component for cashier platform.
+ * Handles user authentication and redirects upon successful login.
  */
 const LoginPage = () => {
   const { login, isLoggedIn } = useAuth();
@@ -20,7 +21,6 @@ const LoginPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // If already logged in, redirect to homepage or intended destination
   useEffect(() => {
     if (isLoggedIn()) {
       const from = location.state?.from?.pathname || '/';
@@ -29,7 +29,8 @@ const LoginPage = () => {
   }, [isLoggedIn, navigate, location]);
 
   /**
-   * Handle successful login
+   * Handles navigation after a successful login.
+   * Redirects the user to their intended destination or the homepage.
    */
   const handleLoginSuccess = useCallback(() => {
     const from = location.state?.from?.pathname || '/';
@@ -37,7 +38,10 @@ const LoginPage = () => {
   }, [navigate, location]);
 
   /**
-   * Handle login form submission
+   * Handles the login form submission.
+   * Calls the login function from the AuthContext and triggers success handling.
+   * @param {string} username - The username entered by the user.
+   * @param {string} password - The password entered by the user.
    */
   const handleLogin = useCallback(
     async (username, password) => {
@@ -45,7 +49,6 @@ const LoginPage = () => {
         await login(username, password);
         handleLoginSuccess();
       } catch (error) {
-        // Error handling is done in the LoginForm component
         console.error('Login error:', error);
       }
     },
@@ -79,7 +82,6 @@ const LoginPage = () => {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
           }}
         >
-          {/* Left side - Brand section */}
           <Box
             sx={{
               bgcolor: alpha(theme.palette.primary.main, 0.95),
@@ -163,7 +165,10 @@ const LoginPage = () => {
 
               <Grid container spacing={2} sx={{ mt: 2, justifyContent: 'center' }}>
                 {[
-                  { icon: <StorefrontIcon />, text: 'Effiziente Verkaufsabwicklung' },
+                  {
+                    icon: <StorefrontIcon />,
+                    text: 'Effiziente Verkaufsabwicklung',
+                  },
                   { icon: <LockOutlinedIcon />, text: 'Sichere Transaktionen' },
                 ].map((item, index) => (
                   <Grid item xs={12} key={index}>
@@ -185,7 +190,6 @@ const LoginPage = () => {
             </Box>
           </Box>
 
-          {/* Right side - Login form */}
           <Box
             sx={{
               p: { xs: 3, sm: 4, md: 5 },

@@ -11,7 +11,9 @@ const ToastContext = createContext({
 });
 
 /**
- * Hook to use the toast context
+ * Hook to use the toast context.
+ * @returns {object} The toast context value.
+ * @throws {Error} If used outside of a ToastProvider.
  */
 export const useToast = () => {
   const context = useContext(ToastContext);
@@ -24,25 +26,64 @@ export const useToast = () => {
 /**
  * ToastProvider component that manages multiple toast notifications.
  * Provides a context for showing and hiding toasts from anywhere in the application.
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} props.children - The child components.
+ * @param {number} [props.maxToasts=3] - The maximum number of toasts to display simultaneously.
  */
 const ToastProvider = ({ children, maxToasts = 3 }) => {
   const [toasts, setToasts] = useState([]);
   const theme = useTheme();
 
+  /**
+   * Generates a unique ID for a toast.
+   * @returns {string} A unique toast ID.
+   */
   const generateId = useCallback(() => {
     return `toast-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   }, []);
 
+  /**
+   * Removes a toast from the state entirely.
+   * @param {string} id - The ID of the toast to remove.
+   */
+  const removeToast = useCallback(id => {
+    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
+  }, []);
+
+  /**
+   * Hides a toast by setting its 'open' state to false, triggering the exit animation.
+   * @param {string} id - The ID of the toast to hide.
+   */
+  const hideToast = useCallback(id => {
+    setToasts(prevToasts =>
+      prevToasts.map(toast => (toast.id === id ? { ...toast, open: false } : toast))
+    );
+  }, []);
+
+  /**
+   * Shows a new toast notification.
+   * @param {object} options - The options for the toast.
+   * @param {string} [options.id] - An optional specific ID for the toast.
+   * @param {string} options.message - The message content of the toast.
+   * @param {'success'|'info'|'warning'|'error'} [options.severity='info'] - The severity level of the toast.
+   * @param {string} [options.title] - An optional title for the toast.
+   * @param {number} [options.autoHideDuration=5000] - Duration in ms before the toast automatically hides.
+   * @param {object} [options.anchorOrigin={ vertical: 'bottom', horizontal: 'left' }] - Position of the toast.
+   * @param {React.ReactNode} [options.action] - Optional action element for the toast.
+   * @param {'standard'|'filled'|'outlined'} [options.variant='standard'] - The visual variant of the toast.
+   * @param {object} [options.sx] - Custom styles for the toast.
+   * @returns {string} The ID of the shown toast.
+   */
   const showToast = useCallback(
     options => {
       const id = options.id || generateId();
-      const autoHideDuration = options.autoHideDuration || 5000;
+      const autoHideDuration = options.autoHideDuration ?? 5000;
 
       setToasts(prevToasts => {
-        const updatedToasts = [...prevToasts];
-        if (updatedToasts.length >= maxToasts) {
-          updatedToasts.shift();
-        }
+        const updatedToasts =
+          prevToasts.length >= maxToasts
+            ? prevToasts.slice(prevToasts.length - maxToasts + 1)
+            : [...prevToasts];
 
         return [
           ...updatedToasts,
@@ -53,10 +94,14 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
             severity: options.severity || 'info',
             title: options.title,
             autoHideDuration,
-            anchorOrigin: options.anchorOrigin || { vertical: 'bottom', horizontal: 'left' },
+            anchorOrigin: options.anchorOrigin || {
+              vertical: 'bottom',
+              horizontal: 'left',
+            },
             action: options.action,
             variant: options.variant || 'standard',
             sx: options.sx || {},
+            creationTime: Date.now(),
           },
         ];
       });
@@ -67,19 +112,15 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
 
       return id;
     },
-    [generateId, maxToasts]
+    [generateId, maxToasts, hideToast]
   );
 
-  const removeToast = useCallback(id => {
-    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
-  }, []);
-
-  const hideToast = useCallback(id => {
-    setToasts(prevToasts =>
-      prevToasts.map(toast => (toast.id === id ? { ...toast, open: false } : toast))
-    );
-  }, []);
-
+  /**
+   * Creates a close handler for a specific toast ID.
+   * Prevents closing on 'clickaway'.
+   * @param {string} id - The ID of the toast this handler is for.
+   * @returns {function} The event handler function.
+   */
   const handleClose = useCallback(
     id => (event, reason) => {
       if (reason === 'clickaway') {
@@ -90,24 +131,29 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
     [hideToast]
   );
 
+  /**
+   * Effect to periodically check for and hide toasts that have been visible
+   * for an extended period (e.g., > 15 seconds), potentially due to issues
+   * with the auto-hide timer or animation callbacks.
+   */
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
+      const staleTimeThreshold = 15000; // 15 seconds
 
-      setToasts(prevToasts => {
-        const updatedToasts = prevToasts.map(toast => {
-          const idParts = toast.id.split('-');
-          if (idParts.length >= 2) {
-            const creationTime = parseInt(idParts[1], 10);
-            if (now - creationTime > 15000 && toast.open) {
-              return { ...toast, open: false };
-            }
+      setToasts(prevToasts =>
+        prevToasts.map(toast => {
+          if (
+            toast &&
+            toast.open &&
+            toast.creationTime &&
+            now - toast.creationTime > staleTimeThreshold
+          ) {
+            return { ...toast, open: false };
           }
           return toast;
-        });
-
-        return updatedToasts;
-      });
+        })
+      );
     }, 5000); // Check every 5 seconds
 
     return () => clearInterval(cleanupInterval);
@@ -194,7 +240,7 @@ const ToastProvider = ({ children, maxToasts = 3 }) => {
                 message={toast.message}
                 severity={toast.severity}
                 title={toast.title}
-                autoHideDuration={toast.autoHideDuration}
+                autoHideDuration={null}
                 action={toast.action}
                 variant={toast.variant}
                 sx={{

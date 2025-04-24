@@ -23,19 +23,26 @@ import { BrandService, SupplierService } from '../../services';
 
 /**
  * InventoryFilterDrawer provides advanced filtering options for inventory products
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Controls if the drawer is open.
+ * @param {function} props.onClose - Function to call when the drawer should close.
+ * @param {object} props.filters - The current filter state.
+ * @param {boolean} props.filters.inStock - Filter for products in stock.
+ * @param {boolean} props.filters.lowStock - Filter for products with low stock.
+ * @param {Array<number>} props.filters.priceRange - Filter for price range [min, max].
+ * @param {Array<string>} props.filters.suppliers - Array of selected supplier IDs.
+ * @param {Array<string>} props.filters.brands - Array of selected brand IDs.
+ * @param {function} props.onFilterChange - Function to call when filters are updated.
  */
 const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
-  // Local state for filters (to prevent updating parent state on every change)
   const [localFilters, setLocalFilters] = useState(filters);
   const [brands, setBrands] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
 
-  // Update local filters when parent filters change
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
 
-  // Fetch brands and suppliers on component mount
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -54,7 +61,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
     fetchOptions();
   }, []);
 
-  // Event handlers for individual filter changes
   const handleCheckboxChange = event => {
     const { name, checked } = event.target;
     setLocalFilters(prev => ({
@@ -106,18 +112,15 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
     });
   };
 
-  // Format price for display
   const formatPrice = value => {
     return `${value} €`;
   };
 
-  // Apply filters
   const handleApplyFilters = () => {
     onFilterChange(localFilters);
     onClose();
   };
 
-  // Reset filters
   const handleResetFilters = () => {
     const resetFilters = {
       inStock: false,
@@ -140,7 +143,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
         sx: { width: { xs: '100%', sm: 400 } },
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           display: 'flex',
@@ -167,9 +169,7 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
         </Stack>
       </Box>
 
-      {/* Filter Body */}
       <Box sx={{ overflow: 'auto', flexGrow: 1, p: 2 }}>
-        {/* Stock Status */}
         <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
           Bestand
         </Typography>
@@ -198,7 +198,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Price Range */}
         <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
           Preisbereich
         </Typography>
@@ -227,7 +226,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Suppliers */}
         <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
           Lieferanten
         </Typography>
@@ -269,7 +267,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Brands */}
         <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
           Marken
         </Typography>
@@ -310,7 +307,6 @@ const InventoryFilterDrawer = ({ open, onClose, filters, onFilterChange }) => {
         </List>
       </Box>
 
-      {/* Footer */}
       <Box
         sx={{
           p: 2,

@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   FormControl,
   Grid,
@@ -23,7 +22,26 @@ import { InventoryManagementService } from '../../services';
 import { Select } from '../ui/inputs';
 
 /**
- * StockAdjustmentDialog allows users to manually adjust inventory stock levels
+ * @typedef {object} Product
+ * @property {string} id - The unique identifier for the product.
+ * @property {string} name - The name of the product.
+ * @property {number | null} currentStock - The current stock level of the product. Can be null if unknown.
+ */
+
+/**
+ * @typedef {object} StockAdjustmentDialogProps
+ * @property {boolean} open - If `true`, the dialog is open.
+ * @property {() => void} onClose - Callback fired when the component requests to be closed.
+ * @property {Product} product - The product whose stock is being adjusted.
+ * @property {() => void} [onSuccess] - Optional callback fired after a successful stock adjustment.
+ */
+
+/**
+ * StockAdjustmentDialog allows users to manually adjust inventory stock levels for a specific product.
+ * It provides options to add or remove stock, specify the quantity, and provide a reason for the adjustment.
+ *
+ * @param {StockAdjustmentDialogProps} props - The props for the component.
+ * @returns {React.ReactElement} The rendered StockAdjustmentDialog component.
  */
 const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
   const theme = useTheme();
@@ -33,17 +51,28 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleClose = () => {
+    setAdjustmentType('add');
+    setQuantity(1);
+    setReason('');
+    setError(null);
+    setIsSubmitting(false);
+    onClose();
+  };
+
   const handleSubmit = async () => {
+    if (quantity < 1) {
+      setError('Quantity must be at least 1.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
 
-      // Calculate the actual quantity change based on the adjustment type
       const quantityChange = adjustmentType === 'add' ? quantity : -quantity;
 
       await InventoryManagementService.adjustStock(product.id, quantityChange, reason);
-
-      setIsSubmitting(false);
 
       if (onSuccess) {
         onSuccess();
@@ -51,17 +80,10 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
 
       handleClose();
     } catch (err) {
+      console.error('Stock adjustment failed:', err);
       setError('Failed to adjust stock. Please try again.');
       setIsSubmitting(false);
     }
-  };
-
-  const handleClose = () => {
-    setAdjustmentType('add');
-    setQuantity(1);
-    setReason('');
-    setError(null);
-    onClose();
   };
 
   const currentStock = product.currentStock !== null ? product.currentStock : 'Unknown';
@@ -69,7 +91,11 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={(event, reason) => {
+        if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+          handleClose();
+        }
+      }}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -105,7 +131,13 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
             {product.name}
           </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <Typography variant="body2" color="text.secondary">
               Artikel-ID: {product.id}
             </Typography>
@@ -165,7 +197,7 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
                 <TextField
                   type="number"
                   value={quantity}
-                  onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
+                  onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                   InputProps={{ inputProps: { min: 1 } }}
                   fullWidth
                   sx={{
@@ -221,6 +253,7 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
         <Button
           onClick={handleClose}
           variant="outlined"
+          disabled={isSubmitting}
           sx={{
             borderRadius: 1.5,
             textTransform: 'none',
@@ -238,6 +271,7 @@ const StockAdjustmentDialog = ({ open, onClose, product, onSuccess }) => {
             borderRadius: 1.5,
             textTransform: 'none',
             px: 3,
+            minWidth: 180,
           }}
           startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
         >

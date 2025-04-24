@@ -29,7 +29,16 @@ import { SupplierService, ProductService } from '../../services';
 import { Select } from '../ui/inputs';
 
 /**
- * SupplierOrderForm component for creating or editing supplier orders
+ * SupplierOrderForm component for creating or editing supplier orders.
+ * Handles fetching necessary data (suppliers, products), form state management,
+ * validation, and submission.
+ *
+ * @param {object} props - The component props.
+ * @param {object} [props.initialData=null] - Initial data for editing an existing order.
+ * @param {Function} props.onSubmit - Callback function executed when the form is submitted successfully.
+ * @param {Function} props.onCancel - Callback function executed when the cancel button is clicked.
+ * @param {boolean} [props.isEditing=false] - Flag indicating if the form is in edit mode.
+ * @returns {React.ReactElement} The SupplierOrderForm component.
  */
 const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
   const theme = useTheme();
@@ -52,15 +61,12 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
       try {
         setLoading(true);
 
-        // Fetch suppliers
         const suppliersResponse = await SupplierService.getSuppliers();
         setSuppliers(suppliersResponse.content || []);
 
-        // Fetch products
         const productsResponse = await ProductService.getProducts();
         setProducts(productsResponse.content || []);
 
-        // If editing, populate form with initial data
         if (initialData) {
           setFormData({
             supplier: initialData.supplier || null,
@@ -90,7 +96,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
       [field]: event.target.value,
     });
 
-    // Clear field error when user updates the field
     if (errors[field]) {
       setErrors({
         ...errors,
@@ -215,7 +220,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
     event.preventDefault();
 
     if (validateForm()) {
-      // Convert empty orderStatus to "PLACED" before submitting
       const dataToSubmit = {
         ...formData,
         orderStatus: formData.orderStatus === '' ? 'PLACED' : formData.orderStatus,
@@ -266,7 +270,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
         <Grid container spacing={3}>
-          {/* Supplier Selection */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth error={!!errors.supplier}>
               <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
@@ -291,7 +294,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
             </FormControl>
           </Grid>
 
-          {/* Delivery Date */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
               <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
@@ -319,7 +321,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
             </FormControl>
           </Grid>
 
-          {/* Notes */}
           <Grid item xs={12}>
             <FormControl fullWidth>
               <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
@@ -341,7 +342,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
             </FormControl>
           </Grid>
 
-          {/* Products Section Title */}
           <Grid item xs={12}>
             <Box sx={{ mt: 2, mb: 1 }}>
               <Typography variant="h6" fontWeight={600}>
@@ -354,7 +354,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
             <Divider />
           </Grid>
 
-          {/* Products List */}
           <Grid item xs={12}>
             {formData.positions.length > 0 ? (
               <TableContainer
@@ -464,7 +463,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
             </Button>
           </Grid>
 
-          {/* Action Buttons */}
           <Grid item xs={12}>
             <Divider sx={{ mb: 3 }} />
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
@@ -500,9 +498,13 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
 };
 
 SupplierOrderForm.propTypes = {
+  /** Initial data for editing an existing order */
   initialData: PropTypes.object,
+  /** Callback function executed when the form is submitted successfully */
   onSubmit: PropTypes.func.isRequired,
+  /** Callback function executed when the cancel button is clicked */
   onCancel: PropTypes.func.isRequired,
+  /** Flag indicating if the form is in edit mode */
   isEditing: PropTypes.bool,
 };
 

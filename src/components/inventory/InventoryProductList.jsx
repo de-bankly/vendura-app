@@ -19,21 +19,33 @@ import React, { useState } from 'react';
 import ProductTransactionHistory from './ProductTransactionHistory';
 
 /**
- * InventoryProductList displays products in a list/table format
+ * Formats a price number into a EUR currency string.
+ * @param {number} price - The price to format.
+ * @returns {string} The formatted price string (e.g., "1.234,56 €").
+ */
+const formatPrice = price => {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(price);
+};
+
+/**
+ * InventoryProductList displays products in a list/table format.
+ * @param {object} props - The component props.
+ * @param {Array<object>} props.products - The list of products to display.
+ * @param {Function} [props.onAdjustStock] - Optional callback function triggered when the adjust stock button is clicked.
  */
 const InventoryProductList = ({ products, onAdjustStock }) => {
   const [transactionHistoryOpen, setTransactionHistoryOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Format price
-  const formatPrice = price => {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
-  };
-
-  // Determine stock status
+  /**
+   * Determines the stock status (label and color) for a given product.
+   * It checks currentStock first, then stockQuantity, and compares against thresholds.
+   * @param {object} product - The product object.
+   * @returns {{color: string, label: string}} An object containing the MUI Chip color and label for the stock status.
+   */
   const getStockStatus = product => {
     let currentStock = product.currentStock;
 
@@ -58,11 +70,18 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
     return { color: 'success', label: 'Auf Lager' };
   };
 
+  /**
+   * Handles opening the transaction history dialog for a specific product.
+   * @param {object} product - The product for which to show the history.
+   */
   const handleOpenTransactionHistory = product => {
     setSelectedProduct(product);
     setTransactionHistoryOpen(true);
   };
 
+  /**
+   * Handles closing the transaction history dialog.
+   */
   const handleCloseTransactionHistory = () => {
     setTransactionHistoryOpen(false);
   };
@@ -129,7 +148,6 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                     </Box>
                   </TableCell>
 
-                  {/* Category */}
                   <TableCell>
                     {product.category ? (
                       <Typography variant="body2">{product.category.name}</Typography>
@@ -140,7 +158,6 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                     )}
                   </TableCell>
 
-                  {/* Brand */}
                   <TableCell>
                     {product.brand ? (
                       <Typography variant="body2">{product.brand.name}</Typography>
@@ -151,14 +168,12 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                     )}
                   </TableCell>
 
-                  {/* Price */}
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight={500}>
                       {formatPrice(product.price)}
                     </Typography>
                   </TableCell>
 
-                  {/* Stock Status */}
                   <TableCell align="center">
                     <Box
                       sx={{
@@ -174,7 +189,7 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                         size="small"
                         sx={{ fontWeight: 500 }}
                       />
-                      {currentStock !== null && (
+                      {currentStock !== null && currentStock !== undefined && (
                         <Typography
                           variant="caption"
                           color="text.secondary"
@@ -191,7 +206,6 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                     </Box>
                   </TableCell>
 
-                  {/* Supplier */}
                   <TableCell>
                     {product.supplier ? (
                       <Typography variant="body2">{product.supplier.name}</Typography>
@@ -202,9 +216,14 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                     )}
                   </TableCell>
 
-                  {/* Actions */}
                   <TableCell align="right">
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 1,
+                      }}
+                    >
                       {onAdjustStock && (
                         <Tooltip title="Bestand anpassen">
                           <IconButton
@@ -234,7 +253,6 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
         </Table>
       </TableContainer>
 
-      {/* Transaction History Dialog */}
       {selectedProduct && (
         <ProductTransactionHistory
           open={transactionHistoryOpen}
@@ -263,7 +281,7 @@ InventoryProductList.propTypes = {
       reorderPoint: PropTypes.number,
       sku: PropTypes.string,
       currentStock: PropTypes.number,
-      productCategory: PropTypes.shape({
+      category: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
       }),
@@ -271,9 +289,9 @@ InventoryProductList.propTypes = {
         id: PropTypes.string,
         name: PropTypes.string,
       }),
-      defaultSupplier: PropTypes.shape({
+      supplier: PropTypes.shape({
         id: PropTypes.string,
-        legalName: PropTypes.string,
+        name: PropTypes.string,
       }),
     })
   ).isRequired,

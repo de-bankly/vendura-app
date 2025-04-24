@@ -2,45 +2,54 @@ import { Chip as MuiChip, alpha, styled } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// Styled Chip Component
 const StyledMuiChip = styled(MuiChip, {
-  // Filter props if necessary
   shouldForwardProp: prop => prop !== 'ownerState',
 })(({ theme, ownerState = {} }) => {
-  // ownerState has color, variant, disabled, clickable etc.
   const { color = 'default', variant = 'filled' } = ownerState;
 
-  // Use default colors that are guaranteed to exist in the theme
   const safeColorMain = theme.palette[color]?.main || theme.palette.grey[500];
 
   return {
     fontWeight: 500,
-    borderRadius: theme.shape.borderRadius, // Use theme borderRadius instead of spacing
+    borderRadius: theme.shape.borderRadius,
     transition: 'all 0.2s ease-in-out',
-    // Apply shadow only for filled variant
     ...(variant === 'filled' && {
-      // Use a subtle shadow, adjust alpha and elevation level as needed
       boxShadow: `0 2px 8px ${alpha(safeColorMain, 0.2)}`,
       '&:hover': {
         boxShadow: `0 4px 12px ${alpha(safeColorMain, 0.3)}`,
-        // Optional: Add a slight transform on hover if desired for filled chips
-        // transform: 'translateY(-1px)',
       },
     }),
-    // Add specific styles for outlined if needed, e.g., border thickness
-    // ...(variant === 'outlined' && {
-    //   borderWidth: '1.5px',
-    // }),
   };
 });
 
 /**
- * Enhanced Chip component using styled API.
+ * @typedef {object} ChipProps
+ * @property {React.ReactNode} [label] - The content of the chip.
+ * @property {'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'} [color='default'] - The color of the chip.
+ * @property {'small' | 'medium'} [size='medium'] - The size of the chip.
+ * @property {'filled' | 'outlined'} [variant='filled'] - The variant to use.
+ * @property {React.ReactElement} [icon] - Icon element.
+ * @property {React.ReactElement} [deleteIcon] - Delete icon element.
+ * @property {function} [onDelete] - Callback function fired when the delete icon is clicked.
+ * @property {boolean} [clickable] - If true, the chip will appear clickable.
+ * @property {boolean} [disabled] - If true, the chip will be disabled.
+ * @property {React.ReactElement} [avatar] - Avatar element.
+ * @property {object} [sx] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @property {React.ElementType} [component] - The component used for the root node. Either a string to use a HTML element or a component.
+ * @property {string} [href] - The URL to link to when the chip is clicked. If defined, an `<a>` element will be used as the root node.
+ * @property {function} [onClick] - Callback fired when the chip is clicked.
+ */
+
+/**
+ * Enhanced Chip component using MUI's styled API.
+ * It forwards refs and applies custom styles based on props.
+ * @param {ChipProps & React.ComponentPropsWithoutRef<typeof MuiChip>} props - The props for the component.
+ * @param {React.Ref<HTMLDivElement>} ref - The ref forwarded to the root element.
+ * @returns {React.ReactElement} The rendered Chip component.
  */
 const Chip = React.forwardRef(
   (
     {
-      // Destructure props used by styled component logic if needed, pass others
       label,
       color = 'default',
       size = 'medium',
@@ -51,11 +60,13 @@ const Chip = React.forwardRef(
       clickable,
       disabled,
       avatar,
-      sx = {}, // Keep sx for instance overrides
-      ...props // Pass label, size, icon, onDelete, clickable, disabled, avatar, etc.
+      sx = {},
+      ...props
     },
     ref
   ) => {
+    const ownerState = { color, variant, disabled, clickable };
+
     return (
       <StyledMuiChip
         ref={ref}
@@ -69,7 +80,8 @@ const Chip = React.forwardRef(
         clickable={clickable}
         disabled={disabled}
         avatar={avatar}
-        sx={sx} // Apply instance sx overrides
+        sx={sx}
+        ownerState={ownerState}
         {...props}
       />
     );
@@ -79,9 +91,14 @@ const Chip = React.forwardRef(
 Chip.displayName = 'Chip';
 
 Chip.propTypes = {
-  /** The content of the chip */
+  /**
+   * The content of the chip.
+   */
   label: PropTypes.node,
-  /** The color of the chip */
+  /**
+   * The color of the chip. It supports the theme palette colors.
+   * @default 'default'
+   */
   color: PropTypes.oneOf([
     'default',
     'primary',
@@ -91,23 +108,45 @@ Chip.propTypes = {
     'success',
     'warning',
   ]),
-  /** The size of the chip */
+  /**
+   * The size of the chip.
+   * @default 'medium'
+   */
   size: PropTypes.oneOf(['small', 'medium']),
-  /** The variant to use */
+  /**
+   * The variant to use.
+   * @default 'filled'
+   */
   variant: PropTypes.oneOf(['filled', 'outlined']),
-  /** Icon element */
-  icon: PropTypes.node,
-  /** Delete icon element */
-  deleteIcon: PropTypes.node,
-  /** Callback function fired when the delete icon is clicked */
+  /**
+   * Icon element displayed before the label.
+   */
+  icon: PropTypes.element,
+  /**
+   * Override the default delete icon element. Shown only if `onDelete` is set.
+   */
+  deleteIcon: PropTypes.element,
+  /**
+   * Callback fired when the delete icon is clicked.
+   * If set, the delete icon will be shown.
+   */
   onDelete: PropTypes.func,
-  /** If true, the chip will appear clickable */
+  /**
+   * If `true`, the chip will appear clickable, and will change styles on hover.
+   */
   clickable: PropTypes.bool,
-  /** If true, the chip will be disabled */
+  /**
+   * If `true`, the component is disabled.
+   * @default false
+   */
   disabled: PropTypes.bool,
-  /** Avatar element */
-  avatar: PropTypes.node,
-  /** The system prop that allows defining system overrides as well as additional CSS styles */
+  /**
+   * Avatar element displayed before the label.
+   */
+  avatar: PropTypes.element,
+  /**
+   * The system prop that allows defining system overrides as well as additional CSS styles.
+   */
   sx: PropTypes.object,
 };
 

@@ -6,6 +6,19 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { fadeVariants } from '../../utils/animations';
 
+/**
+ * Renders a placeholder component indicating an empty cart state.
+ * Includes an icon, messages, and an optional action button.
+ * Uses framer-motion for animations.
+ *
+ * @component
+ * @param {object} props - Component props.
+ * @param {string} [props.message='Der Warenkorb ist leer'] - The main message to display.
+ * @param {string} [props.subMessage='Fügen Sie Produkte hinzu, um mit dem Einkauf zu beginnen'] - The secondary message or instruction.
+ * @param {string} [props.actionText='Produkte durchsuchen'] - The text for the action button.
+ * @param {Function|null} [props.onAction=null] - Callback function for the action button. Button is hidden if null.
+ * @returns {React.ReactElement} The rendered EmptyCart component.
+ */
 const EmptyCart = ({
   message = 'Der Warenkorb ist leer',
   subMessage = 'Fügen Sie Produkte hinzu, um mit dem Einkauf zu beginnen',
@@ -117,9 +130,21 @@ const EmptyCart = ({
 };
 
 EmptyCart.propTypes = {
+  /**
+   * The main message to display.
+   */
   message: PropTypes.string,
+  /**
+   * The secondary message or instruction.
+   */
   subMessage: PropTypes.string,
+  /**
+   * The text for the action button.
+   */
   actionText: PropTypes.string,
+  /**
+   * Callback function for the action button. Button is hidden if null.
+   */
   onAction: PropTypes.func,
 };
 

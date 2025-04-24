@@ -1,10 +1,9 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { useTheme, alpha, Card, CardContent, Avatar, Typography, Button } from '@mui/material';
+import { alpha, Avatar, Button, Card, CardContent, Typography, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Animation variant for the card item (can be passed down or defined here)
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
@@ -26,19 +25,13 @@ const itemVariants = {
  * @param {string} props.title - Card title.
  * @param {string} props.description - Card description.
  * @param {string} props.path - Target path for navigation.
- * @param {'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'} [props.color='primary'] - Color theme for the card.
+ * @param {'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'} [props.color='primary'] - Color theme for the card. Defaults to 'primary'.
+ * @returns {React.ReactElement} The rendered QuickAccessCard component.
  */
-const QuickAccessCard = ({
-  icon,
-  title,
-  description,
-  path,
-  color = 'primary', // Default to primary
-}) => {
+const QuickAccessCard = ({ icon, title, description, path, color = 'primary' }) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  // Determine colors based on the 'color' prop
   const avatarBgColor = alpha(theme.palette[color]?.main || theme.palette.primary.main, 0.1);
   const avatarColor = `${color}.main`;
   const buttonColor = color;
@@ -46,7 +39,14 @@ const QuickAccessCard = ({
   return (
     <motion.div variants={itemVariants} style={{ height: '100%' }}>
       <Card sx={{ height: '100%' }}>
-        <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <CardContent
+          sx={{
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}
+        >
           <Avatar
             sx={{
               bgcolor: avatarBgColor,
@@ -67,7 +67,7 @@ const QuickAccessCard = ({
             color={buttonColor}
             endIcon={<ArrowForwardIcon />}
             onClick={() => navigate(path)}
-            sx={{ p: 0, alignSelf: 'flex-start' }} // Keep button at bottom left
+            sx={{ p: 0, alignSelf: 'flex-start' }}
           >
             Öffnen
           </Button>

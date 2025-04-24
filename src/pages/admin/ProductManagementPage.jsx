@@ -1,5 +1,4 @@
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -27,7 +26,6 @@ import {
   InputAdornment,
   TextField,
   Chip,
-  Divider,
   Avatar,
   alpha,
 } from '@mui/material';
@@ -38,7 +36,6 @@ import { ProductForm } from '../../components/admin';
 import { DeleteConfirmationDialog } from '../../components/ui/modals';
 import { ProductService } from '../../services';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -53,32 +50,29 @@ const itemVariants = {
 };
 
 /**
- * ProductManagementPage - Admin page to manage products
+ * ProductManagementPage - Admin page to manage products.
+ * Displays product statistics, allows searching and filtering,
+ * provides actions to create, edit, and delete products.
  */
 const ProductManagementPage = () => {
   const theme = useTheme();
 
-  // State for products
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
-
-  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
-
-  // Dialog states
   const [openProductForm, setOpenProductForm] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [formMode, setFormMode] = useState('create');
+  const [formMode, setFormMode] = useState('create'); // 'create' or 'edit'
   const [currentProduct, setCurrentProduct] = useState(null);
 
-  // Fetch products
+  /**
+   * Fetches products from the backend based on current pagination settings.
+   */
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -99,14 +93,13 @@ const ProductManagementPage = () => {
     }
   }, [page, rowsPerPage]);
 
-  // Load products on component mount and when page/rowsPerPage changes
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Filter products based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
+      // If search is empty, show all products from the current page
       setFilteredProducts(products);
       return;
     }
@@ -123,29 +116,42 @@ const ProductManagementPage = () => {
     setFilteredProducts(filtered);
   }, [searchQuery, products]);
 
-  // Handle page change
+  /**
+   * Handles changing the current page in pagination.
+   * @param {React.MouseEvent<HTMLButtonElement> | null} event - The event source of the callback.
+   * @param {number} newPage - The new page number.
+   */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Handle rows per page change
+  /**
+   * Handles changing the number of rows displayed per page.
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>} event - The event source of the callback.
+   */
   const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(0); // Reset to first page when rows per page changes
   };
 
-  // Handle search query change
+  /**
+   * Updates the search query state.
+   * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+   */
   const handleSearchChange = event => {
     setSearchQuery(event.target.value);
   };
 
-  // Open form for creating a new product
+  /**
+   * Opens the ProductForm dialog in 'create' mode.
+   */
   const handleOpenCreateForm = () => {
     setCurrentProduct({
       id: '',
       name: '',
       description: '',
       price: 0,
+      stockQuantity: 0,
       category: null,
       brand: null,
       supplier: null,
@@ -154,37 +160,52 @@ const ProductManagementPage = () => {
     setOpenProductForm(true);
   };
 
-  // Open form for editing a product
+  /**
+   * Opens the ProductForm dialog in 'edit' mode with the selected product's data.
+   * @param {object} product - The product to edit.
+   */
   const handleOpenEditForm = product => {
     setCurrentProduct(product);
     setFormMode('edit');
     setOpenProductForm(true);
   };
 
-  // Close product form
+  /**
+   * Closes the ProductForm dialog.
+   */
   const handleCloseProductForm = () => {
     setOpenProductForm(false);
+    setCurrentProduct(null); // Clear current product selection
   };
 
-  // Open delete confirmation dialog
+  /**
+   * Opens the delete confirmation dialog for the selected product.
+   * @param {object} product - The product to delete.
+   */
   const handleOpenDeleteDialog = product => {
     setCurrentProduct(product);
     setOpenDeleteDialog(true);
   };
 
-  // Close delete confirmation dialog
+  /**
+   * Closes the delete confirmation dialog.
+   */
   const handleCloseDeleteDialog = () => {
     setOpenDeleteDialog(false);
+    setCurrentProduct(null); // Clear current product selection
   };
 
-  // Handle form submission (create or update)
+  /**
+   * Handles the submission of the ProductForm (create or update).
+   * @param {object} productData - The product data from the form.
+   */
   const handleSubmitProductForm = async productData => {
     try {
       setLoading(true);
 
       if (formMode === 'create') {
         await ProductService.createProduct(productData);
-      } else {
+      } else if (currentProduct?.id) {
         await ProductService.updateProduct(currentProduct.id, productData);
       }
 
@@ -192,14 +213,21 @@ const ProductManagementPage = () => {
       fetchProducts();
     } catch (err) {
       console.error(`Error ${formMode === 'create' ? 'creating' : 'updating'} product:`, err);
-      setError(`Fehler beim ${formMode === 'create' ? 'Erstellen' : 'Aktualisieren'} des Produkts. 
-        Bitte versuchen Sie es später erneut.`);
+      setError(
+        `Fehler beim ${
+          formMode === 'create' ? 'Erstellen' : 'Aktualisieren'
+        } des Produkts. Bitte versuchen Sie es später erneut.`
+      );
       setLoading(false);
     }
   };
 
-  // Handle product deletion
+  /**
+   * Handles the confirmation of product deletion.
+   */
   const handleDeleteProduct = async () => {
+    if (!currentProduct?.id) return;
+
     try {
       setLoading(true);
       await ProductService.deleteProduct(currentProduct.id);
@@ -212,17 +240,22 @@ const ProductManagementPage = () => {
     }
   };
 
-  // Get product count statistics
+  // Calculate statistics based on the *currently loaded* products page
+  // For global stats, this would need a separate API endpoint or calculation
   const productStats = {
-    total: totalElements,
+    total: totalElements, // Use totalElements from API for accurate total count
     withStock: products.filter(p => (p.stockQuantity || 0) > 0).length,
     lowStock: products.filter(p => (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) < 10)
       .length,
     outOfStock: products.filter(p => (p.stockQuantity || 0) === 0).length,
   };
 
-  // Render product table
+  /**
+   * Renders the main table displaying products.
+   * @returns {JSX.Element} The table component or loading/empty state.
+   */
   const renderProductTable = () => {
+    // Show loading spinner only if loading and no products are displayed yet
     if (loading && products.length === 0) {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -234,13 +267,14 @@ const ProductManagementPage = () => {
     return (
       <>
         <TableContainer>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
               <TableRow
                 sx={{
                   backgroundColor: alpha(theme.palette.primary.main, 0.08),
                   '& th': {
                     fontWeight: 'bold',
+                    whiteSpace: 'nowrap',
                   },
                 }}
               >
@@ -254,40 +288,66 @@ const ProductManagementPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
+              {/* Display loading indicator overlay if loading more data */}
+              {loading && products.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ position: 'relative', p: 0, border: 0 }}>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: alpha(theme.palette.background.paper, 0.7),
+                        zIndex: 1,
+                      }}
+                    >
+                      <CircularProgress size={30} />
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
+
               {filteredProducts.map(product => (
                 <TableRow
                   key={product.id}
+                  hover
                   sx={{
                     '&:nth-of-type(odd)': {
                       backgroundColor:
                         theme.palette.mode === 'light'
-                          ? alpha(theme.palette.background.default, 0.5)
-                          : alpha(theme.palette.background.paper, 0.1),
+                          ? alpha(theme.palette.grey[100], 0.7)
+                          : alpha(theme.palette.grey[800], 0.3),
                     },
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                    },
+                    '&:last-child td, &:last-child th': { border: 0 },
                   }}
                 >
-                  <TableCell>{product.id}</TableCell>
-                  <TableCell>{product.name}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{product.id}</TableCell>
+                  <TableCell sx={{ minWidth: 150 }}>{product.name}</TableCell>
                   <TableCell>{product.category?.name || '-'}</TableCell>
                   <TableCell>{product.brand?.name || '-'}</TableCell>
                   <TableCell align="right">
                     <Chip
                       size="small"
-                      label={product.stockQuantity || 0}
+                      label={product.stockQuantity ?? 0}
                       color={
-                        (product.stockQuantity || 0) === 0
+                        (product.stockQuantity ?? 0) === 0
                           ? 'error'
-                          : (product.stockQuantity || 0) < 10
+                          : (product.stockQuantity ?? 0) < 10
                             ? 'warning'
                             : 'success'
                       }
+                      sx={{ fontWeight: 'medium' }}
                     />
                   </TableCell>
-                  <TableCell align="right">{(product.price ?? 0).toFixed(2)} €</TableCell>
-                  <TableCell align="center">
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    {(product.price ?? 0).toFixed(2)} €
+                  </TableCell>
+                  <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Bearbeiten">
                       <IconButton
                         color="primary"
@@ -312,6 +372,7 @@ const ProductManagementPage = () => {
                 </TableRow>
               ))}
 
+              {/* Display message when no products match filters or exist */}
               {filteredProducts.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
@@ -320,8 +381,8 @@ const ProductManagementPage = () => {
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       {searchQuery
-                        ? 'Versuchen Sie andere Suchbegriffe oder löschen Sie die Filter'
-                        : "Fügen Sie ein neues Produkt mit dem 'Neues Produkt' Button hinzu"}
+                        ? 'Versuchen Sie andere Suchbegriffe oder löschen Sie die Filter.'
+                        : "Fügen Sie ein neues Produkt mit dem 'Neues Produkt' Button hinzu."}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -341,6 +402,7 @@ const ProductManagementPage = () => {
           labelRowsPerPage="Zeilen pro Seite:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} von ${count}`}
           disabled={loading}
+          sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
         />
       </>
     );
@@ -348,7 +410,6 @@ const ProductManagementPage = () => {
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -368,10 +429,10 @@ const ProductManagementPage = () => {
 
       <Container maxWidth="xl">
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Statistics Cards */}
           <motion.div variants={itemVariants}>
             <Grid container spacing={3} sx={{ mb: 3 }}>
-              <Grid item xs={12} md={3}>
+              {/* Statistics Cards */}
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -383,13 +444,16 @@ const ProductManagementPage = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
-                      {loading ? <CircularProgress size={24} /> : productStats.total}
+                      {loading && totalElements === 0 ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        productStats.total
+                      )}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
-
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -401,13 +465,16 @@ const ProductManagementPage = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
-                      {loading ? <CircularProgress size={24} /> : productStats.withStock}
+                      {loading && products.length === 0 ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        productStats.withStock
+                      )}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
-
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -419,13 +486,16 @@ const ProductManagementPage = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
-                      {loading ? <CircularProgress size={24} /> : productStats.lowStock}
+                      {loading && products.length === 0 ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        productStats.lowStock
+                      )}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
-
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -437,7 +507,11 @@ const ProductManagementPage = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
-                      {loading ? <CircularProgress size={24} /> : productStats.outOfStock}
+                      {loading && products.length === 0 ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        productStats.outOfStock
+                      )}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -445,7 +519,6 @@ const ProductManagementPage = () => {
             </Grid>
           </motion.div>
 
-          {/* Filter Section */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -460,7 +533,7 @@ const ProductManagementPage = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    placeholder="Produkte suchen..."
+                    placeholder="Produkte suchen (Name, Beschreibung, Kategorie, Marke)..."
                     value={searchQuery}
                     onChange={handleSearchChange}
                     variant="outlined"
@@ -472,11 +545,18 @@ const ProductManagementPage = () => {
                         </InputAdornment>
                       ),
                     }}
+                    disabled={loading && products.length === 0}
                   />
                 </Grid>
-
                 <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                      gap: 1,
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     <Button
                       variant="outlined"
                       startIcon={<RefreshIcon />}
@@ -500,16 +580,14 @@ const ProductManagementPage = () => {
             </Paper>
           </motion.div>
 
-          {/* Error Message */}
           {error && (
             <motion.div variants={itemVariants}>
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
                 {error}
               </Alert>
             </motion.div>
           )}
 
-          {/* Product Table */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -524,16 +602,16 @@ const ProductManagementPage = () => {
         </motion.div>
       </Container>
 
-      {/* Product Form Dialog */}
+      {/* Dialogs */}
       <ProductForm
         open={openProductForm}
         onClose={handleCloseProductForm}
         onSubmit={handleSubmitProductForm}
         initialData={currentProduct}
         mode={formMode}
+        key={formMode === 'edit' ? currentProduct?.id : 'create'}
       />
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={openDeleteDialog}
         onClose={handleCloseDeleteDialog}
@@ -542,13 +620,14 @@ const ProductManagementPage = () => {
         content={
           <>
             <Typography variant="body1" gutterBottom>
-              Sind Sie sicher, dass Sie das Produkt "{currentProduct?.name || ''}" löschen möchten?
+              Sind Sie sicher, dass Sie das Produkt "{currentProduct?.name || ''}" (ID:{' '}
+              {currentProduct?.id || ''}) löschen möchten?
             </Typography>
             <Typography variant="body2" color="error" sx={{ mt: 2, fontWeight: 'medium' }}>
-              Achtung: Das Löschen von Produkten kann zu Inkonsistenzen im System führen! Produkte
-              könnten in bestehenden Verkäufen, Bestellungen oder Verbindungen zu anderen Produkten
-              verwendet werden. Statt Produkte zu löschen, sollten Sie diese lieber als "nicht
-              verfügbar" markieren, wenn sie nicht mehr verkauft werden sollen.
+              Achtung: Diese Aktion kann nicht rückgängig gemacht werden. Das Löschen von Produkten
+              kann zu Inkonsistenzen führen, wenn das Produkt in Bestellungen oder anderen
+              Systembereichen verwendet wird. Erwägen Sie stattdessen, das Produkt als "nicht
+              verfügbar" zu markieren.
             </Typography>
           </>
         }
