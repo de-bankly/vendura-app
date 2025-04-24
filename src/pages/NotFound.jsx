@@ -1,5 +1,4 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import HomeIcon from '@mui/icons-material/Home';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
@@ -20,19 +19,18 @@ import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 /**
  * Enhanced 404 Not Found page
  * Provides helpful navigation options and suggestions to users
+ * @returns {JSX.Element} The NotFound component.
  */
 const NotFound = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
 
-  // Common navigation links to suggest to users
   const navigationSuggestions = [
     { text: 'Home Page', path: '/', icon: <HomeIcon fontSize="small" /> },
     { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon fontSize="small" /> },
   ];
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {

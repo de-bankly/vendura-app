@@ -14,20 +14,16 @@ import {
   Tooltip,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
 
 /**
- * Page that throws an error during rendering to test the RouterErrorBoundary
- * This component will throw an error when the throwError parameter is present in the URL
+ * @description Page that throws an error during rendering to test the RouterErrorBoundary.
+ * This component will throw an error when the `throwError` parameter is present in the URL.
+ * @returns {JSX.Element} The ErrorPage component.
  */
 const ErrorPage = () => {
   const theme = useTheme();
   const searchParams = new URLSearchParams(window.location.search);
   const shouldThrowError = searchParams.has('throwError');
-
-  useEffect(() => {
-    // Component will throw error if parameter is present
-  }, [shouldThrowError]);
 
   // Animation variants
   const containerVariants = {

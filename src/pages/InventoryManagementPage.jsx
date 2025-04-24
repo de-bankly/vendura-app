@@ -3,16 +3,12 @@ import {
   LocalShipping as LocalShippingIcon,
   Refresh as RefreshIcon,
   WarningAmber as WarningIcon,
-  Inventory2 as InventoryIcon,
   ArrowBack as ArrowBackIcon,
   AltRoute as AltRouteIcon,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
-  CircularProgress,
   Container,
   Grid,
   Tab,
@@ -32,7 +28,6 @@ import SupplierOrderForm from '../components/inventory/SupplierOrderForm';
 import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
 import { InventoryManagementService, SupplierOrderService } from '../services';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -46,6 +41,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
+/**
+ * Renders the Inventory Management page, allowing users to view dashboard summaries,
+ * low stock products, supplier orders, and perform inventory actions.
+ * @returns {JSX.Element} The Inventory Management page component.
+ */
 const InventoryManagementPage = () => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
@@ -62,19 +62,21 @@ const InventoryManagementPage = () => {
     fetchData();
   }, [activeTab, refreshTrigger]);
 
+  /**
+   * Fetches necessary data based on the active tab, including low stock products
+   * and pending supplier orders. Handles loading and error states.
+   */
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
       if (activeTab === 0 || activeTab === 1) {
-        // Fetch low stock products
         const lowStockData = await InventoryManagementService.getLowStockProducts();
         setLowStockProducts(lowStockData);
       }
 
       if (activeTab === 0 || activeTab === 2) {
-        // Fetch pending supplier orders
         const pendingOrdersData = await InventoryManagementService.getPendingSupplierOrders();
         setPendingOrders(pendingOrdersData);
       }
@@ -87,42 +89,71 @@ const InventoryManagementPage = () => {
     }
   };
 
+  /**
+   * Handles changing the active tab.
+   * @param {React.SyntheticEvent} event - The event source of the callback.
+   * @param {number} newValue - The index of the new tab.
+   */
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
+  /**
+   * Triggers a refresh of the data by incrementing the refreshTrigger state.
+   */
   const handleRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  /**
+   * Triggers the backend service to check for products needing reordering.
+   */
   const handleTriggerReorderCheck = async () => {
     try {
       await InventoryManagementService.triggerReorderCheck();
-      handleRefresh();
+      handleRefresh(); // Refresh data after triggering
     } catch (err) {
       console.error('Error triggering reorder check:', err);
       setError('Failed to trigger reorder check.');
     }
   };
 
+  /**
+   * Opens the stock adjustment dialog for a specific product.
+   * @param {object} product - The product object to adjust stock for.
+   */
   const handleOpenStockAdjustment = product => {
     setCurrentProduct(product);
     setShowStockAdjustment(true);
   };
 
+  /**
+   * Closes the stock adjustment dialog and resets the current product.
+   */
   const handleStockAdjustmentClose = () => {
     setShowStockAdjustment(false);
     setCurrentProduct(null);
   };
 
+  /**
+   * Handles successful stock adjustment by refreshing the data.
+   */
   const handleStockAdjustmentSuccess = () => {
     handleRefresh();
   };
 
+  /**
+   * Opens the supplier order form modal/dialog.
+   */
   const handleCreateOrder = () => {
     setShowOrderForm(true);
   };
 
+  /**
+   * Handles the submission of the supplier order form.
+   * Creates the order via the service and refreshes data on success.
+   * @param {object} formData - The data submitted from the supplier order form.
+   */
   const handleOrderFormSubmit = async formData => {
     try {
       await SupplierOrderService.createSupplierOrder(formData);
@@ -134,14 +165,20 @@ const InventoryManagementPage = () => {
     }
   };
 
+  /**
+   * Closes the supplier order form modal/dialog.
+   */
   const handleOrderFormCancel = () => {
     setShowOrderForm(false);
   };
 
+  /**
+   * Renders the dashboard view with summary cards for low stock and pending orders.
+   * @returns {JSX.Element} The dashboard content.
+   */
   const renderDashboard = () => (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <Grid container spacing={3}>
-        {/* Low Stock Products Card */}
         <Grid item xs={12} md={6}>
           <motion.div variants={itemVariants}>
             <Paper
@@ -203,7 +240,6 @@ const InventoryManagementPage = () => {
           </motion.div>
         </Grid>
 
-        {/* Pending Orders Card */}
         <Grid item xs={12} md={6}>
           <motion.div variants={itemVariants}>
             <Paper
@@ -263,7 +299,6 @@ const InventoryManagementPage = () => {
           </motion.div>
         </Grid>
 
-        {/* Inventory Actions Card */}
         <Grid item xs={12}>
           <motion.div variants={itemVariants}>
             <Paper
@@ -324,6 +359,10 @@ const InventoryManagementPage = () => {
     </motion.div>
   );
 
+  /**
+   * Renders the view displaying products with low stock levels.
+   * @returns {JSX.Element} The low stock products content.
+   */
   const renderLowStockProducts = () => (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <motion.div variants={itemVariants}>
@@ -404,6 +443,10 @@ const InventoryManagementPage = () => {
     </motion.div>
   );
 
+  /**
+   * Renders the view displaying pending and recent supplier orders.
+   * @returns {JSX.Element} The supplier orders content.
+   */
   const renderSupplierOrders = () => (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <motion.div variants={itemVariants}>
@@ -602,7 +645,6 @@ const InventoryManagementPage = () => {
         </Container>
       )}
 
-      {/* Stock Adjustment Dialog */}
       {currentProduct && (
         <StockAdjustmentDialog
           open={showStockAdjustment}
@@ -612,7 +654,6 @@ const InventoryManagementPage = () => {
         />
       )}
 
-      {/* Supplier Order Form */}
       {showOrderForm && (
         <Box
           sx={{

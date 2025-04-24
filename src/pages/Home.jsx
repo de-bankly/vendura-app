@@ -34,6 +34,16 @@ import { useNavigate } from 'react-router-dom';
 import QuickAccessCard from '../components/dashboard/QuickAccessCard';
 import { InventoryManagementService, TransactionService } from '../services';
 
+/**
+ * @constant {number} REFRESH_INTERVAL - The interval in milliseconds for automatically refreshing dashboard data (5 minutes).
+ */
+const REFRESH_INTERVAL = 5 * 60000;
+
+/**
+ * @description The main dashboard component displaying key metrics, quick access links, and recent transactions.
+ * @component
+ * @returns {React.ReactElement} The Home component.
+ */
 const Home = () => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -66,37 +76,29 @@ const Home = () => {
     nextRefresh: null,
   });
 
-  // Refresh-Intervall
   const refreshIntervalRef = useRef(null);
-  const REFRESH_INTERVAL = 5 * 60000; // 5 Minuten
 
-  // Fetch inventory status
+  /**
+   * @description Fetches the current inventory status (total, low stock, out of stock).
+   * Handles caching logic and updates the component state.
+   * @param {boolean} [forceRefresh=false] - If true, bypasses the cache and fetches fresh data.
+   * @async
+   */
   const fetchInventoryStatus = useCallback(
     async (forceRefresh = false) => {
       try {
         setIsLoading(true);
-
-        // Hole Daten mit möglichem Cache
         const response = await InventoryManagementService.getInventoryStatus(forceRefresh);
-
-        // Extrahiere die tatsächlichen Daten
         const data = response.data || response;
         const isFromCache = response.isFromCache === true;
-
-        // Berechne den Zeitpunkt der nächsten automatischen Aktualisierung
         const nextRefresh = new Date(Date.now() + REFRESH_INTERVAL);
 
-        // Aktualisiere den Inventory-Cache-Status
         setInventoryCacheStatus({
           fromCache: isFromCache,
           nextRefresh,
         });
-
-        // Setze die extrahierten Inventardaten
         setInventoryStatus(data);
 
-        // Aktualisiere den Zeitstempel für die letzte Aktualisierung
-        // Nur wenn die Daten nicht aus dem Cache kamen, oder bei forciertem Refresh
         if (!isFromCache || forceRefresh) {
           setLastRefreshed(new Date());
         }
@@ -109,66 +111,53 @@ const Home = () => {
     [REFRESH_INTERVAL]
   );
 
-  // Fetch latest sales data
+  /**
+   * @description Fetches the latest sales data, calculates statistics (today vs yesterday, totals, top products),
+   * and updates the component state. Handles caching logic.
+   * @param {boolean} [forceRefresh=false] - If true, bypasses the cache and fetches fresh data.
+   * @async
+   */
   const fetchSalesData = useCallback(
     async (forceRefresh = false) => {
       try {
         setIsRefreshing(true);
-
-        // Hole den Start-Zeitstempel, um zu erkennen, ob Daten aus dem Cache kommen
-        const startTime = performance.now();
-
         const response = await TransactionService.getLatestSales(
           { page: 0, size: 10 },
           forceRefresh
         );
-
-        // Wir bekommen das isFromCache-Flag direkt aus dem response
         const data = response.data || response;
         const isFromCache = response.isFromCache === true;
-
-        // Berechne den Zeitpunkt der nächsten automatischen Aktualisierung
         const nextRefresh = new Date(Date.now() + REFRESH_INTERVAL);
 
-        // Aktualisiere den Cache-Status
         setCacheStatus({
           fromCache: isFromCache,
           nextRefresh,
         });
 
-        // Set recent sales (nur die ersten 5 anzeigen)
         setRecentSales(data.content?.slice(0, 5) || []);
 
-        // Calculate sales data (today and yesterday)
         const now = new Date();
         const today = now.toISOString().split('T')[0];
         const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-        // Calculate total sales for today and yesterday
         let todaySales = 0;
         let yesterdaySales = 0;
         let totalSales = 0;
         let totalItems = 0;
-
-        // Artikel-Tracking für Top-Produkte
         const productCounts = {};
 
         if (data.content && data.content.length > 0) {
           data.content.forEach(sale => {
             const saleDate = new Date(sale.date).toISOString().split('T')[0];
             const saleTotal = sale.total || 0;
-
             totalSales += saleTotal;
 
-            // Zähle alle verkauften Artikel
             if (sale.positions && sale.positions.length > 0) {
               sale.positions.forEach(position => {
                 const quantity = position.quantity || 0;
                 totalItems += quantity;
-
-                // Tracke Produkte für Top-Produkte Liste
                 const productId = position.productDTO?.id;
                 const productName = position.productDTO?.name || 'Unbekanntes Produkt';
 
@@ -181,7 +170,6 @@ const Home = () => {
                       total: 0,
                     };
                   }
-
                   productCounts[productId].count += quantity;
                   productCounts[productId].total +=
                     position.quantity * (position.productDTO?.price || 0);
@@ -197,21 +185,17 @@ const Home = () => {
           });
         }
 
-        // Calculate trend percentage
         let trend = 0;
         let positive = true;
-
         if (yesterdaySales > 0) {
           trend = ((todaySales - yesterdaySales) / yesterdaySales) * 100;
           positive = trend >= 0;
           trend = Math.abs(trend).toFixed(2);
         }
 
-        // Berechne Durchschnittlichen Bestellwert
         const avgOrderValue =
           data.content && data.content.length > 0 ? totalSales / data.content.length : 0;
 
-        // Erstelle Top-Produkte Liste
         const topProducts = Object.values(productCounts)
           .sort((a, b) => b.count - a.count)
           .slice(0, 3);
@@ -227,8 +211,6 @@ const Home = () => {
           topProducts,
         });
 
-        // Aktualisiere den Zeitstempel für die letzte Aktualisierung
-        // Nur wenn die Daten nicht aus dem Cache kamen, oder bei forciertem Refresh
         if (!isFromCache || forceRefresh) {
           setLastRefreshed(new Date());
         }
@@ -242,52 +224,31 @@ const Home = () => {
     [REFRESH_INTERVAL]
   );
 
-  // Initialisiere die Daten beim ersten Laden der Komponente
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // Prüfe, ob wir schon aktuelle Daten im localStorage haben
         const cachedSalesData = await TransactionService.getLatestSales(
           { page: 0, size: 10 },
           false
         );
         const cachedInventoryData = await InventoryManagementService.getInventoryStatus(false);
 
-        // Wenn wir Daten aus dem Cache bekommen haben, können wir diese verwenden
-        if (cachedSalesData.isFromCache) {
-          // Löse die existierenden Daten mit fetchSalesData aus, aber ohne forceRefresh
-          fetchSalesData(false);
-        } else {
-          // Wenn keine Daten im Cache, erzwinge ein Refresh
-          fetchSalesData(true);
-        }
-
-        // Wenn wir Inventardaten aus dem Cache bekommen haben, können wir diese verwenden
-        if (cachedInventoryData.isFromCache) {
-          // Verwende existierende Daten ohne forceRefresh
-          fetchInventoryStatus(false);
-        } else {
-          // Wenn keine Daten im Cache, erzwinge ein Refresh
-          fetchInventoryStatus(true);
-        }
+        fetchSalesData(!cachedSalesData.isFromCache);
+        fetchInventoryStatus(!cachedInventoryData.isFromCache);
       } catch (error) {
         console.error('Error loading initial data:', error);
-        // Bei Fehler: Erzwinge Refresh für beide Datenquellen
         fetchInventoryStatus(true);
         fetchSalesData(true);
       }
     };
 
-    // Lade die initialen Daten
     loadInitialData();
 
-    // Starte das Refresh-Intervall
     refreshIntervalRef.current = setInterval(() => {
       fetchSalesData();
       fetchInventoryStatus();
     }, REFRESH_INTERVAL);
 
-    // Cleanup beim Unmount der Komponente
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
@@ -295,13 +256,18 @@ const Home = () => {
     };
   }, [fetchInventoryStatus, fetchSalesData, REFRESH_INTERVAL]);
 
-  // Manuelles Refresh der Daten
+  /**
+   * @description Handles the manual refresh button click, forcing a data fetch bypassing the cache.
+   */
   const handleRefresh = () => {
-    fetchSalesData(true); // Force refresh aus dem Cache
+    fetchSalesData(true);
     fetchInventoryStatus(true);
   };
 
-  // Formatiere den letzten Aktualisierungszeitpunkt
+  /**
+   * @description Formats the time elapsed since the last data refresh for display.
+   * @returns {string} A user-friendly string indicating when the data was last refreshed.
+   */
   const getRefreshTimeDisplay = () => {
     const now = new Date();
     const diffMs = now - lastRefreshed;
@@ -320,10 +286,12 @@ const Home = () => {
     }
   };
 
-  // Formatiere den Zeitpunkt der nächsten Aktualisierung
+  /**
+   * @description Formats the time of the next scheduled automatic refresh.
+   * @returns {string} The time string for the next refresh, or an empty string if not available.
+   */
   const getNextRefreshDisplay = () => {
     if (!cacheStatus.nextRefresh) return '';
-
     return cacheStatus.nextRefresh.toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit',
@@ -331,7 +299,6 @@ const Home = () => {
     });
   };
 
-  // Data for Quick Access Cards
   const quickAccessItems = [
     {
       title: 'Verkauf',
@@ -363,7 +330,6 @@ const Home = () => {
     },
   ];
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -376,9 +342,14 @@ const Home = () => {
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Header mit Last Refreshed und Refresh Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        {/* Welcome Message */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 4,
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -394,9 +365,14 @@ const Home = () => {
           </Box>
         </motion.div>
 
-        {/* Refresh Button und Last Refreshed Info */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+            }}
+          >
             <Typography variant="caption" color="text.secondary">
               Aktualisiert: {getRefreshTimeDisplay()}
             </Typography>
@@ -432,12 +408,9 @@ const Home = () => {
         </Box>
       </Box>
 
-      {/* Main Dashboard Area */}
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
         <Grid container spacing={3}>
-          {/* Left Column - Combined Revenue and Inventory Card */}
           <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column' }}>
-            {/* Combined Card */}
             <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: 3 }}>
                 <Box
@@ -491,7 +464,6 @@ const Home = () => {
 
                     <Divider sx={{ my: 2 }} />
 
-                    {/* Zusätzliche Verkaufsstatistiken */}
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
                         Verkaufsstatistiken
@@ -543,14 +515,13 @@ const Home = () => {
                       </Grid>
                     </Box>
 
-                    {/* Top Produkte */}
                     {salesData.topProducts && salesData.topProducts.length > 0 && (
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                           Top Produkte
                         </Typography>
 
-                        {salesData.topProducts.map((product, index) => (
+                        {salesData.topProducts.map(product => (
                           <Box
                             key={product.id}
                             sx={{
@@ -596,7 +567,11 @@ const Home = () => {
                         }}
                       >
                         <InventoryIcon
-                          sx={{ fontSize: '1rem', mr: 1, color: theme.palette.primary.main }}
+                          sx={{
+                            fontSize: '1rem',
+                            mr: 1,
+                            color: theme.palette.primary.main,
+                          }}
                         />
                         Inventarstatus
                         <Tooltip
@@ -764,9 +739,7 @@ const Home = () => {
             </Card>
           </Grid>
 
-          {/* Right Column - Quick Access Cards and Recent Transactions */}
           <Grid item xs={12} md={8}>
-            {/* Quick Access Cards - Grid Layout */}
             <Box sx={{ mb: 3 }}>
               <Grid container spacing={3}>
                 {quickAccessItems.map((item, index) => (
@@ -783,7 +756,6 @@ const Home = () => {
               </Grid>
             </Box>
 
-            {/* Recent Transactions Card */}
             <Card>
               <CardContent sx={{ p: 3, bgcolor: alpha(theme.palette.primary.light, 0.03) }}>
                 <Box
@@ -824,7 +796,13 @@ const Home = () => {
                           transition: 'background-color 0.2s ease',
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            width: '100%',
+                          }}
+                        >
                           <Avatar
                             sx={{
                               width: 36,
@@ -874,7 +852,6 @@ const Home = () => {
                               })}
                             </Typography>
 
-                            {/* Zeige Positionen des Verkaufs an */}
                             {sale.positions && sale.positions.length > 0 && (
                               <Box
                                 sx={{
@@ -898,7 +875,10 @@ const Home = () => {
                                   >
                                     <Typography
                                       variant="caption"
-                                      sx={{ display: 'flex', alignItems: 'center' }}
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
                                     >
                                       {position.quantity}× {position.productDTO?.name || 'Produkt'}
                                     </Typography>
@@ -925,9 +905,15 @@ const Home = () => {
                               </Box>
                             )}
 
-                            {/* Zahlungsinformationen */}
                             {sale.payments && sale.payments.length > 0 && (
-                              <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              <Box
+                                sx={{
+                                  mt: 1,
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: 0.5,
+                                }}
+                              >
                                 {sale.payments.map((payment, paymentIndex) => (
                                   <Chip
                                     key={paymentIndex}
