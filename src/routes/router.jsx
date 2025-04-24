@@ -5,10 +5,8 @@ import { ProtectedRoute } from '../components/auth';
 import { withFaroRouterInstrumentation, setRouter } from '../utils/faro';
 import { BarcodeProvider } from '../contexts/BarcodeContext';
 
-// Layouts
 const TopNavLayout = lazy(() => import('../components/layout/TopNavLayout'));
 
-// Pages (Lazy Load all pages)
 const Home = lazy(() => import('../pages/Home'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
@@ -25,7 +23,6 @@ const GiftCardManagementPage = lazy(() => import('../pages/admin/GiftCardManagem
 const PromotionManagementScreen = lazy(() => import('../pages/PromotionManagementScreen'));
 const PfandautomatPage = lazy(() => import('../pages/PfandautomatPage'));
 
-// Error handling
 const RouterErrorBoundary = lazy(() =>
   import('../components/error/ErrorBoundary').then(module => ({
     default: module.RouterErrorBoundary,
@@ -35,6 +32,7 @@ const RouterErrorBoundary = lazy(() =>
 /**
  * Application router configuration
  * Defines all available routes and their corresponding components
+ * @type {import('react-router-dom').Router}
  */
 const reactBrowserRouter = createBrowserRouter([
   {
@@ -163,17 +161,14 @@ const reactBrowserRouter = createBrowserRouter([
       },
     ],
   },
-  // Catch-all route to redirect to login
   {
     path: '*',
     element: <Navigate to="/login" replace />,
   },
 ]);
 
-// Store router reference for Faro instrumentation
 setRouter(reactBrowserRouter);
 
-// Apply Faro instrumentation to the router
 const router = withFaroRouterInstrumentation(reactBrowserRouter);
 
 export default router;

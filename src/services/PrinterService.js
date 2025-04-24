@@ -2,7 +2,14 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_PRINTER_SERVICE_URL || 'http://localhost:3001';
 
+/**
+ * Service class for interacting with the printer API.
+ */
 class PrinterService {
+  /**
+   * Creates an instance of PrinterService.
+   * @param {string} [apiUrl=API_URL] - The base URL for the printer service API.
+   */
   constructor(apiUrl = API_URL) {
     this.apiUrl = apiUrl;
 
@@ -16,8 +23,8 @@ class PrinterService {
   }
 
   /**
-   * Check if the printer is connected
-   * @returns {Promise<{connected: boolean}>}
+   * Checks the connection status of the printer service.
+   * @returns {Promise<{connected: boolean, error?: string}>} A promise that resolves with the connection status.
    */
   async checkStatus() {
     try {
@@ -30,10 +37,18 @@ class PrinterService {
   }
 
   /**
-   * Format cart items for receipt printing
-   * @param {Array} cartItems - Array of cart items
-   * @param {Object} options - Additional options for formatting
-   * @returns {Array} Formatted items ready for printing
+   * Formats cart items into a structure suitable for receipt printing.
+   * @param {Array<Object>} cartItems - Array of cart items.
+   * @param {Object} [options={}] - Additional options for formatting.
+   * @param {number} [options.voucherDiscount=0] - Discount amount from vouchers.
+   * @param {number} [options.depositCredit=0] - Credit amount from deposits.
+   * @param {number} [options.productDiscount=0] - Discount amount on products.
+   * @param {number} [options.giftCardPayment=0] - Amount paid by gift card.
+   * @param {string} [options.paymentMethod='cash'] - The payment method used.
+   * @param {number} [options.cashReceived=0] - Amount of cash received (if paymentMethod is 'cash').
+   * @param {Object} [options.cardDetails={}] - Details of the card used (if paymentMethod is 'card').
+   * @param {number} [options.total=0] - The total amount of the transaction.
+   * @returns {Array<{name: string, price: string, description?: string}>} Formatted items ready for printing.
    */
   formatReceiptItems(cartItems, options = {}) {
     const {
@@ -141,14 +156,26 @@ class PrinterService {
   }
 
   /**
-   * Print a receipt
-   * @param {Object} receiptData - Data for the receipt
-   * @returns {Promise<{success: boolean, message: string}>}
+   * Sends a request to print a standard sales receipt.
+   * @param {Object} receiptData - Data for the receipt.
+   * @param {Array<Object>} receiptData.cartItems - Items included in the transaction.
+   * @param {number} [receiptData.voucherDiscount] - Discount from vouchers.
+   * @param {number} [receiptData.depositCredit] - Credit from deposits.
+   * @param {number} [receiptData.productDiscount] - Discount on products.
+   * @param {number} [receiptData.giftCardPayment] - Amount paid by gift card.
+   * @param {string} [receiptData.paymentMethod] - Payment method used.
+   * @param {number} [receiptData.cashReceived] - Cash received (for cash payments).
+   * @param {Object} [receiptData.cardDetails] - Card details (for card payments).
+   * @param {number} receiptData.total - Total amount of the transaction.
+   * @param {string} [receiptData.title] - Title of the receipt.
+   * @param {string} [receiptData.transactionId] - Unique identifier for the transaction.
+   * @param {string} [receiptData.footerText] - Text to display at the bottom of the receipt.
+   * @returns {Promise<{success: boolean, message: string}>} A promise that resolves with the print status or rejects with an error.
    */
   async printReceipt(receiptData) {
     try {
       const { cartItems, ...rest } = receiptData;
-      receiptData = {
+      const formattedReceiptData = {
         ...rest,
         items: this.formatReceiptItems(cartItems, {
           voucherDiscount: receiptData.voucherDiscount || 0,
@@ -166,7 +193,7 @@ class PrinterService {
         footerText: receiptData.footerText || 'Vielen Dank für Ihren Einkauf!',
       };
 
-      const response = await this.client.post('/print/receipt', receiptData);
+      const response = await this.client.post('/print/receipt', formattedReceiptData);
       return response.data;
     } catch (error) {
       console.error('Error printing receipt:', error);
@@ -175,9 +202,12 @@ class PrinterService {
   }
 
   /**
-   * Print a deposit receipt
-   * @param {Object} depositData - Deposit receipt data
-   * @returns {Promise<{success: boolean, message: string}>}
+   * Sends a request to print a deposit receipt.
+   * @param {Object} depositData - Data for the deposit receipt.
+   * @param {string} [depositData.id] - Unique identifier for the deposit.
+   * @param {Array<Object>} [depositData.positions] - Items included in the deposit.
+   * @param {number} [depositData.total] - Total amount of the deposit.
+   * @returns {Promise<{success: boolean, message: string}>} A promise that resolves with the print status or rejects with an error.
    */
   async printDepositReceipt(depositData) {
     try {

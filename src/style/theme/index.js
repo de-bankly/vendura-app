@@ -1,6 +1,55 @@
 import { createTheme, alpha as muiAlpha } from '@mui/material/styles';
 
-// Define color palette - Modern minimalist colors
+/**
+ * @typedef {object} ColorShades
+ * @property {string} main - The main shade of the color.
+ * @property {string} light - A lighter shade of the color.
+ * @property {string} dark - A darker shade of the color.
+ * @property {string} contrastText - Text color that contrasts well with the main shade.
+ */
+
+/**
+ * @typedef {object} GreyShades
+ * @property {string} 50
+ * @property {string} 100
+ * @property {string} 200
+ * @property {string} 300
+ * @property {string} 400
+ * @property {string} 500
+ * @property {string} 600
+ * @property {string} 700
+ * @property {string} 800
+ * @property {string} 900
+ */
+
+/**
+ * @typedef {object} CommonColors
+ * @property {string} black
+ * @property {string} white
+ */
+
+/**
+ * @typedef {object} TooltipColors
+ * @property {string} background
+ * @property {string} text
+ */
+
+/**
+ * Defines the color palette for the theme using modern minimalist colors.
+ * @type {{
+ *   primary: ColorShades,
+ *   secondary: ColorShades,
+ *   background: { default: string, paper: string },
+ *   text: { primary: string, secondary: string },
+ *   grey: GreyShades,
+ *   success: ColorShades,
+ *   warning: ColorShades,
+ *   error: ColorShades,
+ *   info: ColorShades,
+ *   common: CommonColors,
+ *   tooltip?: TooltipColors
+ * }}
+ */
 const COLORS = {
   primary: {
     main: '#0F172A',
@@ -66,12 +115,16 @@ COLORS.tooltip = {
   text: COLORS.common.white,
 };
 
-// Add common colors if not present
+// Add common colors if not present (defensive coding)
 if (!COLORS.common) {
   COLORS.common = { black: '#000', white: '#fff' };
 }
 
-// Create theme
+/**
+ * MUI theme configuration object.
+ * Includes palette, typography, shape, shadows, and component overrides.
+ * @type {import('@mui/material/styles').Theme}
+ */
 const theme = createTheme({
   palette: {
     primary: COLORS.primary,
@@ -215,27 +268,26 @@ const theme = createTheme({
         html, body {
           scroll-behavior: smooth;
         }
-        
-        /* Accessible focus outline using theme color */
+
         :focus-visible {
-          outline: 2px solid ${theme.palette.primary.light}; /* Use theme token */
+          outline: 2px solid ${theme.palette.primary.light};
           outline-offset: 2px;
         }
-        
+
         ::-webkit-scrollbar {
           width: 4px;
           height: 4px;
         }
-        
+
         ::-webkit-scrollbar-track {
           background: ${theme.palette.grey[100]};
         }
-        
+
         ::-webkit-scrollbar-thumb {
           background: ${theme.palette.grey[400]};
           border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
           background: ${theme.palette.grey[500]};
         }

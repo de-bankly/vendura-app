@@ -2,22 +2,23 @@ import CartCareTaker from './CartCareTaker';
 import CartOriginator from './CartOriginator';
 
 /**
- * CartMementoService
- * Service that integrates the Memento pattern for cart state management
+ * Service integrating the Memento pattern for cart state management.
+ * Provides functionality to save, restore (undo/redo), and manage cart states.
  */
 class CartMementoService {
   constructor() {
     this._originator = new CartOriginator();
     this._careTaker = new CartCareTaker();
     this._autoSaveEnabled = true;
-    this._autoSaveThreshold = 2000; // Time in ms between auto-saves (prevents too many saves on rapid changes)
+    this._autoSaveThreshold = 2000; // Default threshold in ms
     this._lastSaveTimestamp = 0;
     this._pendingSaveTimeout = null;
   }
 
   /**
-   * Update the cart items in the originator and trigger auto-save if enabled
-   * @param {Array} cartItems - The new cart items
+   * Updates the cart items in the originator and schedules an auto-save if enabled.
+   * @param {Array} cartItems - The new array of cart items.
+   * @returns {Array} The updated cart items, or an empty array if input was falsy.
    */
   updateCartItems(cartItems) {
     if (!cartItems) return [];
@@ -27,50 +28,50 @@ class CartMementoService {
   }
 
   /**
-   * Update the applied vouchers in the originator and trigger auto-save if enabled
-   * @param {Array} appliedVouchers - The new applied vouchers
+   * Updates the applied vouchers in the originator and schedules an auto-save if enabled.
+   * @param {Array} appliedVouchers - The new array of applied vouchers. Defaults to empty array if falsy.
+   * @returns {Array} The updated applied vouchers.
    */
   updateAppliedVouchers(appliedVouchers) {
-    this._originator.setAppliedVouchers(appliedVouchers || []);
+    const vouchers = appliedVouchers || [];
+    this._originator.setAppliedVouchers(vouchers);
     this._scheduleAutoSave();
-    return appliedVouchers || [];
+    return vouchers;
   }
 
   /**
-   * Get the current cart items from the originator
-   * @returns {Array} The current cart items
+   * Gets the current cart items from the originator.
+   * @returns {Array} The current array of cart items.
    */
   getCartItems() {
     return this._originator.getCartItems();
   }
 
   /**
-   * Get the current applied vouchers from the originator
-   * @returns {Array} The current applied vouchers
+   * Gets the current applied vouchers from the originator.
+   * @returns {Array} The current array of applied vouchers.
    */
   getAppliedVouchers() {
     return this._originator.getAppliedVouchers();
   }
 
   /**
-   * Manually save the current state to a memento
-   * @param {string} label - Optional label for the memento
-   * @returns {boolean} True if the save was successful
+   * Manually saves the current state to a memento.
+   * Does not save if the cart is empty. Clears any pending auto-save.
+   * @param {string} [label=null] - An optional label to identify the saved state.
+   * @returns {boolean} True if the state was saved successfully (cart not empty), false otherwise.
    */
   saveState(label = null) {
-    // Check if there are cart items before saving
     const cartItems = this._originator.getCartItems();
     if (!cartItems || cartItems.length === 0) {
       return false;
     }
 
-    // Clear any pending auto-save
     if (this._pendingSaveTimeout) {
       clearTimeout(this._pendingSaveTimeout);
       this._pendingSaveTimeout = null;
     }
 
-    // Save the current state
     const memento = this._originator.saveToMemento();
     if (label) {
       memento.label = label;
@@ -82,8 +83,8 @@ class CartMementoService {
   }
 
   /**
-   * Restore a previous state (undo)
-   * @returns {Object|null} An object containing the restored state, or null if restore failed
+   * Restores the previous state from the history (undo).
+   * @returns {{cartItems: Array, appliedVouchers: Array}|null} An object containing the restored state ({cartItems, appliedVouchers}), or null if no previous state exists.
    */
   undo() {
     const previousMemento = this._careTaker.getPreviousMemento();
@@ -98,8 +99,8 @@ class CartMementoService {
   }
 
   /**
-   * Restore a next state (redo)
-   * @returns {Object|null} An object containing the restored state, or null if restore failed
+   * Restores the next state from the history (redo), if available after an undo.
+   * @returns {{cartItems: Array, appliedVouchers: Array}|null} An object containing the restored state ({cartItems, appliedVouchers}), or null if no next state exists.
    */
   redo() {
     const nextMemento = this._careTaker.getNextMemento();
@@ -114,25 +115,25 @@ class CartMementoService {
   }
 
   /**
-   * Check if undo is available
-   * @returns {boolean} True if undo is available
+   * Checks if an undo operation is possible (if there is a previous state in history).
+   * @returns {boolean} True if undo is available, false otherwise.
    */
   canUndo() {
     return this._careTaker.canUndo();
   }
 
   /**
-   * Check if redo is available
-   * @returns {boolean} True if redo is available
+   * Checks if a redo operation is possible (if there is a next state in history).
+   * @returns {boolean} True if redo is available, false otherwise.
    */
   canRedo() {
     return this._careTaker.canRedo();
   }
 
   /**
-   * Restore state from a specific memento by index
-   * @param {number} index - The index of the memento to restore
-   * @returns {Object|null} An object containing the restored state, or null if restore failed
+   * Restores state from a specific memento by its index in the history.
+   * @param {number} index - The index of the memento to restore.
+   * @returns {{cartItems: Array, appliedVouchers: Array}|null} An object containing the restored state ({cartItems, appliedVouchers}), or null if the index is invalid.
    */
   restoreStateByIndex(index) {
     const memento = this._careTaker.getMemento(index);
@@ -147,68 +148,81 @@ class CartMementoService {
   }
 
   /**
-   * Get all saved states
-   * @returns {Array} Array of all saved mementos
+   * Gets all saved mementos (states) currently stored in the history.
+   * @returns {Array} Array of all saved mementos.
    */
   getAllSavedStates() {
     return this._careTaker.getAllMementos();
   }
 
   /**
-   * Clear all saved states
+   * Clears all saved states from the history and resets the current originator state to empty.
    */
   clearHistory() {
     this._careTaker.clear();
-    // Also reset the current state
     this._originator.setCartItems([]);
     this._originator.setAppliedVouchers([]);
+    this._lastSaveTimestamp = 0; // Reset timestamp as history is cleared
+    if (this._pendingSaveTimeout) {
+      clearTimeout(this._pendingSaveTimeout);
+      this._pendingSaveTimeout = null;
+    }
   }
 
   /**
-   * Enable or disable auto-saving
-   * @param {boolean} enabled - Whether auto-saving should be enabled
+   * Enables or disables the auto-save feature.
+   * @param {boolean} enabled - True to enable auto-saving, false to disable.
    */
   setAutoSaveEnabled(enabled) {
     this._autoSaveEnabled = enabled;
+    if (!enabled && this._pendingSaveTimeout) {
+      // Clear pending save if auto-save is disabled
+      clearTimeout(this._pendingSaveTimeout);
+      this._pendingSaveTimeout = null;
+    }
   }
 
   /**
-   * Set the auto-save threshold (to prevent too many saves on rapid changes)
-   * @param {number} threshold - Time in ms between auto-saves
+   * Sets the minimum time interval (in milliseconds) between automatic saves.
+   * This prevents excessive saves during rapid state changes.
+   * @param {number} threshold - The time threshold in milliseconds (e.g., 2000 for 2 seconds).
    */
   setAutoSaveThreshold(threshold) {
     this._autoSaveThreshold = threshold;
   }
 
   /**
-   * Schedule an auto-save if auto-save is enabled
+   * Schedules an automatic save operation if auto-save is enabled and the cart is not empty.
+   * Uses a threshold to debounce rapid changes, ensuring saves don't happen too frequently.
+   * Clears any previously scheduled auto-save before setting a new one.
    * @private
    */
   _scheduleAutoSave() {
-    // Only schedule an auto-save if enabled
     if (!this._autoSaveEnabled) {
       return;
     }
 
-    // Check if there are cart items before scheduling an auto-save
     const cartItems = this._originator.getCartItems();
     if (!cartItems || cartItems.length === 0) {
+      // Don't schedule auto-save for an empty cart state
+      // Clear pending save if cart becomes empty
+      if (this._pendingSaveTimeout) {
+        clearTimeout(this._pendingSaveTimeout);
+        this._pendingSaveTimeout = null;
+      }
       return;
     }
 
-    // Clear any existing timeout
     if (this._pendingSaveTimeout) {
       clearTimeout(this._pendingSaveTimeout);
     }
 
-    // Calculate how long to wait before auto-saving
     const timeSinceLastSave = Date.now() - this._lastSaveTimestamp;
     const timeToWait = Math.max(0, this._autoSaveThreshold - timeSinceLastSave);
 
-    // Schedule the auto-save
     this._pendingSaveTimeout = setTimeout(() => {
-      this.saveState();
-      this._pendingSaveTimeout = null;
+      this.saveState(); // Use the public saveState method
+      this._pendingSaveTimeout = null; // Clear the timeout ID after execution
     }, timeToWait);
   }
 }
