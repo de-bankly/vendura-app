@@ -5,7 +5,6 @@ import apiClient from './ApiConfig';
  */
 class TransactionService {
   constructor() {
-    // Cache-Objekte für verschiedene Datentypen
     this.cache = {
       latestSales: {
         data: null,
@@ -16,15 +15,12 @@ class TransactionService {
       productTransactions: {}, // key: productId, value: {data, timestamp, params}
     };
 
-    // Cache-Konfiguration
     this.cacheConfig = {
-      // Wie lange der Cache gültig ist (in Millisekunden)
       maxAge: 2 * 60 * 1000, // 2 Minuten Standard-Cache-Zeit
       dashboardMaxAge: 5 * 60 * 1000, // 5 Minuten für Dashboard-Daten (häufiger aktualisiert)
       storageKey: 'vendura_transaction_cache', // Schlüssel für den LocalStorage
     };
 
-    // Load cache from localStorage on service initialization
     this.loadCacheFromStorage();
   }
 
@@ -33,10 +29,8 @@ class TransactionService {
    */
   saveCacheToStorage() {
     try {
-      // Erstelle eine Kopie des Cache-Objekts ohne zirkuläre Referenzen
       const cacheToSave = {
         latestSales: this.cache.latestSales,
-        // Speichere auch die Daten für saleDetails, nicht nur die Timestamps
         saleDetails: Object.fromEntries(
           Object.entries(this.cache.saleDetails).map(([id, entry]) => [
             id,
@@ -46,7 +40,6 @@ class TransactionService {
             },
           ])
         ),
-        // Speichere auch die Daten für productTransactions, nicht nur die Timestamps
         productTransactions: Object.fromEntries(
           Object.entries(this.cache.productTransactions).map(([id, entry]) => [
             id,
@@ -59,11 +52,9 @@ class TransactionService {
         ),
       };
 
-      // Speichere den vollständigen Cache im localStorage
       localStorage.setItem(this.cacheConfig.storageKey, JSON.stringify(cacheToSave));
     } catch (error) {
       console.error('Error saving cache to localStorage:', error);
-      // Bei Fehlern localStorage-Speicherung überspringen, aber weitermachen
     }
   }
 
@@ -77,42 +68,33 @@ class TransactionService {
       if (savedCache) {
         const parsedCache = JSON.parse(savedCache);
 
-        // Prüfen, ob der Cache-Eintrag für latestSales noch gültig ist
         if (
           parsedCache.latestSales &&
           parsedCache.latestSales.data &&
           parsedCache.latestSales.timestamp &&
           this.isCacheValid(parsedCache.latestSales)
         ) {
-          // Stelle sicher, dass wir den vollständigen Datensatz inkl. data laden
           this.cache.latestSales = parsedCache.latestSales;
-          console.log('Cached latestSales data loaded from localStorage');
         }
 
-        // Lade die vollständigen saleDetails-Daten inklusive der eigentlichen Daten
         if (parsedCache.saleDetails) {
-          // Für jedes saleDetail prüfen, ob es noch gültig ist und Daten hat
           const validSaleDetails = {};
 
           Object.entries(parsedCache.saleDetails).forEach(([id, entry]) => {
             if (entry.timestamp && entry.data && this.isCacheValid(entry)) {
               validSaleDetails[id] = entry;
-              console.log(`Cached sale detail data loaded for ID ${id}`);
             }
           });
 
           this.cache.saleDetails = validSaleDetails;
         }
 
-        // Lade die vollständigen productTransactions-Daten inklusive der eigentlichen Daten
         if (parsedCache.productTransactions) {
-          // Für jede productTransaction prüfen, ob sie noch gültig ist und Daten hat
           const validProductTransactions = {};
 
           Object.entries(parsedCache.productTransactions).forEach(([id, entry]) => {
             if (entry.timestamp && entry.data && this.isCacheValid(entry)) {
               validProductTransactions[id] = entry;
-              console.log(`Cached product transaction data loaded for ID ${id}`);
             }
           });
 
@@ -121,7 +103,6 @@ class TransactionService {
       }
     } catch (error) {
       console.error('Error loading cache from localStorage:', error);
-      // Bei Fehlern den In-Memory-Cache verwenden
     }
   }
 
@@ -132,22 +113,18 @@ class TransactionService {
    * @returns {boolean} True wenn der Cache noch gültig ist, sonst false
    */
   isCacheValid(cacheEntry, maxAge = this.cacheConfig.maxAge) {
-    // Prüfe, ob der Cache-Eintrag existiert und alle erforderlichen Felder hat
     if (!cacheEntry || !cacheEntry.timestamp) {
       return false;
     }
 
-    // Bei latestSales müssen wir sicherstellen, dass data vorhanden ist
     if (cacheEntry === this.cache.latestSales && (!cacheEntry.data || !cacheEntry.data.content)) {
       return false;
     }
 
-    // Prüfe für andere Cache-Einträge
     if (cacheEntry !== this.cache.latestSales && !cacheEntry.data) {
       return false;
     }
 
-    // Prüfe, ob der Cache noch nicht abgelaufen ist
     const now = Date.now();
     return now - cacheEntry.timestamp < maxAge;
   }
@@ -176,7 +153,6 @@ class TransactionService {
    */
   async createSaleTransaction(transactionData) {
     try {
-      // Prepare position data (cart items)
       const positions = transactionData.cartItems.map(item => ({
         productDTO: { id: item.id },
         quantity: item.quantity,
@@ -185,7 +161,6 @@ class TransactionService {
         discountValue: item.discount || 0,
       }));
 
-      // Prioritize using payments provided by PaymentProcessor
       let payments = [];
 
       if (
@@ -195,12 +170,9 @@ class TransactionService {
       ) {
         payments = transactionData.payments;
       } else {
-        // Fallback: Construct payments from individual components
         let giftCardTotal = 0;
 
-        // Add gift card payments
         if (transactionData.appliedVouchers && transactionData.appliedVouchers.length > 0) {
-          // Gift card vouchers
           const giftCardVouchers = transactionData.appliedVouchers.filter(
             voucher => voucher.type === 'GIFT_CARD'
           );
@@ -217,7 +189,6 @@ class TransactionService {
             }
           }
 
-          // Discount card vouchers
           const discountVouchers = transactionData.appliedVouchers.filter(
             voucher => voucher.type === 'DISCOUNT_CARD'
           );
@@ -234,14 +205,10 @@ class TransactionService {
           }
         }
 
-        // Calculate remaining amount after gift cards and deposit credit
-        // Hinweis: Pfandguthaben wird direkt vom total abgezogen,
-        // da es nicht als Zahlungsmethode im payments-Array erscheint
         const depositCredit = parseFloat(transactionData.depositCredit) || 0;
         const remainingAmount = Math.max(0, transactionData.total - giftCardTotal - depositCredit);
 
         if (transactionData.paymentMethod === 'cash') {
-          // Für Barzahlungen wird immer ein handed-Wert benötigt
           const parsedCashReceived = parseFloat(transactionData.cashReceived) || 0;
           const handedAmount =
             parsedCashReceived > 0 ? parsedCashReceived : Math.max(remainingAmount, 0.01);
@@ -266,10 +233,8 @@ class TransactionService {
         }
       }
 
-      // Prepare deposit receipts data
       const depositReceipts = [];
 
-      // Add deposit receipts if applicable
       if (transactionData.depositReceipts && transactionData.depositReceipts.length > 0) {
         for (const receipt of transactionData.depositReceipts) {
           depositReceipts.push({
@@ -278,7 +243,6 @@ class TransactionService {
         }
       }
 
-      // Construct sale DTO
       const saleDTO = {
         positions,
         payments,
@@ -286,10 +250,8 @@ class TransactionService {
         total: transactionData.subtotal,
       };
 
-      // Send to backend
       const response = await apiClient.post('/v1/sale', saleDTO);
 
-      // Invalidate cache after successful transaction
       this.invalidateCache();
 
       return response.data;
@@ -306,12 +268,10 @@ class TransactionService {
    */
   invalidateCache(type, id) {
     if (!type) {
-      // Alle Caches invalidieren
       this.cache.latestSales = { data: null, timestamp: null, params: null };
       this.cache.saleDetails = {};
       this.cache.productTransactions = {};
 
-      // Cache im localStorage aktualisieren
       this.saveCacheToStorage();
       return;
     }
@@ -338,7 +298,6 @@ class TransactionService {
         break;
     }
 
-    // Cache im localStorage aktualisieren
     this.saveCacheToStorage();
   }
 
@@ -350,7 +309,6 @@ class TransactionService {
    */
   async getLatestSales(pageable = { page: 0, size: 5 }, forceRefresh = false) {
     try {
-      // Größere Detailgenauigkeit anfordern mit Expand-Parameter
       const queryParams = {
         ...pageable,
         expand: 'positions,payments,depositReceipts',
@@ -361,13 +319,11 @@ class TransactionService {
       // zuerst angezeigt werden. Im Frontend werden die ersten Einträge der Liste
       // für Dashboards und Übersichten verwendet.
 
-      // Cache-Validität prüfen (für Dashboard kürzere Lebensdauer)
       const isDashboardRequest = pageable.size <= 10;
       const maxAge = isDashboardRequest
         ? this.cacheConfig.dashboardMaxAge
         : this.cacheConfig.maxAge;
 
-      // Prüfe, ob wir gültige gecachte Daten für diese Parameter haben
       const cacheEntry = this.cache.latestSales;
 
       if (
@@ -375,33 +331,26 @@ class TransactionService {
         this.isCacheValid(cacheEntry, maxAge) &&
         this.areParamsEqual(queryParams, cacheEntry.params)
       ) {
-        // Gib ein Objekt zurück, das sowohl die Daten als auch die Information enthält,
-        // dass die Daten aus dem Cache kommen
         return {
           data: cacheEntry.data,
           isFromCache: true,
         };
       }
 
-      // Wenn kein gültiger Cache, Daten vom Server holen
       const response = await apiClient.get('/v1/sale', { params: queryParams });
 
-      // Formatiere die Daten für die Anzeige
       if (response.data && response.data.content) {
         response.data.content = response.data.content.map(this.formatSaleData);
       }
 
-      // Aktualisiere den Cache
       this.cache.latestSales = {
         data: response.data,
         timestamp: Date.now(),
         params: queryParams,
       };
 
-      // Cache im localStorage aktualisieren
       this.saveCacheToStorage();
 
-      // Gib ein Objekt zurück, das die Information enthält, dass die Daten nicht aus dem Cache kommen
       return {
         data: response.data,
         isFromCache: false,
@@ -418,32 +367,25 @@ class TransactionService {
    * @returns {Object} Formatted sale data
    */
   formatSaleData(sale) {
-    // Formatiere Verkaufsdaten für die Anzeige
     return {
       ...sale,
-      // Stelle sicher, dass total als Zahl vorliegt
       total: typeof sale.total === 'number' ? sale.total : parseFloat(sale.total || 0),
-      // Stelle sicher, dass positions ein Array ist
       positions: Array.isArray(sale.positions)
         ? sale.positions.map(position => ({
             ...position,
-            // Stelle sicher, dass quantity als Zahl vorliegt
             quantity:
               typeof position.quantity === 'number'
                 ? position.quantity
                 : parseInt(position.quantity || 0, 10),
-            // Stelle sicher, dass discountEuro als Zahl vorliegt
             discountEuro:
               typeof position.discountEuro === 'number'
                 ? position.discountEuro
                 : parseFloat(position.discountEuro || 0),
           }))
         : [],
-      // Stelle sicher, dass payments ein Array ist
       payments: Array.isArray(sale.payments)
         ? sale.payments.map(payment => ({
             ...payment,
-            // Stelle sicher, dass amount als Zahl vorliegt
             amount:
               typeof payment.amount === 'number' ? payment.amount : parseFloat(payment.amount || 0),
           }))
@@ -459,29 +401,23 @@ class TransactionService {
    */
   async getTransactionById(id, forceRefresh = false) {
     try {
-      // Prüfe, ob wir einen gültigen Cache für diese ID haben
       const cacheEntry = this.cache.saleDetails[id];
 
       if (!forceRefresh && this.isCacheValid(cacheEntry)) {
-        console.log(`Using cached sale data for ID ${id}`);
         return cacheEntry.data;
       }
 
-      // Wenn kein gültiger Cache, Daten vom Server holen
       const response = await apiClient.get(`/v1/sale/${id}`, {
         params: { expand: 'positions,payments,depositReceipts' },
       });
 
-      // Formatierte Daten
       const formattedData = this.formatSaleData(response.data);
 
-      // Aktualisiere den Cache
       this.cache.saleDetails[id] = {
         data: formattedData,
         timestamp: Date.now(),
       };
 
-      // Cache im localStorage aktualisieren
       this.saveCacheToStorage();
 
       return formattedData;
@@ -500,11 +436,9 @@ class TransactionService {
    */
   async getProductTransactions(productId, pageable = { page: 0, size: 10 }, forceRefresh = false) {
     try {
-      // Prüfe, ob wir einen gültigen Cache für diese Produkt-ID und Parameter haben
       const cacheKey = productId;
       const cacheEntry = this.cache.productTransactions[cacheKey];
 
-      // Ergänze Sort-Parameter für Sortierung
       const queryParams = {
         ...pageable,
         sort: 'date,desc', // Sortierung nach Datum absteigend (neueste zuerst)
@@ -515,23 +449,19 @@ class TransactionService {
         this.isCacheValid(cacheEntry) &&
         this.areParamsEqual(queryParams, cacheEntry.params)
       ) {
-        console.log(`Using cached product transactions for product ID ${productId}`);
         return cacheEntry.data;
       }
 
-      // Wenn kein gültiger Cache, Daten vom Server holen
       const response = await apiClient.get(`/v1/transaction/product/product/${productId}`, {
         params: queryParams,
       });
 
-      // Aktualisiere den Cache
       this.cache.productTransactions[cacheKey] = {
         data: response.data,
         timestamp: Date.now(),
         params: queryParams,
       };
 
-      // Cache im localStorage aktualisieren
       this.saveCacheToStorage();
 
       return response.data;
@@ -549,11 +479,9 @@ class TransactionService {
    */
   async getAllProductTransactions(pageable = { page: 0, size: 10 }, forceRefresh = false) {
     try {
-      // Prüfe, ob wir einen gültigen Cache für diese Parameter haben
       const cacheKey = 'all';
       const cacheEntry = this.cache.productTransactions[cacheKey];
 
-      // Ergänze Sort-Parameter für Sortierung
       const queryParams = {
         ...pageable,
         sort: 'date,desc', // Sortierung nach Datum absteigend (neueste zuerst)
@@ -564,23 +492,19 @@ class TransactionService {
         this.isCacheValid(cacheEntry) &&
         this.areParamsEqual(queryParams, cacheEntry.params)
       ) {
-        console.log('Using cached all product transactions');
         return cacheEntry.data;
       }
 
-      // Wenn kein gültiger Cache, Daten vom Server holen
       const response = await apiClient.get('/v1/transaction/product', {
         params: queryParams,
       });
 
-      // Aktualisiere den Cache
       this.cache.productTransactions[cacheKey] = {
         data: response.data,
         timestamp: Date.now(),
         params: queryParams,
       };
 
-      // Cache im localStorage aktualisieren
       this.saveCacheToStorage();
 
       return response.data;

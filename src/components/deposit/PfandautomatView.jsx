@@ -3,7 +3,6 @@ import {
   Container,
   Typography,
   Box,
-  Paper,
   Grid,
   Button,
   CircularProgress,
@@ -22,13 +21,11 @@ import {
   Avatar,
   alpha,
   Badge,
-  Chip,
   Stack,
   Fade,
 } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import PrintIcon from '@mui/icons-material/Print';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import BottleAltIcon from '@mui/icons-material/WineBarOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -103,59 +100,39 @@ const PfandautomatView = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Enable scanner when component mounts
   useEffect(() => {
-    console.log('PfandautomatView: Enabling barcode scanner');
     enableScanner();
-    // Optional: Disable scanner when unmounting
-    return () => {
-      // Consider if disabling is always desired
-      // disableScanner();
-    };
+    return () => {};
   }, [enableScanner]);
 
-  // Listen for barcode scan values
   const handlePfandProductLookup = useCallback(async code => {
-    console.log(`PfandautomatView: Looking up potential Pfand product: ${code}`);
     setIsLoading(true);
     try {
-      // Fetch the product by its barcode/id
       const product = await ProductService.getProductById(code, true);
 
       if (!product) {
-        console.log(`PfandautomatView: No product found with code ${code}`);
         setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
         return false;
       }
 
-      // Check if this is a Pfand product directly
       const isPfandProduct = product.category && product.category.name === 'Pfand';
 
       if (isPfandProduct) {
-        console.log(`PfandautomatView: Found direct Pfand product: ${product.name || product.id}`);
-        // Add it to scanned items
         addToScannedItems(product);
         return true;
       }
 
-      // Not a direct Pfand product, check for connected Pfand products
       const pfandProducts = product.connectedProducts
         ? product.connectedProducts.filter(cp => cp.category && cp.category.name === 'Pfand')
         : [];
 
       if (pfandProducts.length > 0) {
-        console.log(`PfandautomatView: Found ${pfandProducts.length} connected Pfand products`);
-        // Add all connected Pfand products
         pfandProducts.forEach(pfandProduct => {
           addToScannedItems(pfandProduct);
         });
         return true;
       }
 
-      // No Pfand product found
-      console.log(
-        `PfandautomatView: ${code} is not a Pfand product and has no connected Pfand products`
-      );
       setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
       return false;
     } catch (err) {
@@ -167,14 +144,11 @@ const PfandautomatView = () => {
     }
   }, []);
 
-  // Helper to add product to scanned items
   const addToScannedItems = useCallback(product => {
     setScannedItems(prev => {
-      // Check if product already exists
       const existingItemIndex = prev.findIndex(item => item.product.id === product.id);
 
       if (existingItemIndex !== -1) {
-        // If it exists, increase quantity
         const newItems = [...prev];
         newItems[existingItemIndex] = {
           ...newItems[existingItemIndex],
@@ -182,22 +156,16 @@ const PfandautomatView = () => {
         };
         return newItems;
       } else {
-        // If it doesn't exist, add new item
         return [...prev, { product, quantity: 1 }];
       }
     });
 
-    // Show animation for added item
     setItemAdded(true);
     setTimeout(() => setItemAdded(false), 1500);
   }, []);
 
-  // Listen for barcode scan values
   useEffect(() => {
     if (scannedValue) {
-      console.log(`PfandautomatView: Received scanned value: ${scannedValue}`);
-
-      // Process the scan - only look for Pfand products
       (async () => {
         try {
           await handlePfandProductLookup(scannedValue);
@@ -205,14 +173,12 @@ const PfandautomatView = () => {
           console.error('PfandautomatView: Error during Pfand lookup:', err);
           setError(`Fehler beim Scannen: ${err.message}`);
         } finally {
-          // Reset scan state in context
           resetScan();
         }
       })();
     }
   }, [scannedValue, resetScan, handlePfandProductLookup]);
 
-  // Handle scan errors
   useEffect(() => {
     if (scanError) {
       setError(scanError);
@@ -220,10 +186,8 @@ const PfandautomatView = () => {
     }
   }, [scanError, resetScan]);
 
-  // Process pendingDepositItems from BarcodeContext
   useEffect(() => {
     if (pendingDepositItems.length > 0) {
-      // Merge with existing scanned items
       const updatedItems = [...scannedItems];
 
       pendingDepositItems.forEach(pendingItem => {
@@ -232,34 +196,28 @@ const PfandautomatView = () => {
         );
 
         if (existingItemIndex !== -1) {
-          // Increment quantity if already in list
           updatedItems[existingItemIndex] = {
             ...updatedItems[existingItemIndex],
             quantity: updatedItems[existingItemIndex].quantity + pendingItem.quantity,
           };
         } else {
-          // Add new item if not in list
           updatedItems.push({ ...pendingItem });
         }
       });
 
       setScannedItems(updatedItems);
-      // Show animation for added item
       setItemAdded(true);
       setTimeout(() => setItemAdded(false), 1500);
-      // Clear the pending items after processing them
       clearPendingDepositItems();
     }
   }, [pendingDepositItems, clearPendingDepositItems, scannedItems]);
 
-  // Load products that have deposit items connected to them
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Fetch all products - we'll filter for those with connected products in the UI
+
         const response = await ProductService.getProducts({ page: 0, size: 100 });
-        // Keep only products that have at least one connected product in the "Pfand" category
         const productsWithDeposits = response.content.filter(
           product =>
             product.connectedProducts &&
@@ -279,7 +237,6 @@ const PfandautomatView = () => {
     fetchProducts();
   }, []);
 
-  // Generate deposit receipt
   const handleGenerateReceipt = async () => {
     if (scannedItems.length === 0) {
       setError('No items have been scanned yet.');
@@ -289,7 +246,6 @@ const PfandautomatView = () => {
     try {
       setIsLoading(true);
 
-      // Format data for API
       const depositReceiptData = {
         positions: scannedItems.map(item => ({
           quantity: item.quantity,
@@ -297,24 +253,18 @@ const PfandautomatView = () => {
         })),
       };
 
-      // Make API call to create receipt
       const response = await DepositService.createDepositReceipt(depositReceiptData);
 
-      // Set receipt data for display
       setReceiptData(response.data);
       setReceiptGenerated(true);
       setShowReceiptDialog(true);
 
-      // Print the receipt (automatically)
       try {
         await printDepositReceipt(response.data);
       } catch (printError) {
         console.error('Error printing deposit receipt:', printError);
-        // We don't want to show an error for print failures
-        // as the receipt generation was successful
       }
 
-      // Reset scanned items after successful receipt generation
       setScannedItems([]);
     } catch (err) {
       setError('Failed to generate receipt. Please try again.');
@@ -324,14 +274,12 @@ const PfandautomatView = () => {
     }
   };
 
-  // Calculate total deposit value
   const calculateTotal = () => {
     return scannedItems.reduce((total, item) => {
       return total + (item.product.price || 0) * item.quantity;
     }, 0);
   };
 
-  // Calculate total bottles
   const calculateTotalBottles = () => {
     return scannedItems.reduce((total, item) => {
       return total + item.quantity;

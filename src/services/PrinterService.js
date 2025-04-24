@@ -21,9 +21,7 @@ class PrinterService {
    */
   async checkStatus() {
     try {
-      console.log('Checking printer status...');
       const response = await this.client.get('/');
-      console.log('Printer status response:', response.data);
       return { connected: response.data.success === true };
     } catch (error) {
       console.error('Error checking printer status:', error);

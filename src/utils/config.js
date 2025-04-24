@@ -52,7 +52,7 @@ export const isStaging = () => {
  * @returns {string} The API URL
  */
 export const getApiUrl = () => {
-  return getEnvVar('VITE_API_URL', 'https://api.vendura.me');
+  return getEnvVar('VITE_API_URL', 'http://localhost:8080');
 };
 
 /**
