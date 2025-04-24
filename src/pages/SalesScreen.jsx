@@ -1,18 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  useTheme,
-  Slide,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Alert,
-  Typography,
-} from '@mui/material';
-import { motion } from 'framer-motion';
+import { Box, Container, useTheme, Button, Alert, Typography } from '@mui/material';
 
 // Import components and utilities
 import {
@@ -65,12 +52,8 @@ const SalesScreen = () => {
   const [cartLocked, setCartLocked] = useState(false);
   const [lastTransactionId, setLastTransactionId] = useState(null);
 
-  const [cartUndoEnabled, setCartUndoEnabled] = useState(
-    CartStateManager.canUndoCartState() || false
-  );
-  const [cartRedoEnabled, setCartRedoEnabled] = useState(
-    CartStateManager.canRedoCartState() || false
-  );
+  const [cartUndoEnabled, setCartUndoEnabled] = useState(CartStateManager.canUndoCartState());
+  const [cartRedoEnabled, setCartRedoEnabled] = useState(CartStateManager.canRedoCartState());
   const [receiptReady, setReceiptReady] = useState(false);
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -103,7 +86,6 @@ const SalesScreen = () => {
         }
       } catch (err) {
         if (isMounted) {
-          console.error('Error fetching products:', err);
           setError(err.message || 'Fehler beim Laden der Produkte.');
         }
       } finally {
@@ -114,8 +96,6 @@ const SalesScreen = () => {
     };
 
     loadProducts();
-    setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
-    setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
 
     return () => {
       isMounted = false;
@@ -156,8 +136,8 @@ const SalesScreen = () => {
   }, [paymentMethod, cashReceived, total]);
 
   useEffect(() => {
-    setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
-    setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
+    setCartUndoEnabled(CartStateManager.canUndoCartState());
+    setCartRedoEnabled(CartStateManager.canRedoCartState());
   }, [cartItems, appliedVouchers]);
 
   const handleAddToCart = useCallback(
@@ -205,6 +185,17 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  // Define the reset logic for screen-specific state
+  const resetScreenState = useCallback(() => {
+    setCartLocked(false);
+    setReceiptReady(false);
+    setLastTransactionId(null);
+    // Reset payment method and cash for new transactions
+    setPaymentMethod('cash');
+    setCashReceived('');
+    setError(null);
+  }, []); // No dependencies needed as it only calls setters
+
   const handleClearCart = useCallback(() => {
     CartStateManager.clearCart(
       setCartItems,
@@ -213,11 +204,10 @@ const SalesScreen = () => {
       setVoucherDiscount,
       setDepositCredit,
       setCardDetails,
-      () => setLastTransactionId(null)
+      resetScreenState // Pass the reset function here
     );
-    setCartLocked(false);
-    setReceiptReady(false);
-  }, []);
+    // No need to set states here anymore, handled by resetScreenState
+  }, [resetScreenState]); // Add resetScreenState to dependencies
 
   const handleUndoCartState = useCallback(() => {
     if (cartLocked) {
@@ -337,7 +327,6 @@ const SalesScreen = () => {
           message: 'Beleg wird gedruckt...',
         });
       } catch (err) {
-        console.error(`Error printing receipt for transaction ${transactionIdToPrint}:`, err);
         showToast({
           severity: 'error',
           message: `Fehler beim Drucken: ${err.message}`,
@@ -363,7 +352,31 @@ const SalesScreen = () => {
     ]
   );
 
+  const refetchProductsAfterSale = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const productData = await ProductService.getProducts({ page: 0, size: 100 });
+      const allProducts = productData.content || [];
+      setProducts(allProducts);
+      setProductsByCategory(ProductService.groupByCategory(allProducts));
+      setLoading(false);
+      showToast({
+        severity: 'info',
+        message: 'Produktbestände wurden aktualisiert.',
+      });
+    } catch (fetchErr) {
+      setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
+      setLoading(false);
+      showToast({
+        severity: 'error',
+        message: 'Fehler beim Aktualisieren der Produktbestände.',
+      });
+    }
+  }, [showToast]);
+
   const handlePaymentSubmit = useCallback(async () => {
+    setPaymentLoading(true);
     let paymentResult = null;
     try {
       paymentResult = await processPayment({
@@ -381,7 +394,7 @@ const SalesScreen = () => {
         showToast,
         setReceiptReady,
         setPaymentModalOpen,
-        setPaymentLoading,
+        setPaymentLoading: () => {},
       });
 
       if (paymentResult && paymentResult.success) {
@@ -394,39 +407,21 @@ const SalesScreen = () => {
         setReceiptReady(true);
 
         await printTransactionReceipt(transactionId);
+        setPaymentModalOpen(false);
 
-        setTimeout(async () => {
-          try {
-            setLoading(true);
-            setError(null);
-            const productData = await ProductService.getProducts({ page: 0, size: 100 });
-            const allProducts = productData.content || [];
-            setProducts(allProducts);
-            setProductsByCategory(ProductService.groupByCategory(allProducts));
-            setLoading(false);
-            showToast({
-              severity: 'info',
-              message: 'Produktbestände wurden aktualisiert.',
-            });
-          } catch (fetchErr) {
-            console.error('Error refetching products after sale:', fetchErr);
-            setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
-            setLoading(false);
-            showToast({
-              severity: 'error',
-              message: 'Fehler beim Aktualisieren der Produktbestände.',
-            });
-          }
-        }, 500);
+        setTimeout(refetchProductsAfterSale, 500);
       } else {
-        console.error('Payment failed or was cancelled:', paymentResult?.error || 'Unknown error');
+        showToast({
+          severity: 'warning',
+          message: `Zahlung fehlgeschlagen: ${paymentResult?.error || 'Unbekannter Fehler'}`,
+        });
       }
     } catch (error) {
-      console.error('Payment submission error:', error);
       showToast({
         severity: 'error',
         message: `Zahlungsfehler: ${error.message || 'Unbekannter Fehler'}`,
       });
+    } finally {
       setPaymentLoading(false);
     }
   }, [
@@ -444,6 +439,7 @@ const SalesScreen = () => {
     productDiscount,
     showToast,
     printTransactionReceipt,
+    refetchProductsAfterSale,
     setReceiptReady,
     setPaymentModalOpen,
     setPaymentLoading,
@@ -456,10 +452,9 @@ const SalesScreen = () => {
   }, [printTransactionReceipt]);
 
   const handleNewTransaction = useCallback(() => {
+    // Simply call handleClearCart, which now includes resetting screen state
     handleClearCart();
-    setPaymentMethod('cash');
-    setCashReceived('');
-    setError(null);
+    // No need for additional resets here
   }, [handleClearCart]);
 
   const handleRedeemVoucherDialog = useCallback(() => {
@@ -542,7 +537,6 @@ const SalesScreen = () => {
 
   useEffect(() => {
     enableScanner();
-    return () => {};
   }, [enableScanner]);
 
   const handleProductLookup = useCallback(
@@ -560,13 +554,12 @@ const SalesScreen = () => {
           return false;
         }
       } catch (err) {
-        console.error(`SalesScreen: Error fetching product ${code}:`, err);
         const errorMsg =
           err.response?.status === 404
             ? `Produkt mit Code ${code} nicht gefunden.`
             : `Fehler beim Abrufen des Produkts: ${err.message}`;
         showToast({ severity: 'error', message: errorMsg });
-        throw err;
+        return false;
       }
     },
     [ProductService, handleAddToCart, showToast]
