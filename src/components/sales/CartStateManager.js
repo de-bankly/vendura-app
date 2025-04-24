@@ -1,20 +1,31 @@
 import { CartService } from '../../services';
 
-// Centralized error logger (can be replaced with a proper logging service)
+/**
+ * Logs an error message to the console with context.
+ * @param {string} context - The context where the error occurred (e.g., function name).
+ * @param {Error} error - The error object.
+ */
 const logError = (context, error) => {
   console.error(`[CartStateManager:${context}]`, error);
-  // TODO: Integrate with a proper logging service if available
 };
 
 /**
  * Adds a product to the cart, checking stock and saving state.
+ * @param {Array<object>} cartItems - The current items in the cart.
+ * @param {Array<object>} appliedVouchers - The currently applied vouchers.
+ * @param {object} product - The product to add.
+ * @param {Function} setCartItems - State setter function for cart items.
+ * @param {Function} [showToast] - Optional function to display toast notifications.
  */
 export const addToCart = (cartItems, appliedVouchers, product, setCartItems, showToast) => {
   const availableStock = product.currentStock ?? product.stockQuantity;
 
   if (availableStock <= 0) {
-    showToast?.({ severity: 'error', message: `${product.name} ist nicht mehr auf Lager.` });
-    return; // Exit without changing state
+    showToast?.({
+      severity: 'error',
+      message: `${product.name} ist nicht mehr auf Lager.`,
+    });
+    return;
   }
 
   const existingItem = cartItems.find(item => item.id === product.id);
@@ -25,10 +36,9 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
       severity: 'warning',
       message: `Kann ${product.name} nicht hinzufügen. Nur noch ${availableStock} auf Lager.`,
     });
-    return; // Exit without changing state
+    return;
   }
 
-  // Check connected product stock (excluding 'Pfand')
   const hasOutOfStockConnected = product.connectedProducts?.some(p => {
     const connectedStock = p.currentStock ?? p.stockQuantity;
     return p.category?.name !== 'Pfand' && connectedStock <= 0;
@@ -39,10 +49,9 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
       severity: 'error',
       message: `${product.name} ist als Bundle nicht verfügbar, da Teile nicht lagernd sind.`,
     });
-    return; // Exit without changing state
+    return;
   }
 
-  // Validate product discount information
   if (
     product.hasDiscount &&
     product.originalPrice !== undefined &&
@@ -51,13 +60,11 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
     const originalPrice = parseFloat(product.originalPrice) || 0;
     const discountedPrice = parseFloat(product.discountedPrice) || 0;
 
-    // Check if discount seems unreasonable (more than 50% of original price)
     if (originalPrice > 0) {
       const discountAmount = originalPrice - discountedPrice;
       const discountPercentage = (discountAmount / originalPrice) * 100;
 
       if (discountPercentage > 50) {
-        // Fix the discount to a reasonable amount (50%)
         const reasonableDiscount = originalPrice * 0.5;
         product.discountedPrice = originalPrice - reasonableDiscount;
         product.discountPercentage = 50;
@@ -65,7 +72,6 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
     }
   }
 
-  // All checks passed, update cart
   const updatedItems = CartService.addToCart([...cartItems], product);
   setCartItems(updatedItems);
 
@@ -78,6 +84,10 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
 
 /**
  * Removes one unit of a product from the cart and saves state.
+ * @param {Array<object>} cartItems - The current items in the cart.
+ * @param {Array<object>} appliedVouchers - The currently applied vouchers.
+ * @param {string|number} productId - The ID of the product to remove one unit of.
+ * @param {Function} setCartItems - State setter function for cart items.
  */
 export const removeFromCart = (cartItems, appliedVouchers, productId, setCartItems) => {
   const updatedItems = CartService.removeFromCart([...cartItems], productId);
@@ -90,6 +100,10 @@ export const removeFromCart = (cartItems, appliedVouchers, productId, setCartIte
 
 /**
  * Deletes all units of a product from the cart and saves state.
+ * @param {Array<object>} cartItems - The current items in the cart.
+ * @param {Array<object>} appliedVouchers - The currently applied vouchers.
+ * @param {string|number} productId - The ID of the product to delete.
+ * @param {Function} setCartItems - State setter function for cart items.
  */
 export const deleteFromCart = (cartItems, appliedVouchers, productId, setCartItems) => {
   const updatedItems = CartService.deleteFromCart([...cartItems], productId);
@@ -102,11 +116,13 @@ export const deleteFromCart = (cartItems, appliedVouchers, productId, setCartIte
 
 /**
  * Applies a voucher and saves cart state.
+ * @param {Array<object>} cartItems - The current items in the cart.
+ * @param {Array<object>} appliedVouchers - The currently applied vouchers.
+ * @param {object} voucher - The voucher object to apply.
+ * @param {Function} setAppliedVouchers - State setter function for applied vouchers.
  */
 export const applyVoucher = (cartItems, appliedVouchers, voucher, setAppliedVouchers) => {
-  // Prevent adding duplicate vouchers
   if (appliedVouchers.some(v => v.id === voucher.id)) {
-    // Optional: show a toast message here if needed
     console.warn(`Voucher ${voucher.id} is already applied.`);
     return;
   }
@@ -120,10 +136,13 @@ export const applyVoucher = (cartItems, appliedVouchers, voucher, setAppliedVouc
 
 /**
  * Removes a voucher and saves cart state.
+ * @param {Array<object>} cartItems - The current items in the cart.
+ * @param {Array<object>} appliedVouchers - The currently applied vouchers.
+ * @param {string|number} voucherId - The ID of the voucher to remove.
+ * @param {Function} setAppliedVouchers - State setter function for applied vouchers.
  */
 export const removeVoucher = (cartItems, appliedVouchers, voucherId, setAppliedVouchers) => {
   const updatedVouchers = appliedVouchers.filter(v => v.id !== voucherId);
-  // Only update state and save if a voucher was actually removed
   if (updatedVouchers.length < appliedVouchers.length) {
     setAppliedVouchers(updatedVouchers);
     CartService.saveCartState(cartItems, updatedVouchers, 'Removed voucher').catch(err =>
@@ -134,40 +153,41 @@ export const removeVoucher = (cartItems, appliedVouchers, voucherId, setAppliedV
 
 /**
  * Undoes the last cart state change.
+ * @param {Function} setCartItems - State setter function for cart items.
+ * @param {Function} setAppliedVouchers - State setter function for applied vouchers.
  */
 export const undoCartState = async (setCartItems, setAppliedVouchers) => {
   try {
     const result = await CartService.undoCartState();
     if (result) {
       setCartItems(result.cartItems);
-      setAppliedVouchers(result.appliedVouchers || []); // Ensure array
+      setAppliedVouchers(result.appliedVouchers || []);
     }
-    // Optionally return result or boolean indicating success
   } catch (err) {
     logError('undoCartState', err);
-    // Optionally show a toast to the user
   }
 };
 
 /**
  * Redoes the last undone cart state change.
+ * @param {Function} setCartItems - State setter function for cart items.
+ * @param {Function} setAppliedVouchers - State setter function for applied vouchers.
  */
 export const redoCartState = async (setCartItems, setAppliedVouchers) => {
   try {
     const result = await CartService.redoCartState();
     if (result) {
       setCartItems(result.cartItems);
-      setAppliedVouchers(result.appliedVouchers || []); // Ensure array
+      setAppliedVouchers(result.appliedVouchers || []);
     }
-    // Optionally return result or boolean indicating success
   } catch (err) {
     logError('redoCartState', err);
-    // Optionally show a toast to the user
   }
 };
 
 /**
  * Checks if an undo operation is available.
+ * @returns {boolean} True if undo is possible, false otherwise.
  */
 export const canUndoCartState = () => {
   try {
@@ -180,6 +200,7 @@ export const canUndoCartState = () => {
 
 /**
  * Checks if a redo operation is available.
+ * @returns {boolean} True if redo is possible, false otherwise.
  */
 export const canRedoCartState = () => {
   try {
@@ -199,26 +220,31 @@ const initialCardDetails = {
 
 /**
  * Clears the cart, resets related state, and clears history.
+ * @param {Function} setCartItems - State setter function for cart items.
+ * @param {Function} setAppliedVouchers - State setter function for applied vouchers.
+ * @param {Function} setAppliedDeposits - State setter function for applied deposits.
+ * @param {Function} setVoucherDiscount - State setter function for voucher discount amount.
+ * @param {Function} setDepositCredit - State setter function for deposit credit amount.
+ * @param {Function} [setCardDetails] - Optional state setter for card details.
+ * @param {Function} [resetOtherStates] - Optional callback for resetting other screen-specific states.
  */
 export const clearCart = (
   setCartItems,
   setAppliedVouchers,
-  setAppliedDeposits, // Keep if deposits are managed outside vouchers/items
+  setAppliedDeposits,
   setVoucherDiscount,
   setDepositCredit,
-  setCardDetails, // Make optional if card details aren't always cleared
-  resetOtherStates // Optional callback for other screen-specific resets
+  setCardDetails,
+  resetOtherStates
 ) => {
   setCartItems([]);
   setAppliedVouchers([]);
-  setAppliedDeposits([]); // Reset deposits
-  setVoucherDiscount(0); // Reset calculated discounts/credits
+  setAppliedDeposits([]);
+  setVoucherDiscount(0);
   setDepositCredit(0);
 
-  // Only reset card details if the setter is provided
   setCardDetails?.(initialCardDetails);
 
-  // Allow parent component to reset other specific states
   resetOtherStates?.();
 
   CartService.clearCartHistory().catch(err => {

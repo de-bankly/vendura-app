@@ -1,8 +1,15 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { InputAdornment, TextField } from '@mui/material';
-import PropTypes from 'prop-types';
 import React from 'react';
 
+/**
+ * A search bar component that allows users to input search terms.
+ *
+ * @param {object} props - The component props.
+ * @param {string} props.searchTerm - The current value of the search input.
+ * @param {function(string): void} props.onSearchChange - Callback function triggered when the search term changes.
+ * @returns {React.ReactElement} The rendered search bar component.
+ */
 const SearchBar = ({ searchTerm, onSearchChange }) => {
   return (
     <TextField
@@ -22,11 +29,6 @@ const SearchBar = ({ searchTerm, onSearchChange }) => {
       sx={{ mb: 2 }}
     />
   );
-};
-
-SearchBar.propTypes = {
-  searchTerm: PropTypes.string.isRequired,
-  onSearchChange: PropTypes.func.isRequired,
 };
 
 export default SearchBar;

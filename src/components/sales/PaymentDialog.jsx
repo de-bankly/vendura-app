@@ -14,8 +14,6 @@ import {
   DialogActions,
   TextField,
   FormControl,
-  FormControlLabel,
-  RadioGroup,
   Radio as MuiRadio,
   InputAdornment,
   Box,
@@ -37,9 +35,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 /**
- * Format card number with spaces (4 digits groups)
- * @param {string} value - Card number to format
- * @returns {string} Formatted card number
+ * Formats a card number string by adding spaces every 4 digits.
+ * Only allows digits and limits length between 4 and 16.
+ * @param {string} value - The card number string to format.
+ * @returns {string} The formatted card number string (e.g., "1234 5678 1234 5678").
  */
 const formatCardNumber = value => {
   const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -59,9 +58,10 @@ const formatCardNumber = value => {
 };
 
 /**
- * Format expiration date (MM/YY)
- * @param {string} value - Expiration date to format
- * @returns {string} Formatted expiration date
+ * Formats an expiration date string into MM/YY format.
+ * Removes non-digit characters and validates the month part (01-12).
+ * @param {string} value - The expiration date string to format.
+ * @returns {string} The formatted expiration date string (e.g., "12/25").
  */
 const formatExpirationDate = value => {
   const cleanValue = value.replace(/[^\d]/g, '');
@@ -73,7 +73,6 @@ const formatExpirationDate = value => {
   let month = cleanValue.substring(0, 2);
   const year = cleanValue.substring(2);
 
-  // Validate month (01-12)
   if (parseInt(month) > 12) {
     month = '12';
   }
@@ -81,7 +80,11 @@ const formatExpirationDate = value => {
   return `${month}/${year}`;
 };
 
-// Custom styled Radio component
+/**
+ * A custom styled Material UI Radio component.
+ * @param {object} props - The props passed to the MuiRadio component.
+ * @returns {React.ReactElement} The styled Radio component.
+ */
 const Radio = props => {
   return (
     <MuiRadio
@@ -98,7 +101,18 @@ const Radio = props => {
   );
 };
 
-// Payment method option component
+/**
+ * Renders a selectable payment method option with an icon, label, and description.
+ * Applies visual styles based on whether it's checked and provides hover effects.
+ * @param {object} props - The component props.
+ * @param {string} props.value - The value associated with this payment option.
+ * @param {string} props.label - The main label for the payment option.
+ * @param {React.ElementType} props.icon - The icon component to display.
+ * @param {string} props.description - A short description of the payment option.
+ * @param {boolean} props.checked - Whether this option is currently selected.
+ * @param {function} props.onChange - Callback function triggered when the option is clicked.
+ * @returns {React.ReactElement} The PaymentMethodOption component.
+ */
 const PaymentMethodOption = ({ value, label, icon: Icon, description, checked, onChange }) => {
   const theme = useTheme();
 
@@ -171,7 +185,29 @@ PaymentMethodOption.propTypes = {
 };
 
 /**
- * PaymentDialog component for processing payments
+ * A dialog component for handling the payment process.
+ * It allows selecting payment methods (cash, card), entering details,
+ * applying discounts/gift cards/deposit credits, and summarizing the transaction.
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {function} props.onClose - Callback function when the dialog is requested to close.
+ * @param {function} [props.onComplete=()=>{}] - Callback function when the payment is confirmed.
+ * @param {number} props.total - The final amount to be paid after all deductions.
+ * @param {number} props.cartItemsCount - The number of items in the cart.
+ * @param {number} props.voucherDiscount - The total discount amount from vouchers.
+ * @param {Array} [props.appliedVouchers=[]] - An array of applied voucher objects.
+ * @param {number} [props.giftCardPayment=0] - The total amount paid via gift cards.
+ * @param {string} props.paymentMethod - The currently selected payment method ('cash', 'card', 'deposit', 'giftcard').
+ * @param {function} props.onPaymentMethodChange - Callback function when the payment method changes.
+ * @param {string} props.cashReceived - The amount of cash received (as a string).
+ * @param {function} props.onCashReceivedChange - Callback function when the cash received amount changes.
+ * @param {object} props.cardDetails - An object containing card details { cardNumber, cardHolderName, expirationDate, cvv }.
+ * @param {function} props.onCardDetailsChange - Callback function to update card details.
+ * @param {string} props.change - The calculated change amount (as a string).
+ * @param {React.ElementType} [props.TransitionComponent] - The transition component for the dialog.
+ * @param {boolean} [props.loading=false] - Indicates if the payment process is in progress.
+ * @param {number} [props.depositCredit=0] - The amount of available deposit credit.
+ * @returns {React.ReactElement} The PaymentDialog component.
  */
 const PaymentDialog = ({
   open,
@@ -188,7 +224,6 @@ const PaymentDialog = ({
   onCashReceivedChange,
   cardDetails,
   onCardDetailsChange,
-  change,
   TransitionComponent,
   loading = false,
   depositCredit = 0,
@@ -201,12 +236,6 @@ const PaymentDialog = ({
     cvv: '',
   });
 
-  // Calculate the amount to be paid in the correct order:
-  // Start with total price
-  // 1. Subtract deposit credits
-  // 2. Subtract gift card payment
-  // 3. Subtract voucher discounts
-  // The result is what needs to be paid in cash or by card
   const totalBeforeDeductions = total + depositCredit + giftCardPayment + voucherDiscount;
   const remainingTotal = Math.max(0, total);
 
@@ -217,7 +246,10 @@ const PaymentDialog = ({
   const giftCardVouchers = appliedVouchers.filter(v => v.type === 'GIFT_CARD');
   const discountVouchers = appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD');
 
-  // Validate card details when payment method is card
+  const isFullyCoveredByDeposit = depositCredit >= totalBeforeDeductions;
+  const remainingAfterDeposit = Math.max(0, totalBeforeDeductions - depositCredit);
+  const isFullyCoveredByGiftCards = giftCardPayment >= remainingAfterDeposit;
+
   useEffect(() => {
     if (paymentMethod !== 'card') {
       setCardErrors({
@@ -226,26 +258,14 @@ const PaymentDialog = ({
         expirationDate: '',
         cvv: '',
       });
-      return;
     }
   }, [paymentMethod]);
 
-  // Check if deposit fully covers the payment
-  const isFullyCoveredByDeposit = depositCredit >= totalBeforeDeductions;
-
-  // Check if gift cards fully cover the remaining payment after deposit
-  const remainingAfterDeposit = Math.max(0, totalBeforeDeductions - depositCredit);
-  const isFullyCoveredByGiftCards = giftCardPayment >= remainingAfterDeposit;
-
-  // Handle when the customer has no actual remaining payment to make
   useEffect(() => {
     if (open && remainingTotal <= 0.01) {
-      // Auto-select the most relevant payment method when payment is fully covered
       if (isFullyCoveredByDeposit) {
-        // If deposit covers everything, select deposit payment
         onPaymentMethodChange({ target: { value: 'deposit' } });
       } else if (isFullyCoveredByGiftCards) {
-        // If gift cards cover everything after deposit, select gift card payment
         onPaymentMethodChange({ target: { value: 'giftcard' } });
       }
     }
@@ -257,12 +277,9 @@ const PaymentDialog = ({
     onPaymentMethodChange,
   ]);
 
-  // Handle formatted card number input
   const handleCardNumberChange = e => {
     const formattedValue = formatCardNumber(e.target.value);
     onCardDetailsChange('cardNumber', formattedValue);
-
-    // Validate card number
     const cleanValue = formattedValue.replace(/\s+/g, '');
     if (cleanValue.length > 0 && cleanValue.length < 13) {
       setCardErrors(prev => ({
@@ -274,26 +291,29 @@ const PaymentDialog = ({
     }
   };
 
-  // Handle formatted expiration date input
   const handleExpirationDateChange = e => {
     const formattedValue = formatExpirationDate(e.target.value);
     onCardDetailsChange('expirationDate', formattedValue);
-
-    // Validate expiration date
     if (formattedValue.length > 0 && formattedValue.length < 5) {
-      setCardErrors(prev => ({ ...prev, expirationDate: 'Bitte geben Sie Monat/Jahr ein' }));
+      setCardErrors(prev => ({
+        ...prev,
+        expirationDate: 'Bitte geben Sie Monat/Jahr ein',
+      }));
     } else {
       setCardErrors(prev => ({ ...prev, expirationDate: '' }));
     }
   };
 
-  // Validate all card fields
   const validateCardDetails = () => {
     let hasErrors = false;
-    const newErrors = { ...cardErrors };
+    const newErrors = {
+      cardNumber: '',
+      cardHolderName: '',
+      expirationDate: '',
+      cvv: '',
+    };
 
     if (paymentMethod === 'card') {
-      // Card number validation
       if (!cardDetails.cardNumber.trim()) {
         newErrors.cardNumber = 'Kartennummer ist erforderlich';
         hasErrors = true;
@@ -302,13 +322,11 @@ const PaymentDialog = ({
         hasErrors = true;
       }
 
-      // Card holder validation
       if (!cardDetails.cardHolderName.trim()) {
         newErrors.cardHolderName = 'Name ist erforderlich';
         hasErrors = true;
       }
 
-      // Expiration date validation
       if (!cardDetails.expirationDate.trim()) {
         newErrors.expirationDate = 'Ablaufdatum ist erforderlich';
         hasErrors = true;
@@ -317,7 +335,6 @@ const PaymentDialog = ({
         hasErrors = true;
       }
 
-      // CVV validation
       if (!cardDetails.cvv.trim()) {
         newErrors.cvv = 'CVV ist erforderlich';
         hasErrors = true;
@@ -334,37 +351,53 @@ const PaymentDialog = ({
   const canCompletePayment = useCallback(() => {
     if (loading) return false;
 
-    // Für Pfandbeleg-Zahlungsmethode prüfen, ob der Pfandwert ausreicht
+    if (remainingTotal <= 0.01) return true;
+
     if (paymentMethod === 'deposit') {
-      // Prüfen, ob das Pfandguthaben ausreicht (mit kleiner Toleranz für Rundungsfehler)
       return Math.abs(depositCredit - total) < 0.01 || depositCredit >= total;
     }
 
-    // Für Barzahlung prüfen, ob genug Bargeld gegeben wurde
     if (paymentMethod === 'cash') {
       return parseFloat(cashReceived) >= total - 0.005;
     }
 
-    // Für Kartenzahlung prüfen, ob alle erforderlichen Felder ausgefüllt sind
     if (paymentMethod === 'card') {
       return (
         cardDetails.cardNumber.replace(/\s/g, '').length >= 13 &&
         cardDetails.cardHolderName.trim().length > 3 &&
         cardDetails.expirationDate.length === 5 &&
-        cardDetails.cvv.length >= 3
+        cardDetails.cvv.length >= 3 &&
+        !cardErrors.cardNumber &&
+        !cardErrors.cardHolderName &&
+        !cardErrors.expirationDate &&
+        !cardErrors.cvv
       );
     }
 
-    return true;
-  }, [paymentMethod, loading, cashReceived, total, cardDetails, depositCredit]);
+    if (paymentMethod === 'giftcard') {
+      return remainingTotal <= 0.01;
+    }
 
-  // Handle payment completion with validation
+    return false;
+  }, [
+    paymentMethod,
+    loading,
+    cashReceived,
+    total,
+    cardDetails,
+    depositCredit,
+    remainingTotal,
+    cardErrors,
+  ]);
+
   const handleCompletePayment = () => {
+    if (paymentMethod === 'card' && !validateCardDetails()) {
+      return;
+    }
     if (!canCompletePayment()) return;
     onComplete();
   };
 
-  // Calculate change based on payment method and amount
   const calculateChange = () => {
     if (paymentMethod === 'cash' && parseFloat(cashReceived) >= total) {
       return parseFloat(cashReceived) - total;
@@ -372,18 +405,20 @@ const PaymentDialog = ({
     return 0;
   };
 
-  // Handle changing payment method
   const handlePaymentMethodChange = method => {
     onPaymentMethodChange({ target: { value: method } });
   };
 
-  // Main content of the dialog based on payment method
   const renderPaymentMethodContent = () => {
-    // If there's no remaining total, we don't need additional payment details
     if (remainingTotal <= 0.01) {
       return (
         <Box
-          sx={{ my: 2, p: 2, bgcolor: alpha(theme.palette.success.light, 0.1), borderRadius: 2 }}
+          sx={{
+            my: 2,
+            p: 2,
+            bgcolor: alpha(theme.palette.success.light, 0.1),
+            borderRadius: 2,
+          }}
         >
           <Typography variant="subtitle1" color="success.main" fontWeight={600}>
             {isFullyCoveredByDeposit
@@ -406,6 +441,8 @@ const PaymentDialog = ({
             fullWidth
             value={cashReceived}
             onChange={onCashReceivedChange}
+            type="number"
+            inputProps={{ step: '0.01', min: '0' }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -425,12 +462,18 @@ const PaymentDialog = ({
                 borderColor: theme.palette.success.light,
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
                 <Typography variant="subtitle1" fontWeight={600}>
                   Rückgeld:
                 </Typography>
                 <Typography variant="h5" color="success.main" fontWeight={700}>
-                  {(Math.round(change * 100) / 100).toFixed(2)} €
+                  {(Math.round(calculateChange() * 100) / 100).toFixed(2)} €
                 </Typography>
               </Box>
             </Paper>
@@ -491,7 +534,8 @@ const PaymentDialog = ({
               onChange={e => onCardDetailsChange('cvv', e.target.value)}
               error={!!cardErrors.cvv}
               helperText={cardErrors.cvv}
-              inputProps={{ maxLength: 4 }}
+              inputProps={{ maxLength: 4, inputMode: 'numeric' }}
+              type="number"
             />
           </Box>
         </Box>
@@ -509,7 +553,13 @@ const PaymentDialog = ({
               borderColor: theme.palette.info.light,
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
               <Typography variant="subtitle1" fontWeight={600}>
                 Verfügbares Pfandguthaben:
               </Typography>
@@ -523,7 +573,6 @@ const PaymentDialog = ({
     }
 
     if (paymentMethod === 'giftcard') {
-      // Display gift card information
       return (
         <Box sx={{ mt: 2 }}>
           {giftCardVouchers.length > 0 ? (
@@ -561,7 +610,6 @@ const PaymentDialog = ({
       );
     }
 
-    // Default empty state
     return null;
   };
 
@@ -588,7 +636,13 @@ const PaymentDialog = ({
           px: 3,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar
               sx={{
@@ -629,7 +683,6 @@ const PaymentDialog = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
-        {/* Payment method selection */}
         <Typography variant="h6" fontWeight={600} sx={{ mb: 2, mt: 1.5 }}>
           Zahlungsmethode
         </Typography>
@@ -665,8 +718,7 @@ const PaymentDialog = ({
 
         {renderPaymentMethodContent()}
 
-        {/* Applied gift cards/vouchers */}
-        {hasGiftCardPayment && (
+        {(hasGiftCardPayment || hasVoucherDiscount || hasDepositCredit) && (
           <Box
             component={motion.div}
             initial={{ opacity: 0, y: 10 }}
@@ -674,7 +726,7 @@ const PaymentDialog = ({
             sx={{ mb: 3 }}
           >
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Angewendete Gutscheine
+              Angewendete Gutschriften & Rabatte
             </Typography>
             <Paper
               variant="outlined"
@@ -692,7 +744,7 @@ const PaymentDialog = ({
                       <CardGiftcardIcon color="info" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={`Gutschein: ${voucher.code}`}
+                      primary={`Geschenkkarte: ${voucher.code}`}
                       secondary={`Angewendet: ${voucher.value.toFixed(2)} €`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
@@ -706,11 +758,25 @@ const PaymentDialog = ({
                     </ListItemIcon>
                     <ListItemText
                       primary={`Rabattgutschein: ${voucher.code}`}
-                      secondary={`Angewendet: ${voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)} € (${voucher.discountPercentage}%)`}
+                      secondary={`Angewendet: ${
+                        voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)
+                      } € (${voucher.discountPercentage}%)`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
                   </ListItem>
                 ))}
+                {hasDepositCredit && (
+                  <ListItem disablePadding sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <ReceiptIcon color="success" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Pfandguthaben"
+                      secondary={`Angewendet: ${depositCredit.toFixed(2)} €`}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItem>
+                )}
               </List>
               <Box
                 sx={{
@@ -722,17 +788,16 @@ const PaymentDialog = ({
                 }}
               >
                 <Typography variant="body2" fontWeight={500}>
-                  Gesamtgutschriften:
+                  Gesamte Verrechnung:
                 </Typography>
                 <Typography variant="body2" fontWeight={600} color="info.main">
-                  {giftCardPayment.toFixed(2)} €
+                  {(giftCardPayment + voucherDiscount + depositCredit).toFixed(2)} €
                 </Typography>
               </Box>
             </Paper>
           </Box>
         )}
 
-        {/* Payment summary */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 10 }}
@@ -763,7 +828,7 @@ const PaymentDialog = ({
                 Zwischensumme ({cartItemsCount} Artikel):
               </Typography>
               <Typography variant="body2" fontWeight={500} textAlign="right">
-                {(total + voucherDiscount + giftCardPayment).toFixed(2)} €
+                {totalBeforeDeductions.toFixed(2)} €
               </Typography>
 
               {voucherDiscount > 0 && (
@@ -885,7 +950,12 @@ PaymentDialog.propTypes = {
   onPaymentMethodChange: PropTypes.func.isRequired,
   cashReceived: PropTypes.string.isRequired,
   onCashReceivedChange: PropTypes.func.isRequired,
-  cardDetails: PropTypes.object.isRequired,
+  cardDetails: PropTypes.shape({
+    cardNumber: PropTypes.string,
+    cardHolderName: PropTypes.string,
+    expirationDate: PropTypes.string,
+    cvv: PropTypes.string,
+  }).isRequired,
   onCardDetailsChange: PropTypes.func.isRequired,
   change: PropTypes.string.isRequired,
   TransitionComponent: PropTypes.elementType,

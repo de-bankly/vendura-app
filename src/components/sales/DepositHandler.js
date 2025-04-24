@@ -1,5 +1,14 @@
 /**
- * Handles the deposit redemption process
+ * Handles the deposit redemption process.
+ *
+ * @param {object} options - The options object.
+ * @param {{id: string, total: number}} options.depositReceipt - The deposit receipt object to redeem.
+ * @param {Array<{id: string}>} options.appliedDeposits - Array of already applied deposit receipts.
+ * @param {Function} options.setAppliedDeposits - Function to update the list of applied deposits.
+ * @param {Function} options.setDepositCredit - Function to update the total deposit credit.
+ * @param {Function} options.setRedeemDepositDialogOpen - Function to control the redeem deposit dialog visibility.
+ * @param {Function} options.showToast - Function to display toast notifications.
+ * @returns {boolean} - True if the deposit was successfully redeemed, false otherwise.
  */
 export const handleDepositRedemption = ({
   depositReceipt,
@@ -9,14 +18,10 @@ export const handleDepositRedemption = ({
   setRedeemDepositDialogOpen,
   showToast,
 }) => {
-  // Check if this deposit receipt has already been applied
   const isAlreadyApplied = appliedDeposits.some(deposit => deposit.id === depositReceipt.id);
 
   if (isAlreadyApplied) {
-    // Close the dialog
     setRedeemDepositDialogOpen(false);
-
-    // Show error message
     showToast({
       message: 'Dieser Pfandbeleg wurde bereits angewendet',
       severity: 'error',
@@ -24,18 +29,13 @@ export const handleDepositRedemption = ({
     return false;
   }
 
-  // Add the deposit receipt to applied deposits
   setAppliedDeposits(prev => [...prev, depositReceipt]);
-
-  // Update the deposit credit amount
   setDepositCredit(prev => prev + depositReceipt.total);
-
-  // Close the dialog
   setRedeemDepositDialogOpen(false);
-
-  // Show success message
   showToast({
-    message: `Pfandbeleg im Wert von ${depositReceipt.total?.toFixed(2) ?? 'unbekannt'} € zum Warenkorb hinzugefügt`,
+    message: `Pfandbeleg im Wert von ${
+      depositReceipt.total?.toFixed(2) ?? 'unbekannt'
+    } € zum Warenkorb hinzugefügt`,
     severity: 'success',
   });
 
