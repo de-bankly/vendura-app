@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Hook to handle barcode scanner input
- * @param {Object} options Configuration options
- * @param {Function} options.onScan Callback function when barcode is scanned
- * @param {number} options.timeout Time in ms to determine if keystrokes belong to same scan
- * @param {string} options.endCharacter Character that marks the end of a barcode (usually Enter)
- * @param {boolean} options.isEnabled Whether the scanner is currently enabled
- * @param {React.RefObject} options.inputRef Optional ref to input that should receive focus
- * @returns {Object} Barcode state and controls
+ * Hook to handle barcode scanner input.
+ * @param {object} options - Configuration options.
+ * @param {Function} options.onScan - Callback function invoked when a complete barcode is scanned. Receives the scanned barcode string as an argument.
+ * @param {number} [options.timeout=100] - Time in milliseconds to determine if subsequent keystrokes belong to the same scan sequence.
+ * @param {string} [options.endCharacter='Enter'] - The key value indicating the end of a barcode sequence (e.g., 'Enter').
+ * @param {boolean} [options.isEnabled=true] - Flag to enable or disable the barcode scanner listener.
+ * @param {React.RefObject<HTMLInputElement>} [options.inputRef=null] - Optional ref to an input element that should receive focus when the hook is enabled.
+ * @returns {{barcode: string, isScanning: boolean, resetBarcode: Function}} An object containing the current barcode state, scanning status, and a function to manually reset the state.
  */
 export function useBarcode({
   onScan,
-  timeout = 100, // Long timeout for detecting consecutive scans
+  timeout = 100,
   endCharacter = 'Enter',
   isEnabled = true,
   inputRef = null,
@@ -33,7 +33,6 @@ export function useBarcode({
     }
   }, [barcode, onScan, resetBarcode]);
 
-  // Focus the input element if provided
   useEffect(() => {
     if (isEnabled && inputRef && inputRef.current) {
       inputRef.current.focus();
@@ -46,22 +45,17 @@ export function useBarcode({
     const handleKeyDown = event => {
       const currentTime = new Date().getTime();
 
-      // Typical barcode scanners send characters very quickly
       if (
         (currentTime - lastScanTime > timeout && !isScanning) ||
         (isScanning && currentTime - lastScanTime > 500)
       ) {
-        // Reset scanning state if too much time passed
-        // New scan is starting
         setBarcode(event.key);
         setIsScanning(true);
       } else if (isScanning) {
         if (event.key === endCharacter) {
-          // End of barcode detected, process the scan
-          event.preventDefault(); // Prevents Enter actions like form submits
+          event.preventDefault();
           handleScan();
         } else {
-          // Building barcode
           setBarcode(prev => prev + event.key);
         }
       }

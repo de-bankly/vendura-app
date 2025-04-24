@@ -14,9 +14,8 @@ const usePrinter = (options = {}) => {
   const [error, setError] = useState(null);
   const [statusChecked, setStatusChecked] = useState(false);
 
-  // Check printer status
   const checkStatus = useCallback(async () => {
-    if (isLoading) return false; // Prevent multiple concurrent status checks
+    if (isLoading) return false;
 
     setIsLoading(true);
     setError(null);
@@ -35,7 +34,6 @@ const usePrinter = (options = {}) => {
     }
   }, [isLoading]);
 
-  // Print basic content
   const print = useCallback(async (content, options) => {
     setIsLoading(true);
     setError(null);
@@ -51,18 +49,14 @@ const usePrinter = (options = {}) => {
     }
   }, []);
 
-  // Print receipt
   const printReceipt = useCallback(
     async receiptData => {
-      // We'll check status only if it hasn't been checked yet, and only on actual usage
       if (!statusChecked && !isLoading) {
-        // Silently check status without blocking or showing errors to avoid disrupting user flow
         try {
           const { connected } = await PrinterService.checkStatus();
           setIsConnected(connected);
           setStatusChecked(true);
         } catch (error) {
-          // Silently fail - we'll still try to print
           console.warn('Silent printer check failed, continuing anyway');
         }
       }
@@ -83,7 +77,6 @@ const usePrinter = (options = {}) => {
     [statusChecked, isLoading]
   );
 
-  // Print deposit receipt with barcode
   const printDepositReceipt = useCallback(
     async depositData => {
       if (!statusChecked && !isLoading) {
@@ -112,7 +105,6 @@ const usePrinter = (options = {}) => {
     [statusChecked, isLoading]
   );
 
-  // Print simple text
   const printText = useCallback(async text => {
     setIsLoading(true);
     setError(null);
@@ -128,7 +120,6 @@ const usePrinter = (options = {}) => {
     }
   }, []);
 
-  // Check status when the component mounts, only if checkStatusOnMount is true
   useEffect(() => {
     if (checkStatusOnMount) {
       checkStatus();
