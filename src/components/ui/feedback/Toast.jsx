@@ -5,6 +5,19 @@ import React from 'react';
 /**
  * Toast component for displaying temporary notifications.
  * Uses MUI Snackbar and MUI Alert with styling consistent with the Vendura design system.
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - If true, the toast is shown.
+ * @param {function} [props.onClose] - Callback fired when the toast is closed.
+ * @param {React.ReactNode} [props.message] - The message to display.
+ * @param {'error'|'warning'|'info'|'success'} [props.severity='info'] - The severity of the toast.
+ * @param {React.ReactNode} [props.title] - The title of the toast.
+ * @param {number} [props.autoHideDuration=6000] - The number of milliseconds to wait before automatically closing.
+ * @param {object} [props.anchorOrigin={ vertical: 'bottom', horizontal: 'left' }] - The anchor origin of the toast.
+ * @param {React.ReactNode} [props.action] - The action to display (e.g., a button).
+ * @param {'standard'|'filled'|'outlined'} [props.variant='filled'] - The variant to use (Note: internal MuiAlert uses 'standard').
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @param {object} [props.TransitionProps] - Props applied to the transition element.
+ * @returns {React.ReactElement} The rendered Toast component.
  */
 const Toast = ({
   open,
@@ -74,13 +87,19 @@ const Toast = ({
           overflow: 'hidden',
           borderRadius: theme.shape.borderRadius * 1.5,
           backgroundColor: theme.palette.common.white,
-          boxShadow: `0 6px 16px 0 ${alpha(theme.palette.common.black, 0.12)}, 0 3px 6px -4px ${alpha(theme.palette.common.black, 0.12)}`,
+          boxShadow: `0 6px 16px 0 ${alpha(
+            theme.palette.common.black,
+            0.12
+          )}, 0 3px 6px -4px ${alpha(theme.palette.common.black, 0.12)}`,
           transition: 'all 0.2s ease-in-out',
           border: `2px solid ${color.main}`,
           transform: 'translateY(0)',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: `0 8px 24px 0 ${alpha(theme.palette.common.black, 0.15)}, 0 3px 8px -4px ${alpha(theme.palette.common.black, 0.15)}`,
+            boxShadow: `0 8px 24px 0 ${alpha(
+              theme.palette.common.black,
+              0.15
+            )}, 0 3px 8px -4px ${alpha(theme.palette.common.black, 0.15)}`,
           },
         }}
       >
@@ -88,7 +107,7 @@ const Toast = ({
           severity={severity}
           variant="standard"
           action={action}
-          onClose={handleClose}
+          onClose={onClose ? handleClose : undefined}
           sx={{
             width: '100%',
             border: 'none',
@@ -115,7 +134,14 @@ const Toast = ({
           }}
         >
           {title && (
-            <Box sx={{ fontWeight: 700, mb: 0.5, fontSize: '0.9rem', color: color.main }}>
+            <Box
+              sx={{
+                fontWeight: 700,
+                mb: 0.5,
+                fontSize: '0.9rem',
+                color: color.main,
+              }}
+            >
               {title}
             </Box>
           )}
@@ -146,10 +172,12 @@ Toast.propTypes = {
   }),
   /** The action to display (e.g., a button) */
   action: PropTypes.node,
-  /** The variant to use */
+  /** The variant to use (Note: internal MuiAlert uses 'standard') */
   variant: PropTypes.oneOf(['standard', 'filled', 'outlined']),
   /** The system prop that allows defining system overrides as well as additional CSS styles */
   sx: PropTypes.object,
+  /** Props applied to the transition element. */
+  TransitionProps: PropTypes.object,
 };
 
 export default Toast;

@@ -10,13 +10,21 @@ import {
   Paper,
   Grid,
   useTheme,
+  TableContainer,
+  Table as MuiTable,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
+  CircularProgress,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 import UserForm from '../../components/admin/UserForm';
 import { Button, IconButton } from '../../components/ui/buttons';
-import { Chip, Table } from '../../components/ui/feedback';
+import { Chip } from '../../components/ui/feedback';
 import { UserService, RoleService } from '../../services';
 
 // Animation variants
@@ -43,7 +51,9 @@ const UserManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(0);
+  const [rowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -152,15 +162,18 @@ const UserManagementPage = () => {
 
     try {
       // Pass current page state to service
-      const response = await UserService.getAllUsers(page, 10);
+      const response = await UserService.getAllUsers(page, rowsPerPage);
       setUsers(response.content || []);
       setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (err) {
       setError('Failed to load users: ' + (err.response?.data?.message || err.message));
+      setUsers([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, rowsPerPage]);
 
   // Fetch available roles
   const fetchRoles = useCallback(async () => {
@@ -178,9 +191,9 @@ const UserManagementPage = () => {
     fetchRoles();
   }, [fetchUsers, fetchRoles]);
 
-  // Handle page change
-  const handlePageChange = useCallback((event, value) => {
-    setPage(value - 1);
+  // Handle page change for MUI TablePagination
+  const handlePageChange = useCallback((event, newPage) => {
+    setPage(newPage);
   }, []);
 
   // Open dialog for new user
@@ -367,22 +380,97 @@ const UserManagementPage = () => {
                 User Overview
               </Typography>
 
-              <Table
-                columns={columns}
-                data={users || []}
-                loading={loading}
-                page={page + 1}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                elevation={0}
-                sx={{
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: theme.palette.background.default,
-                    borderRadius: '4px',
-                  },
-                }}
-                emptyStateMessage="No users found. Create a new one to get started."
-              />
+              <TableContainer component={Paper} elevation={0}>
+                <MuiTable stickyHeader aria-label="user overview table">
+                  <TableHead
+                    sx={{
+                      '& .MuiTableCell-head': {
+                        backgroundColor: theme.palette.background.default,
+                        fontWeight: 'bold',
+                      },
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <TableRow>
+                      {columns.map(column => (
+                        <TableCell
+                          key={column.field}
+                          sx={{ py: 1.5 }}
+                          align={column.field === 'actions' ? 'right' : 'left'}
+                        >
+                          {column.headerName}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} align="center" sx={{ py: 5 }}>
+                          <CircularProgress />
+                        </TableCell>
+                      </TableRow>
+                    ) : error ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} align="center" sx={{ py: 3 }}>
+                          <Typography color="error">{error}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} align="center" sx={{ py: 3 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No users found. Create a new one to get started.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map((user, index) => (
+                        <TableRow
+                          key={user.id || index}
+                          hover
+                          sx={{
+                            '&:last-child td, &:last-child th': { border: 0 },
+                            '&:nth-of-type(odd)': {
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                          }}
+                        >
+                          {columns.map(column => (
+                            <TableCell
+                              key={`${user.id}-${column.field}`}
+                              sx={{ py: 1.5 }}
+                              align={column.field === 'actions' ? 'right' : 'left'}
+                            >
+                              {column.renderCell
+                                ? column.renderCell(user)
+                                : column.field === 'name'
+                                  ? `${user.firstName || ''} ${user.lastName || ''}`
+                                  : (user[column.field] ?? '-')}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </MuiTable>
+              </TableContainer>
+
+              {/* Pagination */}
+              {!loading && totalElements > 0 && (
+                <TablePagination
+                  component="div"
+                  count={totalElements}
+                  page={page}
+                  onPageChange={handlePageChange}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={[rowsPerPage]}
+                  sx={{
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                    mt: 'auto',
+                  }}
+                />
+              )}
             </Paper>
           </motion.div>
         </motion.div>
