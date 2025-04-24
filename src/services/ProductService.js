@@ -259,7 +259,7 @@ class ProductService {
       shortDescription: product.shortDescription || '',
       longDescription: product.longDescription || '',
       price: price,
-      stockQuantity: stockQuantity,
+      stockQuantity: product.currentStock,
       lowStockThreshold: 5, // Default value
       toBeDiscontinued: toBeDiscontinued, // New property to mark products that should be discontinued
       category: product.productCategory
@@ -277,7 +277,7 @@ class ProductService {
       supplier: product.defaultSupplier
         ? {
             id: product.defaultSupplier.id,
-            name: product.defaultSupplier.name,
+            name: product.defaultSupplier.legalName,
           }
         : null,
       sku: product.id, // Using ID as SKU since backend doesn't have separate SKU field

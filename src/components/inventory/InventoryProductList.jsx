@@ -85,12 +85,11 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
           <TableBody>
             {products.map(product => {
               const stockStatus = getStockStatus(product);
-              const currentStock =
-                product.currentStock !== null
-                  ? product.currentStock
-                  : product.stockQuantity !== null
-                    ? product.stockQuantity
-                    : null;
+              let currentStock = product.currentStock;
+
+              if (currentStock === null || currentStock === undefined) {
+                currentStock = product.stockQuantity;
+              }
 
               return (
                 <TableRow key={product.id}>
@@ -132,8 +131,8 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
 
                   {/* Category */}
                   <TableCell>
-                    {product.productCategory ? (
-                      <Typography variant="body2">{product.productCategory.name}</Typography>
+                    {product.category ? (
+                      <Typography variant="body2">{product.category.name}</Typography>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
                         —
@@ -176,7 +175,16 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
                         sx={{ fontWeight: 500 }}
                       />
                       {currentStock !== null && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            minWidth: '40px',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap',
+                            overflow: 'visible',
+                          }}
+                        >
                           {currentStock} Stk.
                         </Typography>
                       )}
@@ -185,8 +193,8 @@ const InventoryProductList = ({ products, onAdjustStock }) => {
 
                   {/* Supplier */}
                   <TableCell>
-                    {product.defaultSupplier ? (
-                      <Typography variant="body2">{product.defaultSupplier.legalName}</Typography>
+                    {product.supplier ? (
+                      <Typography variant="body2">{product.supplier.name}</Typography>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
                         —
