@@ -36,12 +36,34 @@ const tableRowVariants = {
   }),
 };
 
+/**
+ * Formats a date string into a localized date string.
+ * Returns 'Kein Ablaufdatum' if the date string is falsy.
+ * @param {string | undefined | null} dateString - The date string to format.
+ * @returns {string} The formatted date string or 'Kein Ablaufdatum'.
+ */
 const formatDate = dateString => {
   if (!dateString) return 'Kein Ablaufdatum';
   const date = new Date(dateString);
   return date.toLocaleDateString();
 };
 
+/**
+ * Displays a table of vouchers with pagination and action buttons.
+ *
+ * @param {object} props - The component props.
+ * @param {Array<object>} props.vouchers - Array of voucher objects to display. Each object should have properties like id, type, initialBalance, remainingBalance, discountPercentage, remainingUsages, expirationDate.
+ * @param {boolean} props.loading - Indicates if data is currently being loaded.
+ * @param {number} props.totalElements - Total number of vouchers for pagination.
+ * @param {number} props.page - Current zero-based page index.
+ * @param {number} props.rowsPerPage - Number of rows per page.
+ * @param {function(event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, newPage: number): void} props.onPageChange - Callback for page change.
+ * @param {function(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void} props.onRowsPerPageChange - Callback for rows per page change.
+ * @param {function(voucher: object): void} props.onEdit - Callback for edit action, receives the voucher object.
+ * @param {function(voucher: object): void} props.onDelete - Callback for delete action, receives the voucher object.
+ * @param {function(): void} props.onRefresh - Callback for refresh action.
+ * @returns {React.ReactElement} The rendered VoucherTable component.
+ */
 const VoucherTable = ({
   vouchers,
   loading,
@@ -71,7 +93,14 @@ const VoucherTable = ({
           }`,
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            p: 2,
+            alignItems: 'center',
+          }}
+        >
           <Typography variant="h6" component="div">
             Alle Gutscheine
           </Typography>
@@ -86,7 +115,6 @@ const VoucherTable = ({
             >
               Aktualisieren
             </Button>
-            {/* Add button remains in parent */}
           </Box>
         </Box>
 
@@ -230,7 +258,8 @@ const VoucherTable = ({
                           </Box>{' '}
                           {voucher.remainingBalance !== undefined && (
                             <Box component="span" color="text.secondary" fontSize="0.85rem">
-                              (Verbleibend: {voucher.remainingBalance?.toFixed(2)}€)
+                              (Verbleibend: {voucher.remainingBalance?.toFixed(2)}
+                              €)
                             </Box>
                           )}
                         </Typography>
@@ -248,7 +277,6 @@ const VoucherTable = ({
                       )}
                     </TableCell>
                     <TableCell>
-                      {/* Status Chip */}
                       {voucher.type === 'GIFT_CARD' ? (
                         <Chip
                           label={voucher.remainingBalance > 0 ? 'Aktiv' : 'Aufgebraucht'}
@@ -324,10 +352,10 @@ const VoucherTable = ({
           page={page}
           onPageChange={onPageChange}
           onRowsPerPageChange={onRowsPerPageChange}
-          labelRowsPerPage="Zeilen pro Seite:" // Translate default label
+          labelRowsPerPage="Zeilen pro Seite:"
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} von ${count !== -1 ? count : `mehr als ${to}`}`
-          } // Translate default label
+          }
         />
       </Paper>
     </Box>

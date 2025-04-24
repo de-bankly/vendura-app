@@ -20,24 +20,53 @@ import Select from '../ui/inputs/Select';
 import VoucherTable from './VoucherTable';
 
 /**
- * VoucherManagement component for administrators to manage gift cards
+ * @typedef {object} Voucher
+ * @property {string} id - The unique identifier of the voucher.
+ * @property {'GIFT_CARD' | 'DISCOUNT_CARD'} type - The type of the voucher.
+ * @property {number} [initialBalance] - The initial balance for GIFT_CARD type.
+ * @property {number} [discountPercentage] - The discount percentage for DISCOUNT_CARD type.
+ * @property {number} [maximumUsages] - The maximum number of usages for DISCOUNT_CARD type.
+ * @property {string | null} expirationDate - The expiration date in ISO format, or null.
+ * @property {number} [remainingBalance] - The current remaining balance (fetched separately).
+ * @property {number} [remainingUsages] - The current remaining usages (fetched separately).
+ */
+
+/**
+ * @typedef {object} InitialDialogConfig
+ * @property {boolean} [editMode] - Whether the dialog should open in edit mode.
+ * @property {'GIFT_CARD' | 'DISCOUNT_CARD'} [type] - The default type for a new voucher.
+ */
+
+/**
+ * @typedef {object} VoucherManagementRef
+ * @property {(type?: 'GIFT_CARD' | 'DISCOUNT_CARD') => void} openCreateDialog - Opens the dialog to create a new voucher.
+ * @property {() => Promise<void>} refreshVouchers - Refreshes the list of vouchers.
+ */
+
+/**
+ * VoucherManagement component for administrators to manage gift cards (vouchers).
+ * Displays a table of vouchers and provides functionality to create, edit, and delete them.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} [props.initialOpenDialog] - Whether the create/edit dialog should be open initially.
+ * @param {InitialDialogConfig} [props.initialDialogConfig] - Configuration for the initially open dialog.
+ * @param {() => void} [props.onCloseDialog] - Callback function when the dialog is closed externally.
+ * @param {React.Ref<VoucherManagementRef>} ref - Ref for exposing component methods.
+ * @returns {React.ReactElement} The VoucherManagement component.
  */
 const VoucherManagement = forwardRef(
   ({ initialOpenDialog, initialDialogConfig, onCloseDialog }, ref) => {
-    // State for voucher list and pagination
     const [vouchers, setVouchers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalElements, setTotalElements] = useState(0);
 
-    // State for voucher creation/editing dialog
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [currentVoucher, setCurrentVoucher] = useState(null);
     const [loadingVoucherDetails, setLoadingVoucherDetails] = useState(false);
 
-    // Form state
     const [formData, setFormData] = useState({
       type: 'GIFT_CARD',
       initialBalance: '',
@@ -52,66 +81,19 @@ const VoucherManagement = forwardRef(
     const [submitError, setSubmitError] = useState(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
 
-    // Delete dialog state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [voucherToDelete, setVoucherToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
 
-    // Handle initialOpenDialog from parent
-    useEffect(() => {
-      if (initialOpenDialog) {
-        setDialogOpen(true);
-        setEditMode(initialDialogConfig?.editMode || false);
-
-        if (initialDialogConfig?.type) {
-          setFormData(prev => ({
-            ...prev,
-            type: initialDialogConfig.type,
-            initialBalance: '',
-            discountPercentage: '',
-            maximumUsages: '',
-            expirationDate: null,
-            remainingBalance: null,
-            remainingUsages: null,
-          }));
-        }
-      }
-    }, [initialOpenDialog, initialDialogConfig]);
-
-    // Expose methods to parent component
-    useImperativeHandle(ref, () => ({
-      openCreateDialog: (type = 'GIFT_CARD') => {
-        setEditMode(false);
-        setCurrentVoucher(null);
-        setFormData({
-          type,
-          initialBalance: '',
-          discountPercentage: '',
-          maximumUsages: '',
-          expirationDate: null,
-          remainingBalance: null,
-          remainingUsages: null,
-        });
-        setFormErrors({});
-        setSubmitError(null);
-        setSubmitSuccess(false);
-        setDialogOpen(true);
-      },
-      refreshVouchers: fetchVouchers,
-    }));
-
-    // Load vouchers on component mount and when page/rowsPerPage changes
-    useEffect(() => {
-      fetchVouchers();
-    }, [page, rowsPerPage]);
-
     const fetchVouchers = async () => {
       setLoading(true);
       try {
-        const response = await GiftCardService.getGiftCards({ page, size: rowsPerPage });
+        const response = await GiftCardService.getGiftCards({
+          page,
+          size: rowsPerPage,
+        });
 
-        // Erweiterte Voucher-Informationen mit Transaktionsdaten laden
         const vouchersWithDetails = await Promise.all(
           response.content.map(async voucher => {
             try {
@@ -138,6 +120,51 @@ const VoucherManagement = forwardRef(
         setLoading(false);
       }
     };
+
+    useEffect(() => {
+      fetchVouchers();
+    }, [page, rowsPerPage]);
+
+    useEffect(() => {
+      if (initialOpenDialog) {
+        setDialogOpen(true);
+        setEditMode(initialDialogConfig?.editMode || false);
+
+        if (initialDialogConfig?.type) {
+          setFormData(prev => ({
+            ...prev,
+            type: initialDialogConfig.type,
+            initialBalance: '',
+            discountPercentage: '',
+            maximumUsages: '',
+            expirationDate: null,
+            remainingBalance: null,
+            remainingUsages: null,
+          }));
+        }
+      }
+    }, [initialOpenDialog, initialDialogConfig]);
+
+    useImperativeHandle(ref, () => ({
+      openCreateDialog: (type = 'GIFT_CARD') => {
+        setEditMode(false);
+        setCurrentVoucher(null);
+        setFormData({
+          type,
+          initialBalance: '',
+          discountPercentage: '',
+          maximumUsages: '',
+          expirationDate: null,
+          remainingBalance: null,
+          remainingUsages: null,
+        });
+        setFormErrors({});
+        setSubmitError(null);
+        setSubmitSuccess(false);
+        setDialogOpen(true);
+      },
+      refreshVouchers: fetchVouchers,
+    }));
 
     const handlePageChange = (event, newPage) => {
       setPage(newPage);
@@ -170,9 +197,12 @@ const VoucherManagement = forwardRef(
       setEditMode(true);
       setCurrentVoucher(voucher);
       setLoadingVoucherDetails(true);
+      setFormErrors({});
+      setSubmitError(null);
+      setSubmitSuccess(false);
+      setDialogOpen(true);
 
       try {
-        // Lade aktuelle Transaktionsinformationen für den Gutschein
         const transactionalInfo = await GiftCardService.getTransactionalInformation(voucher.id);
 
         setFormData({
@@ -195,18 +225,31 @@ const VoucherManagement = forwardRef(
           remainingBalance: voucher.remainingBalance,
           remainingUsages: voucher.remainingUsages,
         });
+        setSubmitError(
+          'Fehler beim Laden der aktuellen Gutscheindetails. Angezeigte Werte sind möglicherweise nicht aktuell.'
+        );
       } finally {
         setLoadingVoucherDetails(false);
       }
-
-      setFormErrors({});
-      setSubmitError(null);
-      setSubmitSuccess(false);
-      setDialogOpen(true);
     };
 
     const handleCloseDialog = () => {
       setDialogOpen(false);
+      setEditMode(false);
+      setCurrentVoucher(null);
+      setFormData({
+        type: 'GIFT_CARD',
+        initialBalance: '',
+        discountPercentage: '',
+        maximumUsages: '',
+        expirationDate: null,
+        remainingBalance: null,
+        remainingUsages: null,
+      });
+      setFormErrors({});
+      setSubmitError(null);
+      setSubmitSuccess(false);
+      setLoadingVoucherDetails(false);
       if (onCloseDialog) {
         onCloseDialog();
       }
@@ -215,15 +258,11 @@ const VoucherManagement = forwardRef(
     const handleInputChange = e => {
       const { name, value } = e.target;
 
-      setFormData(prev => {
-        const newState = {
-          ...prev,
-          [name]: value,
-        };
-        return newState;
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
 
-      // Clear error for this field if exists
       if (formErrors[name]) {
         setFormErrors(prev => ({
           ...prev,
@@ -238,7 +277,6 @@ const VoucherManagement = forwardRef(
         expirationDate: date,
       }));
 
-      // Clear error for this field if exists
       if (formErrors.expirationDate) {
         setFormErrors(prev => ({
           ...prev,
@@ -255,21 +293,19 @@ const VoucherManagement = forwardRef(
       }
 
       if (formData.type === 'GIFT_CARD' && !editMode) {
-        if (!formData.initialBalance || formData.initialBalance <= 0) {
-          errors.initialBalance = 'Bitte geben Sie einen gültigen Anfangsbetrag ein';
+        if (!formData.initialBalance || parseFloat(formData.initialBalance) <= 0) {
+          errors.initialBalance = 'Bitte geben Sie einen gültigen positiven Anfangsbetrag ein';
         }
       } else if (formData.type === 'DISCOUNT_CARD') {
-        if (
-          !formData.discountPercentage ||
-          formData.discountPercentage <= 0 ||
-          formData.discountPercentage > 100
-        ) {
+        const discount = parseInt(formData.discountPercentage, 10);
+        if (isNaN(discount) || discount <= 0 || discount > 100) {
           errors.discountPercentage = 'Der Rabatt muss zwischen 1 und 100% liegen';
         }
 
-        if (!formData.maximumUsages || formData.maximumUsages <= 0) {
+        const usages = parseInt(formData.maximumUsages, 10);
+        if (isNaN(usages) || usages <= 0) {
           errors.maximumUsages =
-            'Bitte geben Sie eine gültige Anzahl an maximalen Verwendungen ein';
+            'Bitte geben Sie eine gültige positive Anzahl an maximalen Verwendungen ein';
         }
       }
 
@@ -285,52 +321,41 @@ const VoucherManagement = forwardRef(
       setSubmitSuccess(false);
 
       try {
-        if (editMode) {
-          // Update an existing voucher
-          const payload = {
-            type: formData.type,
-            expirationDate: formData.expirationDate ? formData.expirationDate.toISOString() : null,
-          };
+        let payload = {
+          type: formData.type,
+          expirationDate: formData.expirationDate ? formData.expirationDate.toISOString() : null,
+        };
 
+        if (editMode) {
           if (formData.type === 'DISCOUNT_CARD') {
             payload.discountPercentage = parseInt(formData.discountPercentage, 10);
             payload.maximumUsages = parseInt(formData.maximumUsages, 10);
           } else if (formData.type === 'GIFT_CARD' && currentVoucher.type === 'DISCOUNT_CARD') {
-            // When changing from DISCOUNT_CARD to GIFT_CARD, explicitly set maximumUsages to 0
             payload.maximumUsages = 0;
             payload.discountPercentage = 0;
           } else {
-            // Always include these fields to prevent null values
             payload.maximumUsages = currentVoucher.maximumUsages || 0;
             payload.discountPercentage = currentVoucher.discountPercentage || 0;
           }
-
           await GiftCardService.updateGiftCard(currentVoucher.id, payload);
         } else {
-          // Create a new voucher
-          const payload = {
-            type: formData.type,
-            expirationDate: formData.expirationDate ? formData.expirationDate.toISOString() : null,
-          };
-
           if (formData.type === 'GIFT_CARD') {
             payload.initialBalance = parseFloat(formData.initialBalance);
           } else if (formData.type === 'DISCOUNT_CARD') {
             payload.discountPercentage = parseInt(formData.discountPercentage, 10);
             payload.maximumUsages = parseInt(formData.maximumUsages, 10);
           }
-
           await GiftCardService.createGiftCard(payload);
         }
 
         setSubmitSuccess(true);
         fetchVouchers();
 
-        // Close dialog after a short delay to show success message
         setTimeout(() => {
           handleCloseDialog();
         }, 1500);
       } catch (error) {
+        console.error('Error submitting voucher:', error);
         setSubmitError(
           error.response?.data?.message ||
             error.message ||
@@ -344,12 +369,14 @@ const VoucherManagement = forwardRef(
     const openDeleteDialog = voucher => {
       setVoucherToDelete(voucher);
       setDeleteDialogOpen(true);
+      setDeleteError(null);
     };
 
     const closeDeleteDialog = () => {
       setDeleteDialogOpen(false);
       setVoucherToDelete(null);
       setDeleteError(null);
+      setDeleteLoading(false);
     };
 
     const handleDeleteVoucher = async () => {
@@ -375,7 +402,6 @@ const VoucherManagement = forwardRef(
 
     return (
       <Box>
-        {/* Render the new VoucherTable component */}
         <VoucherTable
           vouchers={vouchers}
           loading={loading}
@@ -387,9 +413,9 @@ const VoucherManagement = forwardRef(
           onEdit={openEditDialog}
           onDelete={openDeleteDialog}
           onRefresh={fetchVouchers}
+          onCreate={openCreateDialog}
         />
 
-        {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
           <DialogTitle>
             {editMode ? 'Gutschein bearbeiten' : 'Neuen Gutschein erstellen'}
@@ -407,27 +433,29 @@ const VoucherManagement = forwardRef(
                   : 'Gutschein wurde erfolgreich erstellt'}
               </Alert>
             )}
-            {submitError && (
+            {submitError && !loadingVoucherDetails && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {submitError}
               </Alert>
             )}
             {editMode &&
               formData.type === 'GIFT_CARD' &&
-              formData.remainingBalance !== undefined && (
+              formData.remainingBalance !== null &&
+              !loadingVoucherDetails && (
                 <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
                   Aktuelles Guthaben: {formData.remainingBalance?.toFixed(2) || '0.00'} €
                 </Alert>
               )}
             {editMode &&
               formData.type === 'DISCOUNT_CARD' &&
-              formData.remainingUsages !== undefined && (
+              formData.remainingUsages !== null &&
+              !loadingVoucherDetails && (
                 <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
                   Verbleibende Nutzungen: {formData.remainingUsages || 0} von{' '}
                   {formData.maximumUsages}
                 </Alert>
               )}
-            <Grid container spacing={2}>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <Select
                   label="Gutschein-Typ"
@@ -435,7 +463,7 @@ const VoucherManagement = forwardRef(
                   id="voucher-type-select"
                   value={formData.type}
                   onChange={handleInputChange}
-                  disabled={editMode}
+                  disabled={editMode || loadingVoucherDetails || submitLoading}
                   error={!!formErrors.type}
                   helperText={formErrors.type}
                   placeholder="Wählen Sie einen Gutschein-Typ"
@@ -457,7 +485,8 @@ const VoucherManagement = forwardRef(
                     onChange={handleInputChange}
                     error={!!formErrors.initialBalance}
                     helperText={formErrors.initialBalance}
-                    inputProps={{ min: 0, step: '0.01' }}
+                    inputProps={{ min: 0.01, step: '0.01' }}
+                    disabled={loadingVoucherDetails || submitLoading}
                   />
                 </Grid>
               )}
@@ -474,7 +503,8 @@ const VoucherManagement = forwardRef(
                       onChange={handleInputChange}
                       error={!!formErrors.discountPercentage}
                       helperText={formErrors.discountPercentage}
-                      inputProps={{ min: 1, max: 100 }}
+                      inputProps={{ min: 1, max: 100, step: 1 }}
+                      disabled={loadingVoucherDetails || submitLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -487,7 +517,8 @@ const VoucherManagement = forwardRef(
                       onChange={handleInputChange}
                       error={!!formErrors.maximumUsages}
                       helperText={formErrors.maximumUsages}
-                      inputProps={{ min: 1 }}
+                      inputProps={{ min: 1, step: 1 }}
+                      disabled={loadingVoucherDetails || submitLoading}
                     />
                   </Grid>
                 </>
@@ -503,9 +534,11 @@ const VoucherManagement = forwardRef(
                       fullWidth: true,
                       error: !!formErrors.expirationDate,
                       helperText: formErrors.expirationDate,
+                      disabled: loadingVoucherDetails || submitLoading,
                     },
                   }}
-                  minDate={dayjs(new Date())}
+                  minDate={dayjs()}
+                  disabled={loadingVoucherDetails || submitLoading}
                 />
               </Grid>
             </Grid>
@@ -521,7 +554,7 @@ const VoucherManagement = forwardRef(
               disabled={submitLoading || submitSuccess || loadingVoucherDetails}
             >
               {submitLoading ? (
-                <CircularProgress size={24} />
+                <CircularProgress size={24} color="inherit" />
               ) : editMode ? (
                 'Aktualisieren'
               ) : (
@@ -531,7 +564,6 @@ const VoucherManagement = forwardRef(
           </DialogActions>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
           <DialogTitle>Gutschein löschen</DialogTitle>
           <DialogContent>
@@ -541,13 +573,22 @@ const VoucherManagement = forwardRef(
               </Alert>
             )}
             <Typography>
-              Sind Sie sicher, dass Sie diesen Gutschein löschen möchten?
+              Sind Sie sicher, dass Sie den Gutschein mit dem Code{' '}
+              <strong>{voucherToDelete?.code}</strong> löschen möchten? Diese Aktion kann nicht
+              rückgängig gemacht werden.
               {voucherToDelete?.type === 'GIFT_CARD' && voucherToDelete?.remainingBalance > 0 && (
                 <Box component="span" sx={{ display: 'block', mt: 1, color: 'error.main' }}>
                   Achtung: Dieser Gutschein hat noch ein Restguthaben von{' '}
                   {voucherToDelete.remainingBalance.toFixed(2)} €.
                 </Box>
               )}
+              {voucherToDelete?.type === 'DISCOUNT_CARD' &&
+                voucherToDelete?.remainingUsages > 0 && (
+                  <Box component="span" sx={{ display: 'block', mt: 1, color: 'warning.main' }}>
+                    Info: Dieser Gutschein hat noch {voucherToDelete.remainingUsages} verbleibende
+                    Nutzungen.
+                  </Box>
+                )}
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -560,7 +601,11 @@ const VoucherManagement = forwardRef(
               variant="contained"
               disabled={deleteLoading}
             >
-              {deleteLoading ? <CircularProgress size={24} /> : 'Löschen'}
+              {deleteLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Löschen bestätigen'
+              )}
             </Button>
           </DialogActions>
         </Dialog>
