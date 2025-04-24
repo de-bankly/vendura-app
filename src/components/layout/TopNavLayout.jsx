@@ -40,7 +40,7 @@ import { Suspense, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { ProfileCard } from '../ui/cards';
+import ProfileCard from '../ui/cards/ProfileCard';
 
 /**
  * Renders the main application layout including the top navigation bar,
