@@ -1,19 +1,9 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,23 +11,13 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  Tooltip,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  CardGiftcard as CardGiftcardIcon,
-  LocalOffer as LocalOfferIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material';
+import { Info as InfoIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import GiftCardService from '../../services/GiftCardService';
 import Select from '../ui/inputs/Select';
-import { motion } from 'framer-motion';
-import { useTheme, alpha } from '@mui/material/styles';
+import VoucherTable from './VoucherTable';
 
 /**
  * VoucherManagement component for administrators to manage gift cards
@@ -77,17 +57,6 @@ const VoucherManagement = forwardRef(
     const [voucherToDelete, setVoucherToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
-
-    // Animation variants
-    const tableRowVariants = {
-      hidden: { opacity: 0 },
-      visible: i => ({
-        opacity: 1,
-        transition: {
-          delay: i * 0.05,
-        },
-      }),
-    };
 
     // Handle initialOpenDialog from parent
     useEffect(() => {
@@ -404,304 +373,21 @@ const VoucherManagement = forwardRef(
       }
     };
 
-    const formatDate = dateString => {
-      if (!dateString) return 'Kein Ablaufdatum';
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    };
-
-    const renderVoucherTable = () => {
-      const theme = useTheme();
-
-      return (
-        <Box sx={{ width: '100%', mb: 2 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              width: '100%',
-              borderRadius: 2,
-              overflow: 'hidden',
-              border: `1px solid ${
-                theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.grey[700], 0.5)
-                  : alpha(theme.palette.grey[300], 0.8)
-              }`,
-            }}
-          >
-            <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', p: 2, alignItems: 'center' }}
-            >
-              <Typography variant="h6" component="div">
-                Alle Gutscheine
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<RefreshIcon />}
-                  onClick={fetchVouchers}
-                  disabled={loading}
-                  size="small"
-                >
-                  Aktualisieren
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
-                  onClick={openCreateDialog}
-                  size="small"
-                >
-                  Neuer Gutschein
-                </Button>
-              </Box>
-            </Box>
-
-            <TableContainer sx={{ maxHeight: 600 }}>
-              <Table stickyHeader aria-label="Gutschein-Tabelle">
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Gutscheincode
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Typ
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Wert/Rabatt
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Status
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Ablaufdatum
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.paper, 0.9)
-                            : alpha(theme.palette.grey[100], 0.9),
-                      }}
-                    >
-                      Aktionen
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                        <CircularProgress size={40} />
-                      </TableCell>
-                    </TableRow>
-                  ) : vouchers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Keine Gutscheine gefunden
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    vouchers.map((voucher, index) => (
-                      <motion.tr
-                        key={voucher.id}
-                        custom={index}
-                        initial="hidden"
-                        animate="visible"
-                        variants={tableRowVariants}
-                        component={TableRow}
-                        sx={{
-                          '&:nth-of-type(odd)': {
-                            backgroundColor:
-                              theme.palette.mode === 'dark'
-                                ? alpha(theme.palette.action.hover, 0.05)
-                                : alpha(theme.palette.action.hover, 0.05),
-                          },
-                          '&:hover': {
-                            backgroundColor:
-                              theme.palette.mode === 'dark'
-                                ? alpha(theme.palette.action.hover, 0.1)
-                                : alpha(theme.palette.action.hover, 0.1),
-                          },
-                          transition: 'background-color 0.2s',
-                        }}
-                      >
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {voucher.id}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={
-                              voucher.type === 'GIFT_CARD' ? (
-                                <CardGiftcardIcon fontSize="small" />
-                              ) : (
-                                <LocalOfferIcon fontSize="small" />
-                              )
-                            }
-                            label={
-                              voucher.type === 'GIFT_CARD' ? 'Geschenkkarte' : 'Rabattgutschein'
-                            }
-                            color={voucher.type === 'GIFT_CARD' ? 'primary' : 'secondary'}
-                            variant="outlined"
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {voucher.type === 'GIFT_CARD' ? (
-                            <Typography>
-                              <Box component="span" fontWeight="medium">
-                                {voucher.initialBalance?.toFixed(2)}€
-                              </Box>{' '}
-                              {voucher.remainingBalance !== undefined && (
-                                <Box component="span" color="text.secondary" fontSize="0.85rem">
-                                  (Verbleibend: {voucher.remainingBalance?.toFixed(2)}€)
-                                </Box>
-                              )}
-                            </Typography>
-                          ) : (
-                            <Typography>
-                              <Box component="span" fontWeight="medium">
-                                {voucher.discountPercentage}%
-                              </Box>{' '}
-                              {voucher.remainingUsages !== undefined && (
-                                <Box component="span" color="text.secondary" fontSize="0.85rem">
-                                  (Verbleibend: {voucher.remainingUsages}x)
-                                </Box>
-                              )}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {/* Status Chip */}
-                          {voucher.type === 'GIFT_CARD' ? (
-                            <Chip
-                              label={voucher.remainingBalance > 0 ? 'Aktiv' : 'Aufgebraucht'}
-                              color={voucher.remainingBalance > 0 ? 'success' : 'default'}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Chip
-                              label={voucher.remainingUsages > 0 ? 'Aktiv' : 'Aufgebraucht'}
-                              color={voucher.remainingUsages > 0 ? 'success' : 'default'}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {voucher.expirationDate ? (
-                            <Typography variant="body2">
-                              {formatDate(voucher.expirationDate)}
-                            </Typography>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              Kein Ablaufdatum
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Tooltip title="Bearbeiten">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => openEditDialog(voucher)}
-                                sx={{
-                                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                  '&:hover': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                  },
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Löschen">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => openDeleteDialog(voucher)}
-                                sx={{
-                                  backgroundColor: alpha(theme.palette.error.main, 0.1),
-                                  '&:hover': {
-                                    backgroundColor: alpha(theme.palette.error.main, 0.2),
-                                  },
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </motion.tr>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={totalElements}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handlePageChange}
-              onRowsPerPageChange={handleRowsPerPageChange}
-            />
-          </Paper>
-        </Box>
-      );
-    };
-
     return (
       <Box>
-        {renderVoucherTable()}
+        {/* Render the new VoucherTable component */}
+        <VoucherTable
+          vouchers={vouchers}
+          loading={loading}
+          totalElements={totalElements}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={handlePageChange}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          onEdit={openEditDialog}
+          onDelete={openDeleteDialog}
+          onRefresh={fetchVouchers}
+        />
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -714,7 +400,6 @@ const VoucherManagement = forwardRef(
                 <CircularProgress size={30} />
               </Box>
             )}
-
             {submitSuccess && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 {editMode
@@ -722,13 +407,11 @@ const VoucherManagement = forwardRef(
                   : 'Gutschein wurde erfolgreich erstellt'}
               </Alert>
             )}
-
             {submitError && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {submitError}
               </Alert>
             )}
-
             {editMode &&
               formData.type === 'GIFT_CARD' &&
               formData.remainingBalance !== undefined && (
@@ -736,7 +419,6 @@ const VoucherManagement = forwardRef(
                   Aktuelles Guthaben: {formData.remainingBalance?.toFixed(2) || '0.00'} €
                 </Alert>
               )}
-
             {editMode &&
               formData.type === 'DISCOUNT_CARD' &&
               formData.remainingUsages !== undefined && (
@@ -745,7 +427,6 @@ const VoucherManagement = forwardRef(
                   {formData.maximumUsages}
                 </Alert>
               )}
-
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Select
