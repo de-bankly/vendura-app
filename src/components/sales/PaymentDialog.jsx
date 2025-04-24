@@ -757,7 +757,7 @@ const PaymentDialog = ({
                       <LocalOfferIcon color="secondary" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={`Rabattgutschein: ${voucher.code}`}
+                      primary={`Rabattgutschein: ${voucher.id}`}
                       secondary={`Angewendet: ${
                         voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)
                       } € (${voucher.discountPercentage}%)`}

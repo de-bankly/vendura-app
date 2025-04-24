@@ -100,7 +100,7 @@ const RedeemVoucherDialog = ({ open, onClose, onVoucherRedeemed, cartTotal = 0 }
     }
 
     if (!GiftCardService.validateGiftCardFormat(voucherCode)) {
-      setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 16-19 Ziffern');
+      setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 13-19 Ziffern');
       return;
     }
 

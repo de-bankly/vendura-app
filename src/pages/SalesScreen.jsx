@@ -10,7 +10,7 @@ import {
   processPayment,
   handleDepositRedemption,
 } from '../components/sales';
-import { ProductService, CartService, DepositService } from '../services';
+import { ProductService, CartService, DepositService, GiftCardService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
 import usePrinter from '../hooks/usePrinter';
@@ -275,6 +275,14 @@ const SalesScreen = () => {
           severity: 'warning',
           message:
             'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Gutscheine anzuwenden.',
+        });
+        return;
+      }
+      if (cartItems.length === 0) {
+        showToast({
+          severity: 'info',
+          message:
+            'Bitte fügen Sie zuerst Produkte zum Warenkorb hinzu, bevor Sie einen Gutschein anwenden.',
         });
         return;
       }
@@ -658,15 +666,29 @@ const SalesScreen = () => {
    * Effect to calculate voucher and gift card impacts when cart or vouchers change.
    */
   useEffect(() => {
-    const afterProductDiscountTotal = subtotal - productDiscount;
+    const discountableSubtotal = cartItems.reduce((sum, item) => {
+      const isDepositItem = item.name === 'Einweg Pfand';
+      if (!isDepositItem) {
+        return sum + item.price * item.quantity;
+      }
+      return sum;
+    }, 0);
 
-    const calculatedDiscount = calculateVoucherDiscount(afterProductDiscountTotal, appliedVouchers);
-    setVoucherDiscount(calculatedDiscount);
+    const calculatedVoucherDiscount = calculateVoucherDiscount(
+      discountableSubtotal,
+      appliedVouchers
+    );
+    setVoucherDiscount(calculatedVoucherDiscount);
 
-    const afterDiscountTotal = afterProductDiscountTotal - calculatedDiscount;
-    const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
+    const baseForGiftCard = subtotal - depositCredit - calculatedVoucherDiscount;
+    const nonNegativeBaseForGiftCard = Math.max(0, baseForGiftCard);
+
+    const calculatedGiftCardPayment = calculateGiftCardPayment(
+      nonNegativeBaseForGiftCard,
+      appliedVouchers
+    );
     setGiftCardPayment(calculatedGiftCardPayment);
-  }, [subtotal, productDiscount, appliedVouchers]);
+  }, [cartItems, subtotal, appliedVouchers, depositCredit]); // Dependencies remain the same
 
   /**
    * Effect to update undo/redo button states based on CartStateManager.
@@ -685,62 +707,115 @@ const SalesScreen = () => {
 
   /**
    * Effect to handle scanned barcode values.
-   * Attempts to redeem as deposit first, then looks up as product.
+   * Attempts to redeem as deposit first, then voucher, then looks up as product.
+   * Ensures that once a type is identified and handled (or fails unexpectedly),
+   * subsequent checks are skipped.
    */
   useEffect(() => {
     if (scannedValue) {
       (async () => {
         let handled = false;
-        try {
-          // 1. Try to get deposit receipt
-          const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
+        let isNotFound = false; // Track if a 404 occurred across checks
 
-          if (depositReceipt && depositReceipt.data?.id) {
-            handleDepositRedeemed(depositReceipt.data);
-            handled = true;
-          } else {
-            // API returned success but no valid receipt data
-            console.warn(
-              `SalesScreen: Deposit check for ${scannedValue} returned no receipt data. Assuming not a deposit.`
-            );
-          }
-        } catch (err) {
-          const isNotFound =
-            err.response?.status === 404 ||
-            err.message?.toLowerCase().includes('not found') ||
-            err.message?.toLowerCase().includes('nicht gefunden');
+        // --- 1. Try Deposit ---
+        if (!handled) {
+          try {
+            const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
+            if (depositReceipt && depositReceipt.data?.id) {
+              handleDepositRedeemed(depositReceipt.data);
+              handled = true;
+            } else {
+              console.warn(
+                `SalesScreen: Deposit check for ${scannedValue} returned successfully but without expected data.`
+              );
+            }
+          } catch (err) {
+            const isDepositNotFound =
+              err.response?.status === 404 ||
+              err.message?.toLowerCase().includes('not found') ||
+              err.message?.toLowerCase().includes('nicht gefunden');
 
-          if (!isNotFound) {
-            // Unexpected error during deposit check
-            console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
-            showToast({
-              severity: 'error',
-              message: `Fehler beim Überprüfen des Codes ${scannedValue}: ${err.message}`,
-            });
-            handled = true; // Mark as handled to prevent product lookup after error
+            if (!isDepositNotFound) {
+              console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
+              showToast({
+                severity: 'error',
+                message: `Fehler beim Überprüfen des Codes ${scannedValue} als Pfandbon: ${err.message}`,
+              });
+              handled = true;
+            } else {
+              isNotFound = true;
+            }
           }
-          // If it IS a 404 Not Found, we proceed to product lookup below
         }
 
-        // 2. If not handled as deposit (or deposit check resulted in 404), try product lookup
+        // --- 2. Try Voucher/Gift Card (only if not handled) ---
+        if (!handled) {
+          try {
+            const giftCard = await GiftCardService.getGiftCardById(scannedValue);
+
+            if (giftCard && giftCard.id) {
+              if (giftCard.maximumUsages > 0) {
+                if (appliedVouchers.some(v => v.id === giftCard.id)) {
+                  showToast({
+                    severity: 'info',
+                    message: 'Dieser Gutschein/Geschenkkarte wurde bereits angewendet.',
+                  });
+                } else {
+                  const voucherData = await GiftCardService.getTransactionalInformation(
+                    giftCard.id
+                  );
+                  handleApplyVoucher(voucherData);
+                }
+              } else {
+                showToast({
+                  severity: 'warning',
+                  message: `Gutschein/Geschenkkarte ${scannedValue} ist ungültig oder bereits eingelöst.`,
+                });
+              }
+              handled = true;
+            } else {
+              console.log(`SalesScreen: Code ${scannedValue} not found as gift card.`);
+            }
+          } catch (err) {
+            const isGiftCardNotFound =
+              err.response?.status === 404 ||
+              err.message?.toLowerCase().includes('not found') ||
+              err.message?.toLowerCase().includes('nicht gefunden');
+
+            if (!isGiftCardNotFound) {
+              console.error(`SalesScreen: Error checking gift card ${scannedValue}:`, err);
+              showToast({
+                severity: 'error',
+                message: `Fehler beim Überprüfen des Codes ${scannedValue} als Gutschein/Geschenkkarte: ${err.message}`,
+              });
+              handled = true;
+            } else {
+              isNotFound = isNotFound || isGiftCardNotFound;
+            }
+          }
+        }
+
+        // --- 3. Try Product (only if not handled) ---
         if (!handled) {
           console.log(
-            `SalesScreen: Code ${scannedValue} not redeemed as deposit, trying product lookup.`
+            `SalesScreen: Code ${scannedValue} not identified as deposit or voucher, trying product lookup.`
           );
           await handleProductLookup(scannedValue);
-          // handleProductLookup shows its own toasts for success/failure
+          handled = true;
         }
 
-        resetScan(); // Reset scanner state regardless of outcome
+        // --- Reset Scanner ---
+        resetScan();
       })();
     }
   }, [
     scannedValue,
     handleDepositRedeemed,
+    handleApplyVoucher,
     handleProductLookup,
+    appliedVouchers,
     showToast,
     resetScan,
-    // DepositService is assumed stable
   ]);
 
   /**

@@ -194,8 +194,8 @@ class GiftCardService {
    * @returns {Boolean} Whether the gift card ID is in a valid format
    */
   validateGiftCardFormat(id) {
-    // Gift card IDs are numeric values of 16-19 digits as per backend implementation
-    const giftCardRegex = /^\d{16,19}$/;
+    // Gift card IDs are numeric values of 13-19 digits as per backend implementation
+    const giftCardRegex = /^\d{13,19}$/;
     return giftCardRegex.test(id);
   }
 }
