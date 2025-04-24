@@ -2,7 +2,7 @@
 
 /**
  * Deploy configuration script for Vendura application
- * 
+ *
  * This script generates environment-specific configuration files for deployment
  */
 
@@ -31,24 +31,24 @@ if (!validEnvs.includes(env)) {
 }
 
 try {
-  // Read the environment variables from the appropriate .env file
-  const envFile = path.join(rootDir, `.env.${env}`);
-  
+  // Read the environment variables from the .env file (not environment-specific)
+  const envFile = path.join(rootDir, `.env`);
+
   // Check if the env file exists
   if (!fs.existsSync(envFile)) {
     console.error(`Error: Environment file not found: ${envFile}`);
     console.log(`Creating empty configuration for ${env} environment...`);
-    
+
     // Create an empty config if the file doesn't exist
     const configFile = path.join(distDir, 'runtime-config.json');
     fs.writeFileSync(configFile, JSON.stringify({}, null, 2));
-    
+
     console.log(`✅ Empty deployment configuration generated at ${configFile}`);
     process.exit(0);
   }
-  
+
   const envContent = fs.readFileSync(envFile, 'utf8');
-  
+
   // Parse the environment variables
   const envVars = {};
   envContent.split('\n').forEach(line => {
@@ -63,13 +63,13 @@ try {
       }
     }
   });
-  
+
   // Create runtime-config.json in the dist directory
   const configFile = path.join(distDir, 'runtime-config.json');
   fs.writeFileSync(configFile, JSON.stringify(envVars, null, 2));
-  
+
   console.log(`✅ Deployment configuration generated successfully at ${configFile}`);
 } catch (error) {
   console.error('❌ Failed to generate deployment configuration:', error.message);
   process.exit(1);
-} 
+}

@@ -2,7 +2,7 @@
 
 /**
  * Build script for Vendura application
- * 
+ *
  * This script handles building the application for different environments
  * and performs additional optimizations.
  */
@@ -38,16 +38,17 @@ try {
     console.log('Cleaning dist directory...');
     fs.rmSync(distDir, { recursive: true, force: true });
   }
-  
+
   // Run the build with the specified environment
-  console.log(`Running Vite build for ${env} environment...`);
-  execSync(`vite build --mode ${env}`, { stdio: 'inherit' });
-  
+  // Using 'default' mode instead of environment-specific mode to ensure .env is used
+  console.log(`Running Vite build with standard .env file...`);
+  execSync(`vite build`, { stdio: 'inherit' });
+
   // Generate runtime configuration
   console.log('Generating runtime configuration...');
   const deployConfigPath = path.join(__dirname, 'deploy-config.js');
   execSync(`node "${deployConfigPath}" --env=${env}`, { stdio: 'inherit' });
-  
+
   // Create a version.json file with build information
   console.log('Creating version.json...');
   const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -56,23 +57,20 @@ try {
     version: packageJson.version,
     name: packageJson.name,
     buildDate: new Date().toISOString(),
-    environment: env
+    environment: env,
   };
-  
-  fs.writeFileSync(
-    path.join(distDir, 'version.json'),
-    JSON.stringify(buildInfo, null, 2)
-  );
-  
+
+  fs.writeFileSync(path.join(distDir, 'version.json'), JSON.stringify(buildInfo, null, 2));
+
   // Run optimization for production builds
   if (shouldOptimize) {
     console.log('Running additional optimizations...');
     const optimizePath = path.join(__dirname, 'optimize.js');
     execSync(`node "${optimizePath}"`, { stdio: 'inherit' });
   }
-  
+
   console.log(`✅ Build completed successfully for ${env} environment!`);
 } catch (error) {
   console.error('❌ Build failed:', error.message);
   process.exit(1);
-} 
+}
