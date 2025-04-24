@@ -281,8 +281,21 @@ class CartService {
       ) {
         const originalPrice = parseFloat(item.originalPrice) || 0;
         const discountedPrice = parseFloat(item.discountedPrice) || 0;
-        // Ensure discount is positive
-        const discountPerItem = Math.max(0, originalPrice - discountedPrice);
+
+        // Skip items with invalid prices
+        if (originalPrice <= 0) {
+          return sum;
+        }
+
+        // Calculate discount per item with sensible limits
+        let discountPerItem = Math.max(0, originalPrice - discountedPrice);
+
+        // Cap discount at 50% of original price as a safety measure
+        const maxDiscount = originalPrice * 0.5;
+        if (discountPerItem > maxDiscount) {
+          discountPerItem = maxDiscount;
+        }
+
         const quantity = parseInt(item.quantity) || 0;
         return sum + discountPerItem * quantity;
       }

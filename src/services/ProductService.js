@@ -102,19 +102,26 @@ class ProductService {
               promotions[0]
             );
 
-            const discountInfo = PromotionService.calculateDiscount(
-              transformedProduct,
-              highestPromotion
-            );
-            return {
-              ...transformedProduct,
-              hasDiscount: discountInfo.hasDiscount,
-              originalPrice: discountInfo.originalPrice,
-              discountAmount: discountInfo.discountAmount,
-              discountedPrice: discountInfo.discountedPrice,
-              discountPercentage: discountInfo.discountPercentage,
-              promotion: highestPromotion,
-            };
+            // Validate promotion discount before applying it
+            if (this.isValidPromotion(highestPromotion, transformedProduct)) {
+              const discountInfo = PromotionService.calculateDiscount(
+                transformedProduct,
+                highestPromotion
+              );
+
+              // Additional validation after discount calculation
+              if (this.isReasonableDiscount(discountInfo)) {
+                return {
+                  ...transformedProduct,
+                  hasDiscount: discountInfo.hasDiscount,
+                  originalPrice: discountInfo.originalPrice,
+                  discountAmount: discountInfo.discountAmount,
+                  discountedPrice: discountInfo.discountedPrice,
+                  discountPercentage: discountInfo.discountPercentage,
+                  promotion: highestPromotion,
+                };
+              }
+            }
           }
         } catch (promotionError) {
           console.error('Error fetching promotions for product:', promotionError);
@@ -127,6 +134,48 @@ class ProductService {
       console.error(`Error fetching product with ID ${id}:`, error.response || error.message);
       throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch product details'));
     }
+  }
+
+  /**
+   * Validates if a promotion is reasonable for a product
+   * @param {Object} promotion - The promotion to validate
+   * @param {Object} product - The product to apply promotion to
+   * @returns {boolean} Whether the promotion is valid
+   */
+  isValidPromotion(promotion, product) {
+    if (!promotion || !product) return false;
+
+    const productPrice = parseFloat(product.price) || 0;
+    if (productPrice <= 0) return false;
+
+    const discountAmount = parseFloat(promotion.discount) || 0;
+    if (discountAmount <= 0) return false;
+
+    // Check if discount is not more than 50% of product price
+    const discountPercentage = (discountAmount / productPrice) * 100;
+    return discountPercentage <= 50;
+  }
+
+  /**
+   * Validates if a calculated discount is reasonable
+   * @param {Object} discountInfo - The calculated discount information
+   * @returns {boolean} Whether the discount is reasonable
+   */
+  isReasonableDiscount(discountInfo) {
+    if (!discountInfo) return false;
+
+    const { originalPrice, discountAmount, discountPercentage } = discountInfo;
+
+    // Check for zero or negative original price
+    if (originalPrice <= 0) return false;
+
+    // Check for negative discount
+    if (discountAmount < 0) return false;
+
+    // Check if discount percentage is too high (over 50%)
+    if (discountPercentage > 50) return false;
+
+    return true;
   }
 
   /**

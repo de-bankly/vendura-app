@@ -42,6 +42,29 @@ export const addToCart = (cartItems, appliedVouchers, product, setCartItems, sho
     return; // Exit without changing state
   }
 
+  // Validate product discount information
+  if (
+    product.hasDiscount &&
+    product.originalPrice !== undefined &&
+    product.discountedPrice !== undefined
+  ) {
+    const originalPrice = parseFloat(product.originalPrice) || 0;
+    const discountedPrice = parseFloat(product.discountedPrice) || 0;
+
+    // Check if discount seems unreasonable (more than 50% of original price)
+    if (originalPrice > 0) {
+      const discountAmount = originalPrice - discountedPrice;
+      const discountPercentage = (discountAmount / originalPrice) * 100;
+
+      if (discountPercentage > 50) {
+        // Fix the discount to a reasonable amount (50%)
+        const reasonableDiscount = originalPrice * 0.5;
+        product.discountedPrice = originalPrice - reasonableDiscount;
+        product.discountPercentage = 50;
+      }
+    }
+  }
+
   // All checks passed, update cart
   const updatedItems = CartService.addToCart([...cartItems], product);
   setCartItems(updatedItems);

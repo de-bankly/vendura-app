@@ -122,13 +122,35 @@ class PromotionService {
       };
     }
 
-    const originalPrice = product.price;
-    const discountAmount = promotion.discount;
+    const originalPrice = parseFloat(product.price) || 0;
+    // Ensure originalPrice is not zero to avoid division by zero
+    if (originalPrice <= 0) {
+      return {
+        hasDiscount: false,
+        originalPrice: 0,
+        discountAmount: 0,
+        discountedPrice: 0,
+        discountPercentage: 0,
+      };
+    }
+
+    // Get the raw discount amount
+    let discountAmount = parseFloat(promotion.discount) || 0;
+
+    // Limit discount to a maximum of 50% of the original price
+    const maxDiscount = originalPrice * 0.5;
+    if (discountAmount > maxDiscount) {
+      discountAmount = maxDiscount;
+    }
+
+    // Ensure discount is not negative and doesn't exceed product price
+    discountAmount = Math.min(Math.max(0, discountAmount), originalPrice);
+
     const discountedPrice = Math.max(0, originalPrice - discountAmount);
     const discountPercentage = Math.round((discountAmount / originalPrice) * 100);
 
     return {
-      hasDiscount: true,
+      hasDiscount: discountAmount > 0,
       originalPrice,
       discountAmount,
       discountedPrice,
