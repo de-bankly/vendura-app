@@ -1,31 +1,31 @@
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ReceiptIcon from '@mui/icons-material/Receipt';
 import CloseIcon from '@mui/icons-material/Close';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  Typography,
-  CircularProgress,
   Alert,
-  Paper,
+  alpha,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
+  IconButton,
+  InputAdornment,
+  Paper,
   Table,
-  TableHead,
   TableBody,
-  TableRow,
   TableCell,
   TableContainer,
-  Chip,
-  IconButton,
-  Avatar,
-  alpha,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
   useTheme,
-  InputAdornment,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
@@ -35,6 +35,11 @@ import DepositService from '../../services/DepositService';
 
 /**
  * Dialog component for validating deposit receipts and adding them to the cart
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Whether the dialog is open.
+ * @param {function} props.onClose - Function to call when the dialog should close.
+ * @param {function} [props.onDepositRedeemed] - Function to call when a deposit is successfully validated and applied. Passes the deposit details.
+ * @param {string[]} [props.appliedDepositIds=[]] - Array of deposit IDs already applied to the current cart.
  */
 const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositIds = [] }) => {
   const theme = useTheme();
@@ -44,10 +49,8 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
   const [validatedReceipt, setValidatedReceipt] = useState(null);
   const [applied, setApplied] = useState(false);
 
-  // Reset state when dialog is opened/closed
   React.useEffect(() => {
     if (!open) {
-      // Reset only when dialog is closed
       setDepositId('');
       setError(null);
       setValidatedReceipt(null);
@@ -55,13 +58,11 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
     }
   }, [open]);
 
-  // Handle deposit ID change
   const handleDepositIdChange = event => {
     setDepositId(event.target.value.trim());
     setError(null);
   };
 
-  // Handle deposit receipt validation
   const handleValidateDeposit = async () => {
     if (!depositId.trim()) {
       setError('Bitte geben Sie eine Pfand-Belegnummer ein');
@@ -92,25 +93,32 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
     }
   };
 
-  // Handle deposit application to cart
   const handleApplyDeposit = () => {
     setApplied(true);
-    if (onDepositRedeemed) {
+    if (onDepositRedeemed && validatedReceipt) {
       onDepositRedeemed({
         id: validatedReceipt.id,
         value: validatedReceipt.total,
         positions: validatedReceipt.positions,
-        redeemed: false, // The receipt is not actually redeemed yet
+        redeemed: false,
       });
     }
   };
 
-  // Format currency
+  /**
+   * Formats a number as currency in Euros.
+   * @param {number} amount - The amount to format.
+   * @returns {string} The formatted currency string.
+   */
   const formatCurrency = amount => {
-    return amount.toFixed(2) + ' €';
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount)) {
+      console.error('Invalid amount passed to formatCurrency:', amount);
+      return '0.00 €';
+    }
+    return numericAmount.toFixed(2) + ' €';
   };
 
-  // Handle dialog close
   const handleClose = () => {
     onClose();
   };
@@ -137,7 +145,13 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
           px: 3,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar
               sx={{
@@ -200,15 +214,18 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
               Pfandbeleg hinzugefügt!
             </Typography>
             <Typography variant="body1" paragraph color="text.secondary">
-              Der Pfandbeleg im Wert von {formatCurrency(validatedReceipt.total)} wurde erfolgreich
-              zum Warenkorb hinzugefügt.
+              Der Pfandbeleg im Wert von{' '}
+              {validatedReceipt ? formatCurrency(validatedReceipt.total) : '0.00 €'} wurde
+              erfolgreich zum Warenkorb hinzugefügt.
             </Typography>
-            <Chip
-              label={`Beleg-Nr: ${validatedReceipt.id}`}
-              color="success"
-              variant="outlined"
-              sx={{ mt: 1 }}
-            />
+            {validatedReceipt && (
+              <Chip
+                label={`Beleg-Nr: ${validatedReceipt.id}`}
+                color="success"
+                variant="outlined"
+                sx={{ mt: 1 }}
+              />
+            )}
           </Box>
         ) : (
           <>
@@ -421,7 +438,11 @@ const RedeemDepositDialog = ({ open, onClose, onDepositRedeemed, appliedDepositI
                 },
               }}
             >
-              {loading ? <CircularProgress size={24} /> : 'Zum Warenkorb hinzufügen'}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Zum Warenkorb hinzufügen'
+              )}
             </Button>
           </motion.div>
         )}
