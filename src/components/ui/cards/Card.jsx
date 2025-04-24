@@ -2,40 +2,45 @@ import { Card as MuiCard, styled } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// Define styled component
 const StyledMuiCard = styled(MuiCard, {
   shouldForwardProp: prop => prop !== 'hoverEffect' && prop !== 'borderRadiusMultiplier',
 })(({ theme, elevation, variant, borderRadiusMultiplier = 1, hoverEffect }) => ({
-  // Base styles
-  borderRadius: theme.shape.borderRadius * 1.5 * borderRadiusMultiplier, // Use theme shape and multiplier with 1.5 base
+  borderRadius: theme.shape.borderRadius * 1.5 * borderRadiusMultiplier,
   overflow: 'hidden',
   transition: 'all 0.2s ease-in-out',
   border: variant === 'outlined' ? `1px solid ${theme.palette.divider}` : 'none',
-  // Use elevation prop directly for shadow, MUI handles mapping number to shadow
   boxShadow: variant === 'outlined' ? 'none' : theme.shadows[elevation],
-
-  // Apply hover effect if prop is true
   ...(hoverEffect && {
     '&:hover': {
       transform: 'translateY(-4px)',
-      // Use a slightly higher elevation shadow on hover
-      boxShadow: theme.shadows[Math.min(elevation + 3, 24)], // Example: increase shadow by 3 levels, max 24
+      boxShadow: theme.shadows[Math.min(elevation + 3, 24)],
     },
   }),
 }));
 
 /**
- * Enhanced Card component using styled-components API.
+ * Enhanced Card component using MUI's styled API.
+ * It wraps the MUI Card component, providing additional styling options
+ * like hover effects and customizable border radius based on a multiplier.
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} props.children - The content of the card.
+ * @param {number} [props.elevation=0] - Shadow depth, corresponds to dp in the spec.
+ * @param {'elevation' | 'outlined'} [props.variant='elevation'] - The variant to use.
+ * @param {number} [props.borderRadius=1] - Multiplier for theme.shape.borderRadius.
+ * @param {boolean} [props.hoverEffect=false] - Whether to apply a hover effect.
+ * @param {object} [props.sx={}] - The system prop for instance-specific overrides.
+ * @param {React.Ref<HTMLDivElement>} ref - Forwarded ref to the underlying MUI Card element.
+ * @returns {React.ReactElement} The rendered Card component.
  */
 const Card = React.forwardRef(
   (
     {
       children,
       elevation = 0,
-      variant = 'elevation', // Keep variant prop
-      borderRadius = 1, // Keep prop, will be multiplier now
+      variant = 'elevation',
+      borderRadius = 1,
       hoverEffect = false,
-      sx = {}, // Keep sx prop for instance-specific overrides
+      sx = {},
       ...props
     },
     ref
@@ -43,11 +48,11 @@ const Card = React.forwardRef(
     return (
       <StyledMuiCard
         ref={ref}
-        elevation={elevation} // Pass elevation to styled component
-        variant={variant} // Pass variant to styled component
+        elevation={elevation}
+        variant={variant}
         hoverEffect={hoverEffect}
-        borderRadiusMultiplier={borderRadius} // Pass multiplier
-        sx={sx} // Apply sx prop for overrides
+        borderRadiusMultiplier={borderRadius}
+        sx={sx}
         {...props}
       >
         {children}
@@ -58,19 +63,31 @@ const Card = React.forwardRef(
 
 Card.displayName = 'Card';
 
-// Update PropTypes description for borderRadius
 Card.propTypes = {
-  /** The content of the card */
+  /**
+   * The content of the card.
+   */
   children: PropTypes.node,
-  /** Shadow depth, corresponds to dp in the spec. Default is 0 for flat design. */
+  /**
+   * Shadow depth, corresponds to dp in the spec. Default is 0 for flat design.
+   */
   elevation: PropTypes.number,
-  /** The variant to use */
+  /**
+   * The variant to use.
+   */
   variant: PropTypes.oneOf(['elevation', 'outlined']),
-  /** Multiplier for theme.shape.borderRadius (e.g., 1 for default, 2 for double) */
+  /**
+   * Multiplier for theme.shape.borderRadius (e.g., 1 for default, 2 for double).
+   */
   borderRadius: PropTypes.number,
-  /** Whether to apply a hover effect */
+  /**
+   * Whether to apply a hover effect (translateY and increased shadow).
+   */
   hoverEffect: PropTypes.bool,
-  /** The system prop that allows defining system overrides as well as additional CSS styles */
+  /**
+   * The system prop that allows defining system overrides as well as additional CSS styles.
+   * See the MUI documentation for more details.
+   */
   sx: PropTypes.object,
 };
 

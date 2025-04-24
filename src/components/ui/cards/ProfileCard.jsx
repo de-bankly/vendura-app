@@ -3,13 +3,23 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 /**
- * ProfileCard component displays user's profile information in a card format
- * Enhanced to match the dashboard, sales, inventory, and deposit screens styling
+ * @typedef {object} User
+ * @property {string} [firstName] - The user's first name.
+ * @property {string} [lastName] - The user's last name.
+ * @property {string} [displayName] - The user's display name (used if first/last name are not available).
+ * @property {string} [email] - The user's email address.
+ * @property {Array<string|number>} [roles] - An array representing the user's roles.
+ */
+
+/**
+ * ProfileCard component displays user's profile information in a card format,
+ * styled consistently with dashboard, sales, inventory, and deposit screens.
+ * @param {object} props - The component props.
+ * @param {User} props.user - User object containing profile information.
+ * @returns {React.ReactElement} The rendered ProfileCard component.
  */
 const ProfileCard = ({ user }) => {
   const theme = useTheme();
-
-  // Get user role (simplified - in a real app you'd map role IDs to names)
   const userRole = user?.roles?.[0] ? 'Admin' : 'Mitarbeiter';
 
   return (
@@ -89,7 +99,8 @@ const ProfileCard = ({ user }) => {
 
 ProfileCard.propTypes = {
   /**
-   * User object containing profile information
+   * User object containing profile information.
+   * See the User typedef for details on the expected shape.
    */
   user: PropTypes.shape({
     firstName: PropTypes.string,
