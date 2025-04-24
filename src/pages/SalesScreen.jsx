@@ -26,7 +26,7 @@ import {
 } from '../components/sales';
 
 // Import services
-import { ProductService, CartService, printerService, DepositService } from '../services';
+import { ProductService, CartService, DepositService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
 import usePrinter from '../hooks/usePrinter';
@@ -63,9 +63,14 @@ const SalesScreen = () => {
   const [depositCredit, setDepositCredit] = useState(0);
   const [giftCardPayment, setGiftCardPayment] = useState(0);
   const [cartLocked, setCartLocked] = useState(false);
+  const [lastTransactionId, setLastTransactionId] = useState(null);
 
-  const [cartUndoEnabled, setCartUndoEnabled] = useState(false);
-  const [cartRedoEnabled, setCartRedoEnabled] = useState(false);
+  const [cartUndoEnabled, setCartUndoEnabled] = useState(
+    CartStateManager.canUndoCartState() || false
+  );
+  const [cartRedoEnabled, setCartRedoEnabled] = useState(
+    CartStateManager.canRedoCartState() || false
+  );
   const [receiptReady, setReceiptReady] = useState(false);
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -82,22 +87,6 @@ const SalesScreen = () => {
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const productData = await ProductService.getProducts({ page: 0, size: 100 });
-      const allProducts = productData.content || [];
-      setProducts(allProducts);
-      setProductsByCategory(ProductService.groupByCategory(allProducts));
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError(err.message || 'Fehler beim Laden der Produkte.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +114,9 @@ const SalesScreen = () => {
     };
 
     loadProducts();
+    setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
+    setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
+
     return () => {
       isMounted = false;
     };
@@ -164,14 +156,8 @@ const SalesScreen = () => {
   }, [paymentMethod, cashReceived, total]);
 
   useEffect(() => {
-    const checkUndoRedoState = () => {
-      setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
-      setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
-    };
-
-    checkUndoRedoState();
-    const interval = setInterval(checkUndoRedoState, 500);
-    return () => clearInterval(interval);
+    setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
+    setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
   }, [cartItems, appliedVouchers]);
 
   const handleAddToCart = useCallback(
@@ -226,8 +212,11 @@ const SalesScreen = () => {
       setAppliedDeposits,
       setVoucherDiscount,
       setDepositCredit,
-      setCardDetails
+      setCardDetails,
+      () => setLastTransactionId(null)
     );
+    setCartLocked(false);
+    setReceiptReady(false);
   }, []);
 
   const handleUndoCartState = useCallback(() => {
@@ -306,9 +295,78 @@ const SalesScreen = () => {
     setCardDetails(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  const printTransactionReceipt = useCallback(
+    async (transactionIdOverride = null) => {
+      const transactionIdToPrint =
+        transactionIdOverride || lastTransactionId || `MANUAL-${Date.now().toString().slice(-6)}`;
+      try {
+        if (!printerStatusChecked || !isPrinterConnected) {
+          const isConnectedNow = await checkPrinterStatus();
+          if (!isConnectedNow) {
+            showToast({
+              severity: 'warning',
+              message: 'Drucker ist nicht verbunden. Versuche trotzdem zu drucken...',
+            });
+          }
+        }
+
+        const receiptData = {
+          cartItems,
+          total,
+          subtotal,
+          voucherDiscount,
+          giftCardPayment,
+          depositCredit,
+          paymentMethod,
+          cashReceived,
+          productDiscount,
+          transactionId: transactionIdToPrint,
+          date: new Date().toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        };
+
+        await printReceipt(receiptData);
+
+        showToast({
+          severity: 'success',
+          message: 'Beleg wird gedruckt...',
+        });
+      } catch (err) {
+        console.error(`Error printing receipt for transaction ${transactionIdToPrint}:`, err);
+        showToast({
+          severity: 'error',
+          message: `Fehler beim Drucken: ${err.message}`,
+        });
+      }
+    },
+    [
+      cartItems,
+      total,
+      subtotal,
+      voucherDiscount,
+      giftCardPayment,
+      depositCredit,
+      paymentMethod,
+      cashReceived,
+      productDiscount,
+      lastTransactionId,
+      printReceipt,
+      showToast,
+      checkPrinterStatus,
+      printerStatusChecked,
+      isPrinterConnected,
+    ]
+  );
+
   const handlePaymentSubmit = useCallback(async () => {
+    let paymentResult = null;
     try {
-      const paymentResult = await processPayment({
+      paymentResult = await processPayment({
         cartItems,
         total,
         subtotal,
@@ -326,71 +384,39 @@ const SalesScreen = () => {
         setPaymentLoading,
       });
 
-      setCartLocked(true);
-      console.log('Payment result received:', paymentResult);
-
       if (paymentResult && paymentResult.success) {
-        console.log('Payment successful, preparing to print receipt');
-        // Print receipt automatically
-        try {
-          // Only check status if it hasn't been checked yet
-          if (!printerStatusChecked) {
-            const isConnected = await checkPrinterStatus();
-            if (!isConnected) {
-              showToast({
-                severity: 'warning',
-                message: 'Drucker ist nicht verbunden. Versuche trotzdem den Beleg zu drucken...',
-              });
-            }
+        const transactionId =
+          paymentResult.transactionId ||
+          paymentResult.id ||
+          `TR-${Date.now().toString().slice(-6)}`;
+        setLastTransactionId(transactionId);
+        setCartLocked(true);
+        setReceiptReady(true);
+
+        await printTransactionReceipt(transactionId);
+
+        setTimeout(async () => {
+          try {
+            setLoading(true);
+            setError(null);
+            const productData = await ProductService.getProducts({ page: 0, size: 100 });
+            const allProducts = productData.content || [];
+            setProducts(allProducts);
+            setProductsByCategory(ProductService.groupByCategory(allProducts));
+            setLoading(false);
+            showToast({
+              severity: 'info',
+              message: 'Produktbestände wurden aktualisiert.',
+            });
+          } catch (fetchErr) {
+            console.error('Error refetching products after sale:', fetchErr);
+            setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
+            setLoading(false);
+            showToast({
+              severity: 'error',
+              message: 'Fehler beim Aktualisieren der Produktbestände.',
+            });
           }
-
-          // Create receipt data with all necessary transaction information
-          const receiptData = {
-            cartItems,
-            total,
-            subtotal,
-            voucherDiscount,
-            giftCardPayment,
-            depositCredit,
-            paymentMethod,
-            cashReceived,
-            cardDetails,
-            productDiscount,
-            transactionId:
-              paymentResult.transactionId ||
-              paymentResult.id ||
-              `TR-${Date.now().toString().slice(-6)}`,
-            date: new Date().toLocaleDateString('de-DE', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          };
-
-          console.log('Printing receipt with data:', JSON.stringify(receiptData));
-          const printResult = await printReceipt(receiptData);
-          console.log('Print result:', printResult);
-
-          showToast({
-            severity: 'success',
-            message: 'Beleg wurde automatisch gedruckt.',
-          });
-        } catch (err) {
-          console.error('Error printing receipt:', err);
-          showToast({
-            severity: 'error',
-            message: `Fehler beim Drucken: ${err.message}`,
-          });
-        }
-
-        setTimeout(() => {
-          fetchProducts();
-          showToast({
-            severity: 'info',
-            message: 'Produktbestände wurden aktualisiert.',
-          });
         }, 500);
       } else {
         console.error('Payment failed or was cancelled:', paymentResult?.error || 'Unknown error');
@@ -401,6 +427,7 @@ const SalesScreen = () => {
         severity: 'error',
         message: `Zahlungsfehler: ${error.message || 'Unbekannter Fehler'}`,
       });
+      setPaymentLoading(false);
     }
   }, [
     cartItems,
@@ -416,121 +443,24 @@ const SalesScreen = () => {
     depositCredit,
     productDiscount,
     showToast,
-    fetchProducts,
-    printReceipt,
-    checkPrinterStatus,
-    printerStatusChecked,
+    printTransactionReceipt,
+    setReceiptReady,
+    setPaymentModalOpen,
+    setPaymentLoading,
+    setCartLocked,
+    setLastTransactionId,
   ]);
-
-  const handleCheckPrinterStatus = useCallback(async () => {
-    try {
-      const isConnected = await checkPrinterStatus();
-      if (isConnected) {
-        showToast({
-          severity: 'success',
-          message: 'Drucker ist verbunden und bereit.',
-        });
-      } else {
-        showToast({
-          severity: 'warning',
-          message: 'Drucker ist nicht verbunden. Bitte überprüfen Sie die Verbindung.',
-        });
-      }
-      return isConnected;
-    } catch (err) {
-      console.error('Error checking printer status:', err);
-      showToast({
-        severity: 'error',
-        message: `Fehler bei der Druckerprüfung: ${err.message}`,
-      });
-      return false;
-    }
-  }, [checkPrinterStatus, showToast]);
 
   const handlePrintReceipt = useCallback(async () => {
-    try {
-      // Only check status if it hasn't been checked yet
-      if (!printerStatusChecked) {
-        console.log('Printer status not checked yet, checking now...');
-        const isConnected = await checkPrinterStatus();
-        if (!isConnected) {
-          showToast({
-            severity: 'warning',
-            message: 'Drucker ist nicht verbunden. Versuche trotzdem zu drucken...',
-          });
-        } else {
-          console.log('Printer is connected and ready');
-        }
-      } else {
-        console.log(
-          'Printer status already checked:',
-          isPrinterConnected ? 'connected' : 'not connected'
-        );
-      }
-
-      // Use the same format for manual receipt printing
-      const receiptData = {
-        cartItems,
-        total,
-        subtotal,
-        voucherDiscount,
-        giftCardPayment,
-        depositCredit,
-        paymentMethod,
-        cashReceived,
-        cardDetails,
-        productDiscount,
-        transactionId: `TR-${Date.now().toString().slice(-6)}`,
-        date: new Date().toLocaleDateString('de-DE', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      };
-
-      console.log('Manually printing receipt with data:', JSON.stringify(receiptData));
-      const printResult = await printReceipt(receiptData);
-      console.log('Manual print result:', printResult);
-
-      showToast({
-        severity: 'success',
-        message: 'Beleg wird gedruckt...',
-      });
-    } catch (err) {
-      console.error('Error manually printing receipt:', err);
-      showToast({
-        severity: 'error',
-        message: `Fehler beim Drucken: ${err.message}`,
-      });
-    }
-  }, [
-    cartItems,
-    total,
-    subtotal,
-    voucherDiscount,
-    giftCardPayment,
-    depositCredit,
-    paymentMethod,
-    cashReceived,
-    productDiscount,
-    printReceipt,
-    showToast,
-    checkPrinterStatus,
-    printerStatusChecked,
-    isPrinterConnected,
-  ]);
+    await printTransactionReceipt();
+  }, [printTransactionReceipt]);
 
   const handleNewTransaction = useCallback(() => {
     handleClearCart();
-    setReceiptReady(false);
     setPaymentMethod('cash');
     setCashReceived('');
     setError(null);
-    setCartLocked(false);
-    fetchProducts();
-  }, [handleClearCart, fetchProducts]);
+  }, [handleClearCart]);
 
   const handleRedeemVoucherDialog = useCallback(() => {
     if (cartLocked) {
@@ -590,7 +520,6 @@ const SalesScreen = () => {
         });
         return;
       }
-      // Check if the deposit receipt is already applied
       if (appliedDeposits.some(d => d.id === depositReceipt.id)) {
         showToast({
           severity: 'info',
@@ -604,36 +533,26 @@ const SalesScreen = () => {
         appliedDeposits,
         setAppliedDeposits,
         setDepositCredit,
-        setRedeemDepositDialogOpen, // This might not be needed here, but kept for consistency with manual redemption
+        setRedeemDepositDialogOpen,
         showToast,
       });
     },
-    [appliedDeposits, cartLocked, showToast, handleDepositRedemption] // Added handleDepositRedemption dependency
+    [appliedDeposits, cartLocked, showToast, handleDepositRedemption]
   );
 
   useEffect(() => {
     enableScanner();
-    // Optional: Disable scanner when component unmounts
-    return () => {
-      // Consider if disabling is always desired. Maybe only if it was enabled by this component?
-      // disableScanner();
-    };
+    return () => {};
   }, [enableScanner]);
 
-  // Helper function for product lookup to avoid code duplication
   const handleProductLookup = useCallback(
     async code => {
-      console.log(`SalesScreen: Fetching product with barcode ${code}.`);
       try {
-        // Get product with stock calculation
         const product = await ProductService.getProductById(code, true);
         if (product && product.id) {
-          console.log(`SalesScreen: Found product ${product.name || product.id}. Adding to cart.`);
           handleAddToCart(product);
           return true;
         } else {
-          // API returned success but no product?
-          console.warn(`SalesScreen: Product lookup for ${code} returned empty.`);
           showToast({
             severity: 'warning',
             message: `Produkt mit Code ${code} nicht gefunden.`,
@@ -642,32 +561,24 @@ const SalesScreen = () => {
         }
       } catch (err) {
         console.error(`SalesScreen: Error fetching product ${code}:`, err);
-        // Handle product lookup errors
         const errorMsg =
           err.response?.status === 404
             ? `Produkt mit Code ${code} nicht gefunden.`
             : `Fehler beim Abrufen des Produkts: ${err.message}`;
         showToast({ severity: 'error', message: errorMsg });
-        throw err; // Re-throw to handle in the calling function
+        throw err;
       }
     },
     [ProductService, handleAddToCart, showToast]
-  ); // Add dependencies
+  );
 
-  // Add handleProductLookup to useEffect dependencies
   useEffect(() => {
-    // Check if there is a new scanned value
     if (scannedValue) {
-      // Use an async IIFE to handle the async checks
       (async () => {
-        let processed = false; // Flag to ensure scan is processed only once
+        let processed = false;
         try {
-          // Attempt to fetch as deposit receipt
-          console.log(`SalesScreen: Checking if ${scannedValue} is a deposit receipt.`);
           const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
-          // Check if depositReceipt is valid (not null/undefined and has an id)
           if (depositReceipt && depositReceipt.id) {
-            console.log(`SalesScreen: ${scannedValue} is a deposit receipt. Redeeming.`);
             handleDepositRedeemed(depositReceipt);
             showToast({
               severity: 'success',
@@ -675,57 +586,37 @@ const SalesScreen = () => {
             });
             processed = true;
           } else {
-            // This case might not be reachable if getDepositReceiptById throws 404
-            console.log(
-              `SalesScreen: ${scannedValue} is not a deposit receipt (API returned non-error empty). Checking as product.`
-            );
-            // Try as product if deposit receipt returned empty result
             await handleProductLookup(scannedValue);
             processed = true;
           }
         } catch (err) {
-          console.log(`SalesScreen: Deposit receipt error:`, err);
-          // Verbesserte Erkennung von 404 Fehlern
-          // Check if the error indicates "Not Found", either by status code or message content
           if (
             err.response?.status === 404 ||
             err.message?.toLowerCase().includes('not found') ||
             err.message?.toLowerCase().includes('nicht gefunden')
           ) {
-            console.log(
-              `SalesScreen: ${scannedValue} is not a deposit receipt (404). Checking as product.`
-            );
-            // Not a deposit receipt, try fetching as a product
             try {
               await handleProductLookup(scannedValue);
               processed = true;
             } catch (productErr) {
-              // Log this but don't show another toast - already handled in handleProductLookup
               console.error(`SalesScreen: Product lookup failed:`, productErr);
               processed = true;
             }
           } else {
-            // Handle other potential errors during deposit check (e.g., network issues)
             console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
             showToast({
               severity: 'error',
               message: `Fehler beim Überprüfen des Pfandbons: ${err.message}`,
             });
-            // Auch bei anderen Fehlern Produkt versuchen
             try {
-              console.log(`SalesScreen: Attempting product lookup after deposit error.`);
               await handleProductLookup(scannedValue);
               processed = true;
             } catch (productErr) {
               console.error(`SalesScreen: Product lookup also failed:`, productErr);
-              processed = true; // Mark as processed even on error
+              processed = true;
             }
           }
         } finally {
-          // Always reset the scan state in the context after processing
-          console.log(
-            `SalesScreen: Resetting scan state for ${scannedValue}. Processed: ${processed}`
-          );
           resetScan();
         }
       })();
