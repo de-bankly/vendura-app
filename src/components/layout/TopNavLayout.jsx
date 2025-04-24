@@ -1,73 +1,72 @@
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import DiscountIcon from '@mui/icons-material/Discount';
 import GroupIcon from '@mui/icons-material/Group';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import RecyclingIcon from '@mui/icons-material/Recycling';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import SettingsIcon from '@mui/icons-material/Settings';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import DiscountIcon from '@mui/icons-material/Discount';
 import {
   AppBar,
-  Box,
-  Toolbar,
-  Typography,
-  IconButton,
-  Container,
   Avatar,
-  Tooltip,
-  Menu,
-  MenuItem,
+  Box,
   Button,
+  CircularProgress,
+  Container,
   Divider,
+  Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Drawer,
-  useTheme,
-  useMediaQuery,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Tooltip,
+  Typography,
   alpha,
-  CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { useState, Suspense } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Suspense, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-// Auth context
 import { useAuth } from '../../contexts/AuthContext';
-
-// Components
 import { ProfileCard } from '../ui/cards';
 
+/**
+ * Renders the main application layout including the top navigation bar,
+ * user/admin menus, a mobile drawer, and the main content area via <Outlet>.
+ * Handles responsive behavior and authentication state display.
+ * @returns {JSX.Element} The rendered top navigation layout component.
+ */
 const TopNavLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Auth context
   const { user, isLoggedIn, logout, isAdmin } = useAuth();
 
-  // State for mobile drawer
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
-  // State for user menu
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
   const userMenuOpen = Boolean(userMenuAnchorEl);
-
-  // State for admin menu
   const [adminMenuAnchorEl, setAdminMenuAnchorEl] = useState(null);
   const adminMenuOpen = Boolean(adminMenuAnchorEl);
 
-  // Navigation categories
+  /**
+   * Defines the structure and content for navigation links, categorized by 'main' and 'admin'.
+   * Admin links are only included if the user is an admin.
+   * @type {{main: Array<{text: string, path: string, icon: JSX.Element}>, admin: Array<{text: string, path: string, icon: JSX.Element}>}}
+   */
   const navigationCategories = {
     main: [
       { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
@@ -79,14 +78,29 @@ const TopNavLayout = () => {
       ? [
           { text: 'Benutzer', path: '/admin/users', icon: <GroupIcon /> },
           { text: 'Rollen', path: '/admin/roles', icon: <VpnKeyIcon /> },
-          { text: 'Produkte', path: '/admin/products', icon: <ViewModuleIcon /> },
-          { text: 'Gutscheine', path: '/admin/giftcards', icon: <CardGiftcardIcon /> },
-          { text: 'Aktionen', path: '/admin/promotions', icon: <DiscountIcon /> },
+          {
+            text: 'Produkte',
+            path: '/admin/products',
+            icon: <ViewModuleIcon />,
+          },
+          {
+            text: 'Gutscheine',
+            path: '/admin/giftcards',
+            icon: <CardGiftcardIcon />,
+          },
+          {
+            text: 'Aktionen',
+            path: '/admin/promotions',
+            icon: <DiscountIcon />,
+          },
         ]
       : [],
   };
 
-  // User menu items
+  /**
+   * Defines the items available in the user dropdown menu.
+   * @type {Array<{text: string, icon: JSX.Element, action: function(): void}>}
+   */
   const userMenuItems = [
     {
       text: 'Profil',
@@ -107,38 +121,61 @@ const TopNavLayout = () => {
     },
   ];
 
+  /**
+   * Checks if the given path matches the current location pathname.
+   * @param {string} path - The path to check against the current location.
+   * @returns {boolean} True if the path matches the current location, false otherwise.
+   */
   const isActive = path => {
     return location.pathname === path;
   };
 
-  // Handle mobile drawer toggle
+  /**
+   * Toggles the visibility state of the mobile navigation drawer.
+   */
   const handleMobileDrawerToggle = () => {
     setMobileDrawerOpen(!mobileDrawerOpen);
   };
 
-  // Handle user menu
+  /**
+   * Opens the user menu by setting its anchor element.
+   * @param {React.MouseEvent<HTMLElement>} event - The mouse event that triggered the opening.
+   */
   const handleUserMenuOpen = event => {
     setUserMenuAnchorEl(event.currentTarget);
   };
 
+  /**
+   * Closes the user menu by resetting its anchor element.
+   */
   const handleUserMenuClose = () => {
     setUserMenuAnchorEl(null);
   };
 
-  // Handle admin menu
+  /**
+   * Opens the admin menu by setting its anchor element.
+   * @param {React.MouseEvent<HTMLElement>} event - The mouse event that triggered the opening.
+   */
   const handleAdminMenuOpen = event => {
     setAdminMenuAnchorEl(event.currentTarget);
   };
 
+  /**
+   * Closes the admin menu by resetting its anchor element.
+   */
   const handleAdminMenuClose = () => {
     setAdminMenuAnchorEl(null);
   };
 
-  // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280, p: 2 }}>
       <Box
-        sx={{ display: 'flex', alignItems: 'center', mb: 3, cursor: 'pointer' }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 3,
+          cursor: 'pointer',
+        }}
         onClick={() => {
           navigate('/');
           handleMobileDrawerToggle();
@@ -247,7 +284,6 @@ const TopNavLayout = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* AppBar */}
       <AppBar
         position="fixed"
         color="default"
@@ -260,7 +296,6 @@ const TopNavLayout = () => {
         }}
       >
         <Toolbar>
-          {/* Mobile menu icon */}
           {isMobile && (
             <IconButton
               edge="start"
@@ -273,7 +308,6 @@ const TopNavLayout = () => {
             </IconButton>
           )}
 
-          {/* Logo */}
           <Box
             sx={{
               display: 'flex',
@@ -296,7 +330,6 @@ const TopNavLayout = () => {
             </Typography>
           </Box>
 
-          {/* Desktop navigation */}
           {!isMobile && (
             <Box sx={{ ml: 4, display: 'flex', gap: 0.5 }}>
               {navigationCategories.main.map(item => (
@@ -334,7 +367,6 @@ const TopNavLayout = () => {
                 </Button>
               ))}
 
-              {/* Admin dropdown menu - only visible for admins */}
               {isAdmin && navigationCategories.admin.length > 0 && (
                 <>
                   <Button
@@ -436,7 +468,6 @@ const TopNavLayout = () => {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* User Avatar Button */}
           {isLoggedIn ? (
             <Tooltip title="Konto-Einstellungen">
               <IconButton
@@ -492,7 +523,6 @@ const TopNavLayout = () => {
             </Button>
           )}
 
-          {/* User Menu */}
           <Menu
             id="user-menu"
             anchorEl={userMenuAnchorEl}
@@ -573,13 +603,12 @@ const TopNavLayout = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         open={mobileDrawerOpen}
         onClose={handleMobileDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better mobile performance
+          keepMounted: true,
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
@@ -589,7 +618,6 @@ const TopNavLayout = () => {
         {mobileDrawerContent}
       </Drawer>
 
-      {/* Main Content */}
       <Box
         component="main"
         sx={{

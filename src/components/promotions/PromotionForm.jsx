@@ -13,7 +13,6 @@ import {
   useTheme,
   alpha,
   CircularProgress,
-  Alert,
   IconButton,
   InputAdornment,
 } from '@mui/material';
@@ -32,7 +31,35 @@ import {
 } from '@mui/icons-material';
 
 /**
- * PromotionForm component for creating and editing promotions
+ * @typedef {object} Promotion
+ * @property {string} [id] - The unique identifier of the promotion.
+ * @property {string} [productId] - The ID of the product associated with the promotion.
+ * @property {string|Date} [begin] - The start date of the promotion.
+ * @property {string|Date} [end] - The end date of the promotion.
+ * @property {number} [discount] - The discount amount in Euro.
+ * @property {boolean} [active] - The active status of the promotion.
+ */
+
+/**
+ * @typedef {object} Product
+ * @property {string} id - The unique identifier of the product.
+ * @property {string} name - The name of the product.
+ * @property {number} price - The price of the product.
+ */
+
+/**
+ * A form component within a Dialog for creating and editing promotions.
+ * It handles product selection, date range, discount amount, and active status.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {Function} props.onClose - Callback function invoked when the dialog is closed.
+ * @param {Function} props.onSubmit - Callback function invoked when the form is submitted.
+ *   Receives `submissionData` as the first parameter and optionally `promotionId` as the second parameter in edit mode.
+ * @param {Promotion|null} [props.promotion=null] - The promotion data to pre-fill the form for editing.
+ * @param {Product[]} [props.products=[]] - An array of available products for selection.
+ * @param {boolean} [props.isEditMode=false] - Flag indicating if the form is in edit mode.
+ * @returns {React.ReactElement} The PromotionForm component.
  */
 const PromotionForm = ({
   open,
@@ -46,7 +73,7 @@ const PromotionForm = ({
   const [formData, setFormData] = useState({
     productId: '',
     begin: new Date(),
-    end: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Default: 1 month from now
+    end: new Date(new Date().setMonth(new Date().getMonth() + 1)),
     discount: '',
     active: true,
   });
@@ -54,7 +81,6 @@ const PromotionForm = ({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Initialize form with promotion data if in edit mode
   useEffect(() => {
     if (promotion && isEditMode) {
       setFormData({
@@ -67,7 +93,6 @@ const PromotionForm = ({
         active: promotion.active !== undefined ? promotion.active : true,
       });
     } else {
-      // Reset form when dialog is opened
       setFormData({
         productId: '',
         begin: new Date(),
@@ -88,7 +113,6 @@ const PromotionForm = ({
       [name]: newValue,
     }));
 
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -100,7 +124,6 @@ const PromotionForm = ({
       [name]: date,
     }));
 
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -141,13 +164,11 @@ const PromotionForm = ({
     if (validateForm()) {
       try {
         setLoading(true);
-        // Format data for submission
         const submissionData = {
           ...formData,
           discount: parseFloat(formData.discount),
         };
 
-        // Pass ID separately for routing when in edit mode
         if (isEditMode && promotion) {
           await onSubmit(submissionData, promotion.id);
         } else {
@@ -200,7 +221,6 @@ const PromotionForm = ({
             die folgenden Felder aus.
           </Typography>
 
-          {/* Product Selection */}
           <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
             <LocalOfferIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.primary.main }} />
             Produktinformationen
@@ -212,7 +232,10 @@ const PromotionForm = ({
             onChange={handleChange}
             options={(products || []).map(product => ({
               value: product.id,
-              label: `${product.name} - ${product.price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}`,
+              label: `${product.name} - ${product.price.toLocaleString('de-DE', {
+                style: 'currency',
+                currency: 'EUR',
+              })}`,
             }))}
             error={!!errors.productId}
             helperText={errors.productId}
@@ -220,7 +243,6 @@ const PromotionForm = ({
             sx={{ mb: 3, mt: 1 }}
           />
 
-          {/* Date Range */}
           <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
             <CalendarIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.primary.main }} />
             Aktionszeitraum
@@ -257,7 +279,6 @@ const PromotionForm = ({
             </Box>
           </LocalizationProvider>
 
-          {/* Discount Amount */}
           <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
             <MoneyIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.primary.main }} />
             Rabattinformationen
@@ -278,7 +299,6 @@ const PromotionForm = ({
             sx={{ mb: 3 }}
           />
 
-          {/* Active Status */}
           <Box
             sx={{
               display: 'flex',
@@ -329,7 +349,6 @@ const PromotionForm = ({
 PromotionForm.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  // onSubmit receives submissionData as first param and optionally promotionId as second param
   onSubmit: PropTypes.func.isRequired,
   promotion: PropTypes.shape({
     id: PropTypes.string,
@@ -339,7 +358,13 @@ PromotionForm.propTypes = {
     discount: PropTypes.number,
     active: PropTypes.bool,
   }),
-  products: PropTypes.array,
+  products: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired,
+    })
+  ),
   isEditMode: PropTypes.bool,
 };
 
