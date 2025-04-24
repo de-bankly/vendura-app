@@ -1,19 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import {
   Box,
   Button,
   Card,
   CardContent,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -22,33 +18,54 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TextField,
   Typography,
   Alert,
+  Tooltip,
+  Container,
+  Grid,
+  useTheme,
+  InputAdornment,
+  TextField,
+  Chip,
+  Divider,
+  Avatar,
+  alpha,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import {
-  ProductService,
-  ProductCategoryService,
-  BrandService,
-  SupplierService,
-} from '../../services';
-import { Select } from '../../components/ui/inputs';
+import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { ProductForm } from '../../components/admin';
+import { DeleteConfirmationDialog } from '../../components/ui/modals';
+import { ProductService } from '../../services';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 /**
  * ProductManagementPage - Admin page to manage products
  */
 const ProductManagementPage = () => {
+  const theme = useTheme();
+
   // State for products
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // State for categories, brands, and suppliers
-  const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [loadingOptions, setLoadingOptions] = useState(true);
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Pagination state
   const [page, setPage] = useState(0);
@@ -56,19 +73,10 @@ const ProductManagementPage = () => {
   const [totalElements, setTotalElements] = useState(0);
 
   // Dialog states
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openProductForm, setOpenProductForm] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-
-  // Form states
-  const [currentProduct, setCurrentProduct] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    categoryId: '',
-    brandId: '',
-    supplierId: '',
-  });
+  const [formMode, setFormMode] = useState('create');
+  const [currentProduct, setCurrentProduct] = useState(null);
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
@@ -80,6 +88,7 @@ const ProductManagementPage = () => {
       });
 
       setProducts(response.content || []);
+      setFilteredProducts(response.content || []);
       setTotalElements(response.totalElements || 0);
       setError(null);
     } catch (err) {
@@ -90,36 +99,29 @@ const ProductManagementPage = () => {
     }
   }, [page, rowsPerPage]);
 
-  // Fetch options (categories, brands, suppliers)
-  const fetchOptions = useCallback(async () => {
-    try {
-      setLoadingOptions(true);
-
-      const [categoriesData, brandsData, suppliersData] = await Promise.all([
-        ProductCategoryService.getProductCategories({ page: 0, size: 100 }),
-        BrandService.getBrands({ page: 0, size: 100 }),
-        SupplierService.getSuppliers({ page: 0, size: 100 }),
-      ]);
-
-      setCategories(categoriesData.content || []);
-      setBrands(brandsData.content || []);
-      setSuppliers(suppliersData.content || []);
-    } catch (err) {
-      console.error('Error fetching options:', err);
-      setError('Fehler beim Laden der Optionen. Bitte versuchen Sie es später erneut.');
-    } finally {
-      setLoadingOptions(false);
-    }
-  }, []);
-
-  // Load products and options on component mount
+  // Load products on component mount and when page/rowsPerPage changes
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Filter products based on search query
   useEffect(() => {
-    fetchOptions();
-  }, [fetchOptions]);
+    if (!searchQuery.trim()) {
+      setFilteredProducts(products);
+      return;
+    }
+
+    const lowercaseQuery = searchQuery.toLowerCase();
+    const filtered = products.filter(
+      product =>
+        product.name.toLowerCase().includes(lowercaseQuery) ||
+        (product.description && product.description.toLowerCase().includes(lowercaseQuery)) ||
+        (product.category?.name && product.category.name.toLowerCase().includes(lowercaseQuery)) ||
+        (product.brand?.name && product.brand.name.toLowerCase().includes(lowercaseQuery))
+    );
+
+    setFilteredProducts(filtered);
+  }, [searchQuery, products]);
 
   // Handle page change
   const handleChangePage = (event, newPage) => {
@@ -132,118 +134,76 @@ const ProductManagementPage = () => {
     setPage(0);
   };
 
-  // Handle form input change
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-
-    // Convert numeric values
-    const parsedValue = name === 'price' ? parseFloat(value) || 0 : value;
-
-    setCurrentProduct({
-      ...currentProduct,
-      [name]: parsedValue,
-    });
+  // Handle search query change
+  const handleSearchChange = event => {
+    setSearchQuery(event.target.value);
   };
 
-  // Handle select change for our custom Select component
-  const handleSelectChange = (name, e) => {
+  // Open form for creating a new product
+  const handleOpenCreateForm = () => {
     setCurrentProduct({
-      ...currentProduct,
-      [name]: e.target.value,
-    });
-  };
-
-  // Open create dialog
-  const handleOpenCreateDialog = () => {
-    setCurrentProduct({
+      id: '',
       name: '',
       description: '',
       price: 0,
-      categoryId: '',
-      brandId: '',
-      supplierId: '',
+      category: null,
+      brand: null,
+      supplier: null,
     });
-    setOpenCreateDialog(true);
+    setFormMode('create');
+    setOpenProductForm(true);
   };
 
-  // Close create dialog
-  const handleCloseCreateDialog = () => {
-    setOpenCreateDialog(false);
+  // Open form for editing a product
+  const handleOpenEditForm = product => {
+    setCurrentProduct(product);
+    setFormMode('edit');
+    setOpenProductForm(true);
   };
 
-  // Open edit dialog
-  const handleOpenEditDialog = product => {
-    setCurrentProduct({
-      ...product,
-      categoryId: product.category?.id || '',
-      brandId: product.brand?.id || '',
-      supplierId: product.supplier?.id || '',
-    });
-    setOpenEditDialog(true);
+  // Close product form
+  const handleCloseProductForm = () => {
+    setOpenProductForm(false);
   };
 
-  // Close edit dialog
-  const handleCloseEditDialog = () => {
-    setOpenEditDialog(false);
-  };
-
-  // Open delete dialog
+  // Open delete confirmation dialog
   const handleOpenDeleteDialog = product => {
     setCurrentProduct(product);
     setOpenDeleteDialog(true);
   };
 
-  // Close delete dialog
+  // Close delete confirmation dialog
   const handleCloseDeleteDialog = () => {
     setOpenDeleteDialog(false);
   };
 
-  // Prepare product data for API
-  const prepareProductData = data => {
-    return {
-      ...data,
-      category: categories.find(cat => cat.id === data.categoryId) || null,
-      brand: brands.find(brand => brand.id === data.brandId) || null,
-      supplier: suppliers.find(supplier => supplier.id === data.supplierId) || null,
-    };
-  };
-
-  // Create product
-  const handleCreateProduct = async () => {
+  // Handle form submission (create or update)
+  const handleSubmitProductForm = async productData => {
     try {
       setLoading(true);
-      const productData = prepareProductData(currentProduct);
-      await ProductService.createProduct(productData);
-      handleCloseCreateDialog();
+
+      if (formMode === 'create') {
+        await ProductService.createProduct(productData);
+      } else {
+        await ProductService.updateProduct(currentProduct.id, productData);
+      }
+
+      setOpenProductForm(false);
       fetchProducts();
     } catch (err) {
-      console.error('Error creating product:', err);
-      setError('Fehler beim Erstellen des Produkts. Bitte versuchen Sie es später erneut.');
+      console.error(`Error ${formMode === 'create' ? 'creating' : 'updating'} product:`, err);
+      setError(`Fehler beim ${formMode === 'create' ? 'Erstellen' : 'Aktualisieren'} des Produkts. 
+        Bitte versuchen Sie es später erneut.`);
       setLoading(false);
     }
   };
 
-  // Update product
-  const handleUpdateProduct = async () => {
-    try {
-      setLoading(true);
-      const productData = prepareProductData(currentProduct);
-      await ProductService.updateProduct(currentProduct.id, productData);
-      handleCloseEditDialog();
-      fetchProducts();
-    } catch (err) {
-      console.error('Error updating product:', err);
-      setError('Fehler beim Aktualisieren des Produkts. Bitte versuchen Sie es später erneut.');
-      setLoading(false);
-    }
-  };
-
-  // Delete product
+  // Handle product deletion
   const handleDeleteProduct = async () => {
     try {
       setLoading(true);
       await ProductService.deleteProduct(currentProduct.id);
-      handleCloseDeleteDialog();
+      setOpenDeleteDialog(false);
       fetchProducts();
     } catch (err) {
       console.error('Error deleting product:', err);
@@ -252,240 +212,348 @@ const ProductManagementPage = () => {
     }
   };
 
-  // Check if form is valid
-  const isFormValid = product => {
+  // Get product count statistics
+  const productStats = {
+    total: totalElements,
+    withStock: products.filter(p => (p.stockQuantity || 0) > 0).length,
+    lowStock: products.filter(p => (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) < 10)
+      .length,
+    outOfStock: products.filter(p => (p.stockQuantity || 0) === 0).length,
+  };
+
+  // Render product table
+  const renderProductTable = () => {
+    if (loading && products.length === 0) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
     return (
-      product.name.trim() !== '' &&
-      product.price > 0 &&
-      product.categoryId !== '' &&
-      product.brandId !== '' &&
-      product.supplierId !== ''
+      <>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow
+                sx={{
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  '& th': {
+                    fontWeight: 'bold',
+                  },
+                }}
+              >
+                <TableCell>ID</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Kategorie</TableCell>
+                <TableCell>Marke</TableCell>
+                <TableCell align="right">Bestand</TableCell>
+                <TableCell align="right">Preis (€)</TableCell>
+                <TableCell align="center">Aktionen</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredProducts.map(product => (
+                <TableRow
+                  key={product.id}
+                  sx={{
+                    '&:nth-of-type(odd)': {
+                      backgroundColor:
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.background.default, 0.5)
+                          : alpha(theme.palette.background.paper, 0.1),
+                    },
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                    },
+                  }}
+                >
+                  <TableCell>{product.id}</TableCell>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.category?.name || '-'}</TableCell>
+                  <TableCell>{product.brand?.name || '-'}</TableCell>
+                  <TableCell align="right">
+                    <Chip
+                      size="small"
+                      label={product.stockQuantity || 0}
+                      color={
+                        (product.stockQuantity || 0) === 0
+                          ? 'error'
+                          : (product.stockQuantity || 0) < 10
+                            ? 'warning'
+                            : 'success'
+                      }
+                    />
+                  </TableCell>
+                  <TableCell align="right">{(product.price ?? 0).toFixed(2)} €</TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Bearbeiten">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleOpenEditForm(product)}
+                        disabled={loading}
+                        size="small"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Löschen">
+                      <IconButton
+                        color="error"
+                        onClick={() => handleOpenDeleteDialog(product)}
+                        disabled={loading}
+                        size="small"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {filteredProducts.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      Keine Produkte gefunden
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {searchQuery
+                        ? 'Versuchen Sie andere Suchbegriffe oder löschen Sie die Filter'
+                        : "Fügen Sie ein neues Produkt mit dem 'Neues Produkt' Button hinzu"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={totalElements}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Zeilen pro Seite:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} von ${count}`}
+          disabled={loading}
+        />
+      </>
     );
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Produkt-Verwaltung
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateDialog}
-          disabled={loading || loadingOptions}
-        >
-          Neues Produkt
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Card>
-        <CardContent>
-          {loading && products.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Kategorie</TableCell>
-                      <TableCell>Marke</TableCell>
-                      <TableCell align="right">Preis (€)</TableCell>
-                      <TableCell align="center">Aktionen</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {products.map(product => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.id}</TableCell>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.category?.name || '-'}</TableCell>
-                        <TableCell>{product.brand?.name || '-'}</TableCell>
-                        <TableCell align="right">{(product.price ?? 0).toFixed(2)}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleOpenEditDialog(product)}
-                            disabled={loading}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => handleOpenDeleteDialog(product)}
-                            disabled={loading}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-
-                    {products.length === 0 && !loading && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          Keine Produkte gefunden
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={totalElements}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Zeilen pro Seite:"
-                labelDisplayedRows={({ from, to, count }) => `${from}-${to} von ${count}`}
-                disabled={loading}
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create/Edit Dialog - Shared form */}
-      <Dialog
-        open={openCreateDialog || openEditDialog}
-        onClose={openCreateDialog ? handleCloseCreateDialog : handleCloseEditDialog}
-        maxWidth="sm"
-        fullWidth
+    <Box sx={{ py: 3 }}>
+      {/* Page Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        <DialogTitle>
-          {openCreateDialog ? 'Neues Produkt erstellen' : 'Produkt bearbeiten'}
-        </DialogTitle>
-        <DialogContent>
-          {loadingOptions ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <TextField
-                autoFocus
-                margin="dense"
-                name="name"
-                label="Name"
-                fullWidth
-                variant="outlined"
-                value={currentProduct.name}
-                onChange={handleInputChange}
-                sx={{ mb: 2 }}
-              />
+        <Container maxWidth="xl">
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+              Produkt-Verwaltung
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Verwalten Sie alle Produkte im System und behalten Sie den Bestand im Blick.
+            </Typography>
+          </Box>
+        </Container>
+      </motion.div>
 
-              <TextField
-                margin="dense"
-                name="description"
-                label="Beschreibung"
-                fullWidth
-                variant="outlined"
-                value={currentProduct.description}
-                onChange={handleInputChange}
-                multiline
-                rows={3}
-                sx={{ mb: 2 }}
-              />
+      <Container maxWidth="xl">
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          {/* Statistics Cards */}
+          <motion.div variants={itemVariants}>
+            <Grid container spacing={3} sx={{ mb: 3 }}>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), mr: 2 }}>
+                        <InventoryIcon color="primary" />
+                      </Avatar>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Gesamt
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
+                      {loading ? <CircularProgress size={24} /> : productStats.total}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-              <TextField
-                margin="dense"
-                name="price"
-                label="Preis (€)"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={currentProduct.price}
-                onChange={handleInputChange}
-                inputProps={{ min: 0, step: 0.01 }}
-                sx={{ mb: 2 }}
-              />
+              <Grid item xs={12} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), mr: 2 }}>
+                        <InventoryIcon color="success" />
+                      </Avatar>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Auf Lager
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
+                      {loading ? <CircularProgress size={24} /> : productStats.withStock}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <Select
-                  label="Kategorie"
-                  name="categoryId"
-                  value={currentProduct.categoryId}
-                  onChange={e => handleSelectChange('categoryId', e)}
-                  options={categories.map(category => ({
-                    value: category.id,
-                    label: category.name,
-                  }))}
-                />
-              </FormControl>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), mr: 2 }}>
+                        <InventoryIcon color="warning" />
+                      </Avatar>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Niedriger Bestand
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
+                      {loading ? <CircularProgress size={24} /> : productStats.lowStock}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <Select
-                  label="Marke"
-                  name="brandId"
-                  value={currentProduct.brandId}
-                  onChange={e => handleSelectChange('brandId', e)}
-                  options={brands.map(brand => ({
-                    value: brand.id,
-                    label: brand.name,
-                  }))}
-                />
-              </FormControl>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), mr: 2 }}>
+                        <InventoryIcon color="error" />
+                      </Avatar>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Nicht auf Lager
+                      </Typography>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 0 }}>
+                      {loading ? <CircularProgress size={24} /> : productStats.outOfStock}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </motion.div>
 
-              <FormControl fullWidth>
-                <Select
-                  label="Lieferant"
-                  name="supplierId"
-                  value={currentProduct.supplierId}
-                  onChange={e => handleSelectChange('supplierId', e)}
-                  options={suppliers.map(supplier => ({
-                    value: supplier.id,
-                    label: supplier.name,
-                  }))}
-                />
-              </FormControl>
-            </>
+          {/* Filter Section */}
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                mb: 3,
+                bgcolor: theme.palette.background.paper,
+                borderRadius: 2,
+              }}
+            >
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    placeholder="Produkte suchen..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    variant="outlined"
+                    size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<RefreshIcon />}
+                      onClick={fetchProducts}
+                      disabled={loading}
+                    >
+                      Aktualisieren
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<AddIcon />}
+                      onClick={handleOpenCreateForm}
+                      disabled={loading}
+                    >
+                      Neues Produkt
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+          </motion.div>
+
+          {/* Error Message */}
+          {error && (
+            <motion.div variants={itemVariants}>
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            </motion.div>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={openCreateDialog ? handleCloseCreateDialog : handleCloseEditDialog}>
-            Abbrechen
-          </Button>
-          <Button
-            onClick={openCreateDialog ? handleCreateProduct : handleUpdateProduct}
-            variant="contained"
-            disabled={!isFormValid(currentProduct) || loadingOptions}
-          >
-            {openCreateDialog ? 'Erstellen' : 'Aktualisieren'}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Delete Dialog */}
-      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Produkt löschen</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Sind Sie sicher, dass Sie das Produkt "{currentProduct.name}" löschen möchten? Diese
-            Aktion kann nicht rückgängig gemacht werden.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Abbrechen</Button>
-          <Button onClick={handleDeleteProduct} color="error" variant="contained">
-            Löschen
-          </Button>
-        </DialogActions>
-      </Dialog>
+          {/* Product Table */}
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
+            >
+              {renderProductTable()}
+            </Paper>
+          </motion.div>
+        </motion.div>
+      </Container>
+
+      {/* Product Form Dialog */}
+      <ProductForm
+        open={openProductForm}
+        onClose={handleCloseProductForm}
+        onSubmit={handleSubmitProductForm}
+        initialData={currentProduct}
+        mode={formMode}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={openDeleteDialog}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDeleteProduct}
+        title="Produkt löschen"
+        content={
+          <>
+            <Typography variant="body1" gutterBottom>
+              Sind Sie sicher, dass Sie das Produkt "{currentProduct?.name || ''}" löschen möchten?
+            </Typography>
+            <Typography variant="body2" color="error" sx={{ mt: 2, fontWeight: 'medium' }}>
+              Achtung: Das Löschen von Produkten kann zu Inkonsistenzen im System führen! Produkte
+              könnten in bestehenden Verkäufen, Bestellungen oder Verbindungen zu anderen Produkten
+              verwendet werden. Statt Produkte zu löschen, sollten Sie diese lieber als "nicht
+              verfügbar" markieren, wenn sie nicht mehr verkauft werden sollen.
+            </Typography>
+          </>
+        }
+        loading={loading}
+      />
     </Box>
   );
 };

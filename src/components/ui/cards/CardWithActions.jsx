@@ -1,6 +1,7 @@
-import React from 'react';
-import { CardContent, CardActions, Divider, Box } from '@mui/material';
+import { CardContent, CardActions, Divider, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
 import Card from './Card';
 
 /**
@@ -18,30 +19,27 @@ const CardWithActions = ({
   actionsSpacing = 1,
   ...cardProps
 }) => {
+  const theme = useTheme();
+
+  const contentSx = {
+    ...(contentProps.sx || {}),
+  };
+
+  const actionsSx = {
+    justifyContent: actionsAlignment,
+    gap: theme.spacing(actionsSpacing),
+    ...(actionsProps.sx || {}),
+  };
+
   return (
     <Card {...cardProps}>
-      <CardContent
-        sx={{
-          padding: '20px 24px',
-          '&:last-child': { paddingBottom: actionsAlignment ? '20px' : '16px' },
-          ...(contentProps.sx || {}),
-        }}
-        {...contentProps}
-      >
+      <CardContent sx={contentSx} {...contentProps}>
         {children}
       </CardContent>
       {actions && (
         <>
           {divider && <Divider />}
-          <CardActions
-            sx={{
-              padding: '12px 24px',
-              justifyContent: actionsAlignment,
-              gap: actionsSpacing,
-              ...(actionsProps.sx || {}),
-            }}
-            {...actionsProps}
-          >
+          <CardActions sx={actionsSx} {...actionsProps}>
             {actions}
           </CardActions>
         </>

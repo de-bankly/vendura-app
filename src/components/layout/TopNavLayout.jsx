@@ -1,5 +1,20 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import GroupIcon from '@mui/icons-material/Group';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import RecyclingIcon from '@mui/icons-material/Recycling';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import DiscountIcon from '@mui/icons-material/Discount';
 import {
   AppBar,
   Box,
@@ -9,7 +24,6 @@ import {
   Container,
   Avatar,
   Tooltip,
-  Badge,
   Menu,
   MenuItem,
   Button,
@@ -22,33 +36,16 @@ import {
   useTheme,
   useMediaQuery,
   alpha,
-  Paper,
+  CircularProgress,
 } from '@mui/material';
-
-// Icons
-import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import SettingsIcon from '@mui/icons-material/Settings';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import ErrorIcon from '@mui/icons-material/Error';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import GroupIcon from '@mui/icons-material/Group';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import PersonIcon from '@mui/icons-material/Person';
-import LoginIcon from '@mui/icons-material/Login';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useState, Suspense } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // Auth context
 import { useAuth } from '../../contexts/AuthContext';
+
+// Components
+import { ProfileCard } from '../ui/cards';
 
 const TopNavLayout = () => {
   const navigate = useNavigate();
@@ -75,9 +72,8 @@ const TopNavLayout = () => {
     main: [
       { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { text: 'Verkauf', path: '/sales', icon: <PointOfSaleIcon /> },
+      { text: 'Pfandautomat', path: '/deposit', icon: <RecyclingIcon /> },
       { text: 'Inventar', path: '/inventory', icon: <InventoryIcon /> },
-      { text: 'Gutscheine', path: '/giftcards', icon: <CardGiftcardIcon /> },
-      { text: 'Angebote', path: '/vouchers', icon: <LocalOfferIcon /> },
     ],
     admin: isAdmin
       ? [
@@ -85,6 +81,7 @@ const TopNavLayout = () => {
           { text: 'Rollen', path: '/admin/roles', icon: <VpnKeyIcon /> },
           { text: 'Produkte', path: '/admin/products', icon: <ViewModuleIcon /> },
           { text: 'Gutscheine', path: '/admin/giftcards', icon: <CardGiftcardIcon /> },
+          { text: 'Aktionen', path: '/admin/promotions', icon: <DiscountIcon /> },
         ]
       : [],
   };
@@ -96,22 +93,6 @@ const TopNavLayout = () => {
       icon: <PersonIcon />,
       action: () => {
         navigate('/profile');
-        handleUserMenuClose();
-      },
-    },
-    {
-      text: 'Einstellungen',
-      icon: <SettingsIcon />,
-      action: () => {
-        console.log('Settings clicked');
-        handleUserMenuClose();
-      },
-    },
-    {
-      text: 'Hilfe',
-      icon: <HelpOutlineIcon />,
-      action: () => {
-        console.log('Help clicked');
         handleUserMenuClose();
       },
     },
@@ -156,17 +137,14 @@ const TopNavLayout = () => {
   // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280, p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Avatar
-          sx={{
-            bgcolor: 'primary.main',
-            width: 40,
-            height: 40,
-            mr: 2,
-          }}
-        >
-          V
-        </Avatar>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', mb: 3, cursor: 'pointer' }}
+        onClick={() => {
+          navigate('/');
+          handleMobileDrawerToggle();
+        }}
+      >
+        <PointOfSaleIcon sx={{ mr: 1.5, fontSize: 30, color: 'primary.main' }} />
         <Typography variant="h6" color="primary" fontWeight="bold">
           Vendura
         </Typography>
@@ -304,16 +282,7 @@ const TopNavLayout = () => {
             }}
             onClick={() => navigate('/')}
           >
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 32,
-                height: 32,
-                mr: 1,
-              }}
-            >
-              V
-            </Avatar>
+            <PointOfSaleIcon sx={{ mr: 1, fontSize: 28, color: 'primary.main' }} />
             <Typography
               variant="h6"
               component="div"
@@ -481,10 +450,25 @@ const TopNavLayout = () => {
                   border: 2,
                   borderColor: alpha(theme.palette.primary.main, 0.1),
                   p: 0.5,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    transform: 'translateY(-2px)',
+                  },
                 }}
               >
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                  {user?.displayName?.charAt(0) || 'U'}
+                <Avatar
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    width: 32,
+                    height: 32,
+                    boxShadow: userMenuOpen
+                      ? `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`
+                      : 'none',
+                  }}
+                >
+                  {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || 'U'}
                 </Avatar>
               </IconButton>
             </Tooltip>
@@ -494,6 +478,15 @@ const TopNavLayout = () => {
               color="primary"
               startIcon={<LoginIcon />}
               onClick={() => navigate('/login')}
+              sx={{
+                borderRadius: 1.5,
+                transition: 'all 0.2s ease-in-out',
+                fontWeight: 500,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 4px 8px ${alpha(theme.palette.primary.main, 0.25)}`,
+                },
+              }}
             >
               Anmelden
             </Button>
@@ -510,27 +503,28 @@ const TopNavLayout = () => {
             PaperProps={{
               sx: {
                 mt: 1.5,
-                minWidth: 200,
-                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
-                borderRadius: 1,
+                minWidth: 240,
+                overflow: 'visible',
+                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.15)',
+                borderRadius: 2,
+                '&:before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: -5,
+                  right: 16,
+                  width: 10,
+                  height: 10,
+                  bgcolor: 'background.paper',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                },
               },
             }}
           >
-            <MenuItem sx={{ py: 1 }}>
-              <Avatar sx={{ mr: 2, width: 30, height: 30 }}>
-                {user?.displayName?.charAt(0) || 'U'}
-              </Avatar>
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {user?.displayName || 'User'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user?.email || 'user@example.com'}
-                </Typography>
-              </Box>
-            </MenuItem>
+            <ProfileCard user={user} />
 
-            <Divider />
+            <Divider sx={{ my: 1 }} />
 
             {userMenuItems.map(item => (
               <MenuItem
@@ -538,21 +532,37 @@ const TopNavLayout = () => {
                 onClick={item.action}
                 sx={{
                   py: 1.5,
+                  mx: 1,
+                  my: 0.5,
+                  px: 2,
                   display: 'flex',
                   alignItems: 'center',
-                  mx: 0.5,
                   borderRadius: 1,
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                    transform: 'translateX(4px)',
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: 'text.primary', minWidth: 36 }}>
+                <ListItemIcon
+                  sx={{
+                    color:
+                      item.text === 'Abmelden'
+                        ? theme.palette.error.main
+                        : theme.palette.primary.main,
+                    minWidth: 36,
+                  }}
+                >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={
-                    <Typography variant="body2" fontWeight={500}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      color={item.text === 'Abmelden' ? 'error' : 'textPrimary'}
+                    >
                       {item.text}
                     </Typography>
                   }
@@ -587,10 +597,28 @@ const TopNavLayout = () => {
           pt: { xs: 8, sm: 9 },
           pb: 3,
           overflow: 'hidden',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <Container maxWidth="xl" sx={{ height: '100%' }}>
-          <Outlet />
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 'calc(100vh - 120px)',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Container>
       </Box>
     </Box>

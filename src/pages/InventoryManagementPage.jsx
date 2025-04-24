@@ -1,4 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import {
+  Assessment as AssessmentIcon,
+  LocalShipping as LocalShippingIcon,
+  Refresh as RefreshIcon,
+  WarningAmber as WarningIcon,
+  Inventory2 as InventoryIcon,
+  ArrowBack as ArrowBackIcon,
+  AltRoute as AltRouteIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -11,19 +19,35 @@ import {
   Tabs,
   Typography,
   Paper,
+  alpha,
+  useTheme,
+  Chip,
 } from '@mui/material';
-import {
-  Assessment as AssessmentIcon,
-  LocalShipping as LocalShippingIcon,
-  Refresh as RefreshIcon,
-  WarningAmber as WarningIcon,
-} from '@mui/icons-material';
-import { InventoryManagementService, ProductService, SupplierOrderService } from '../services';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
 import { InventoryProductList, StockAdjustmentDialog } from '../components/inventory';
-import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
 import SupplierOrderForm from '../components/inventory/SupplierOrderForm';
+import SupplierOrdersList from '../components/inventory/SupplierOrdersList';
+import { InventoryManagementService, SupplierOrderService } from '../services';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 const InventoryManagementPage = () => {
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
@@ -115,143 +139,470 @@ const InventoryManagementPage = () => {
   };
 
   const renderDashboard = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <WarningIcon color="warning" sx={{ mr: 1 }} />
-              <Typography variant="h6">Low Stock Products</Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {lowStockProducts.length} products below minimum stock level
-              {lowStockProducts.filter(p => p.currentStock === 0).length > 0 && (
-                <Typography variant="body2" color="error.main" sx={{ mt: 1 }} component="span">
-                  {lowStockProducts.filter(p => p.currentStock === 0).length} products out of stock!
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <Grid container spacing={3}>
+        {/* Low Stock Products Card */}
+        <Grid item xs={12} md={6}>
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                height: '100%',
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box
+                  sx={{
+                    backgroundColor: alpha(theme.palette.warning.main, 0.1),
+                    borderRadius: 1,
+                    p: 1,
+                    mr: 2,
+                  }}
+                >
+                  <WarningIcon color="warning" />
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Niedrige Bestände
                 </Typography>
-              )}
-            </Typography>
-            <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => setActiveTab(1)}>
-              View All
-            </Button>
-          </CardContent>
-        </Card>
-      </Grid>
+              </Box>
 
-      <Grid item xs={12} md={6}>
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <LocalShippingIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Pending Orders</Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {pendingOrders.length} supplier orders pending delivery
-            </Typography>
-            <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => setActiveTab(2)}>
-              View All
-            </Button>
-          </CardContent>
-        </Card>
-      </Grid>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  <strong>{lowStockProducts.length}</strong> Produkte unter dem Mindestbestand
+                </Typography>
 
-      <Grid item xs={12}>
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <AssessmentIcon color="info" sx={{ mr: 1 }} />
-              <Typography variant="h6">Inventory Actions</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button variant="contained" onClick={handleTriggerReorderCheck}>
-                Run Automatic Reordering
+                {lowStockProducts.filter(p => p.currentStock === 0).length > 0 && (
+                  <Chip
+                    label={`${lowStockProducts.filter(p => p.currentStock === 0).length} Produkte nicht verfügbar!`}
+                    color="error"
+                    size="small"
+                    sx={{ my: 1 }}
+                  />
+                )}
+              </Box>
+
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{
+                  mt: 2,
+                  alignSelf: 'flex-start',
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+                onClick={() => setActiveTab(1)}
+              >
+                Alle anzeigen
               </Button>
-              <Button variant="contained" onClick={handleCreateOrder}>
-                Create Supplier Order
+            </Paper>
+          </motion.div>
+        </Grid>
+
+        {/* Pending Orders Card */}
+        <Grid item xs={12} md={6}>
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                height: '100%',
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box
+                  sx={{
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    borderRadius: 1,
+                    p: 1,
+                    mr: 2,
+                  }}
+                >
+                  <LocalShippingIcon color="primary" />
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Bestellungen
+                </Typography>
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  <strong>{pendingOrders.length}</strong> ausstehende Lieferungen
+                </Typography>
+
+                {pendingOrders.length > 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    Klicken Sie auf "Alle anzeigen", um Details zu sehen und den Status zu
+                    aktualisieren.
+                  </Typography>
+                )}
+              </Box>
+
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{
+                  mt: 2,
+                  alignSelf: 'flex-start',
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+                onClick={() => setActiveTab(2)}
+              >
+                Alle anzeigen
               </Button>
-            </Box>
-          </CardContent>
-        </Card>
+            </Paper>
+          </motion.div>
+        </Grid>
+
+        {/* Inventory Actions Card */}
+        <Grid item xs={12}>
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Box
+                  sx={{
+                    backgroundColor: alpha(theme.palette.info.main, 0.1),
+                    borderRadius: 1,
+                    p: 1,
+                    mr: 2,
+                  }}
+                >
+                  <AssessmentIcon color="info" />
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Inventaraktionen
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AltRouteIcon />}
+                  onClick={handleTriggerReorderCheck}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: 1.5,
+                    px: 3,
+                  }}
+                >
+                  Automatische Nachbestellung
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<LocalShippingIcon />}
+                  onClick={handleCreateOrder}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: 1.5,
+                    px: 3,
+                  }}
+                >
+                  Lieferantenbestellung erstellen
+                </Button>
+              </Box>
+            </Paper>
+          </motion.div>
+        </Grid>
       </Grid>
-    </Grid>
+    </motion.div>
   );
 
   const renderLowStockProducts = () => (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6">Low Stock Products</Typography>
-        <Button startIcon={<RefreshIcon />} onClick={handleRefresh}>
-          Refresh
-        </Button>
-      </Box>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants}>
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  backgroundColor: alpha(theme.palette.warning.main, 0.1),
+                  borderRadius: 1,
+                  p: 1,
+                  mr: 2,
+                }}
+              >
+                <WarningIcon color="warning" />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Niedrige Bestände
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Produkte, die nachbestellt werden sollten
+                </Typography>
+              </Box>
+            </Box>
 
-      {lowStockProducts.length > 0 ? (
-        <InventoryProductList
-          products={lowStockProducts}
-          onAdjustStock={handleOpenStockAdjustment}
-        />
-      ) : (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography>No products are below minimum stock levels.</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                startIcon={<RefreshIcon />}
+                onClick={handleRefresh}
+                variant="outlined"
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+              >
+                Aktualisieren
+              </Button>
+            </Box>
+          </Box>
+
+          {lowStockProducts.length > 0 ? (
+            <InventoryProductList
+              products={lowStockProducts}
+              onAdjustStock={handleOpenStockAdjustment}
+            />
+          ) : (
+            <Box
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                bgcolor: alpha(theme.palette.success.light, 0.1),
+                borderRadius: 2,
+                border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}`,
+              }}
+            >
+              <Typography variant="h6" color="success.dark" fontWeight={500}>
+                Alle Produkte haben ausreichende Bestände
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Es gibt derzeit keine Produkte unter dem Mindestbestand.
+              </Typography>
+            </Box>
+          )}
         </Paper>
-      )}
-    </Box>
+      </motion.div>
+    </motion.div>
   );
 
   const renderSupplierOrders = () => (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6">Supplier Orders</Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" onClick={handleCreateOrder}>
-            Create Order
-          </Button>
-          <Button startIcon={<RefreshIcon />} onClick={handleRefresh}>
-            Refresh
-          </Button>
-        </Box>
-      </Box>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants}>
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  borderRadius: 1,
+                  p: 1,
+                  mr: 2,
+                }}
+              >
+                <LocalShippingIcon color="primary" />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Lieferantenbestellungen
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Ausstehende und kürzlich abgeschlossene Bestellungen
+                </Typography>
+              </Box>
+            </Box>
 
-      <SupplierOrdersList orders={pendingOrders} onRefresh={handleRefresh} />
-    </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<LocalShippingIcon />}
+                onClick={handleCreateOrder}
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+              >
+                Bestellung erstellen
+              </Button>
+              <Button
+                startIcon={<RefreshIcon />}
+                onClick={handleRefresh}
+                variant="outlined"
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+              >
+                Aktualisieren
+              </Button>
+            </Box>
+          </Box>
+
+          <SupplierOrdersList orders={pendingOrders} onRefresh={handleRefresh} />
+        </Paper>
+      </motion.div>
+    </motion.div>
   );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Inventory Management
-        </Typography>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab label="Dashboard" />
-          <Tab label="Low Stock" />
-          <Tab label="Supplier Orders" />
-        </Tabs>
-      </Box>
+    <Box sx={{ py: 3 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Container maxWidth="xl">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              mb: 3,
+            }}
+          >
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Button
+                  component={Link}
+                  to="/inventory"
+                  startIcon={<ArrowBackIcon />}
+                  sx={{
+                    mr: 2,
+                    textTransform: 'none',
+                    color: theme.palette.text.secondary,
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
+                >
+                  Zurück
+                </Button>
+                <Typography variant="h4" component="h1" fontWeight={700}>
+                  Bestandsverwaltung
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                <Chip
+                  label="Verwaltung"
+                  size="small"
+                  color="secondary"
+                  sx={{
+                    borderRadius: 1,
+                    fontWeight: 500,
+                    mr: 1,
+                    backgroundColor: theme.palette.secondary.main,
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Bestände prüfen, bestellen und Lieferungen verwalten
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
 
-      {error && (
-        <Box sx={{ mb: 3 }}>
-          <Typography color="error">{error}</Typography>
-        </Box>
-      )}
+          <Box sx={{ mb: 3, mt: 4 }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '1rem',
+                  minWidth: 120,
+                },
+              }}
+            >
+              <Tab label="Dashboard" />
+              <Tab label="Niedrige Bestände" />
+              <Tab label="Lieferantenbestellungen" />
+            </Tabs>
+          </Box>
+
+          {error && (
+            <Paper
+              sx={{
+                p: 2,
+                mb: 3,
+                backgroundColor: alpha(theme.palette.error.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
+                borderRadius: 2,
+              }}
+            >
+              <Typography color="error">{error}</Typography>
+            </Paper>
+          )}
+        </Container>
+      </motion.div>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
+        <Container maxWidth="xl">
+          <Box sx={{ mt: 3 }}>
+            <Grid container spacing={3}>
+              {[...Array(3)].map((_, index) => (
+                <Grid item xs={12} key={index}>
+                  <Paper
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      height: 100,
+                      bgcolor: alpha(theme.palette.primary.main, 0.03),
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </Container>
       ) : (
-        <Box sx={{ mt: 3 }}>
-          {activeTab === 0 && renderDashboard()}
-          {activeTab === 1 && renderLowStockProducts()}
-          {activeTab === 2 && renderSupplierOrders()}
-        </Box>
+        <Container maxWidth="xl">
+          <Box>
+            {activeTab === 0 && renderDashboard()}
+            {activeTab === 1 && renderLowStockProducts()}
+            {activeTab === 2 && renderSupplierOrders()}
+          </Box>
+        </Container>
       )}
 
+      {/* Stock Adjustment Dialog */}
       {currentProduct && (
         <StockAdjustmentDialog
           open={showStockAdjustment}
@@ -261,14 +612,38 @@ const InventoryManagementPage = () => {
         />
       )}
 
+      {/* Supplier Order Form */}
       {showOrderForm && (
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Paper elevation={3} sx={{ p: 2 }}>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1300,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            overflow: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 2,
+          }}
+        >
+          <Paper
+            sx={{
+              width: '100%',
+              maxWidth: 800,
+              maxHeight: '90vh',
+              overflow: 'auto',
+              borderRadius: 2,
+            }}
+          >
             <SupplierOrderForm onSubmit={handleOrderFormSubmit} onCancel={handleOrderFormCancel} />
           </Paper>
         </Box>
       )}
-    </Container>
+    </Box>
   );
 };
 

@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { Add as AddIcon, Delete as DeleteIcon, Close as CloseIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Chip,
   FormControl,
   Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -18,15 +14,17 @@ import {
   TableRow,
   TextField,
   Typography,
+  Divider,
+  useTheme,
+  alpha,
+  Tooltip,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  CalendarToday as CalendarIcon,
-} from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
 import { SupplierService, ProductService } from '../../services';
 import { Select } from '../ui/inputs';
 
@@ -34,9 +32,9 @@ import { Select } from '../ui/inputs';
  * SupplierOrderForm component for creating or editing supplier orders
  */
 const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     supplier: null,
-    purchaseOrderNumber: '',
     expectedDeliveryDate: null,
     notes: '',
     positions: [],
@@ -66,7 +64,6 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
         if (initialData) {
           setFormData({
             supplier: initialData.supplier || null,
-            purchaseOrderNumber: initialData.purchaseOrderNumber || '',
             expectedDeliveryDate: initialData.expectedDeliveryDate
               ? new Date(initialData.expectedDeliveryDate)
               : null,
@@ -229,180 +226,275 @@ const SupplierOrderForm = ({ initialData, onSubmit, onCancel, isEditing }) => {
   };
 
   if (loading) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography>Daten werden geladen...</Typography>
+      </Box>
+    );
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        {isEditing ? 'Edit Supplier Order' : 'Create New Supplier Order'}
-      </Typography>
-
-      <Grid container spacing={3}>
-        {/* Supplier Selection */}
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth error={!!errors.supplier}>
-            <Select
-              label="Supplier *"
-              value={formData.supplier ? formData.supplier.id : ''}
-              onChange={handleSupplierChange}
-              options={suppliers.map(supplier => ({
-                value: supplier.id,
-                label: supplier.legalName,
-              }))}
-              error={!!errors.supplier}
-              helperText={errors.supplier}
-              disabled={isEditing}
-            />
-          </FormControl>
-        </Grid>
-
-        {/* Purchase Order Number */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            label="Purchase Order Number"
-            value={formData.purchaseOrderNumber}
-            onChange={handleChange('purchaseOrderNumber')}
-            fullWidth
-            placeholder="Auto-generated if empty"
-          />
-        </Grid>
-
-        {/* Expected Delivery Date */}
-        <Grid item xs={12} md={6}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              label="Expected Delivery Date"
-              value={formData.expectedDeliveryDate}
-              onChange={handleDateChange}
-              slotProps={{ textField: { fullWidth: true } }}
-            />
-          </LocalizationProvider>
-        </Grid>
-
-        {/* Order Status */}
-        <Grid item xs={12} md={6}>
-          <Select
-            label="Order Status"
-            value={formData.orderStatus}
-            onChange={handleStatusChange}
-            options={[
-              { value: '', label: 'Select a status' },
-              { value: 'PLACED', label: 'Placed' },
-              { value: 'SHIPPED', label: 'Shipped' },
-              { value: 'DELIVERED', label: 'Delivered' },
-              { value: 'CANCELLED', label: 'Cancelled' },
-            ]}
-          />
-        </Grid>
-
-        {/* Notes */}
-        <Grid item xs={12}>
-          <TextField
-            label="Notes"
-            value={formData.notes}
-            onChange={handleChange('notes')}
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Additional notes about this order"
-          />
-        </Grid>
-
-        {/* Products Selection */}
-        <Grid item xs={12}>
-          <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          p: 3,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography variant="h5" fontWeight={600}>
+          {isEditing ? 'Bestellung bearbeiten' : 'Neue Lieferantenbestellung'}
+        </Typography>
+        <Tooltip title="Schließen">
+          <IconButton
+            onClick={onCancel}
+            size="small"
+            sx={{
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.error.main, 0.1),
+                color: theme.palette.error.main,
+              },
+            }}
           >
-            <Typography variant="h6">Order Items</Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={addProductPosition}
-              size="small"
-            >
-              Add Product
-            </Button>
-          </Box>
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-          {errors.positions && (
-            <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-              {errors.positions}
-            </Typography>
-          )}
+      <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
+        <Grid container spacing={3}>
+          {/* Supplier Selection */}
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth error={!!errors.supplier}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                Lieferant *
+              </Typography>
+              <Select
+                value={formData.supplier ? formData.supplier.id : ''}
+                onChange={handleSupplierChange}
+                options={suppliers.map(supplier => ({
+                  value: supplier.id,
+                  label: supplier.legalName,
+                }))}
+                error={!!errors.supplier}
+                helperText={errors.supplier}
+                disabled={isEditing}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                  },
+                }}
+              />
+            </FormControl>
+          </Grid>
 
-          {formData.positions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ my: 2 }}>
-              No products added yet. Click "Add Product" to add items to this order.
-            </Typography>
-          ) : (
-            <TableContainer component={Paper} sx={{ mb: 3 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Product</TableCell>
-                    <TableCell align="center">Quantity</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {formData.positions.map((position, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={position.product ? position.product.id : ''}
-                          onChange={e => handleProductChange(index, e)}
-                          options={[
-                            { value: '', label: 'Select a product' },
-                            ...products.map(product => ({
-                              value: product.id,
-                              label: product.name,
-                            })),
-                          ]}
-                          size="small"
-                          fullWidth
-                        />
+          {/* Delivery Date */}
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                Erwartetes Lieferdatum
+              </Typography>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  value={formData.expectedDeliveryDate}
+                  onChange={handleDateChange}
+                  renderInput={params => (
+                    <TextField
+                      {...params}
+                      fullWidth
+                      error={!!errors.expectedDeliveryDate}
+                      helperText={errors.expectedDeliveryDate}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1.5,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </LocalizationProvider>
+            </FormControl>
+          </Grid>
+
+          {/* Notes */}
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500 }}>
+                Anmerkungen
+              </Typography>
+              <TextField
+                multiline
+                rows={3}
+                value={formData.notes}
+                onChange={handleChange('notes')}
+                placeholder="Zusätzliche Informationen zur Bestellung"
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                  },
+                }}
+              />
+            </FormControl>
+          </Grid>
+
+          {/* Products Section Title */}
+          <Grid item xs={12}>
+            <Box sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="h6" fontWeight={600}>
+                Bestellpositionen
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Fügen Sie die Produkte hinzu, die Sie bestellen möchten
+              </Typography>
+            </Box>
+            <Divider />
+          </Grid>
+
+          {/* Products List */}
+          <Grid item xs={12}>
+            {formData.positions.length > 0 ? (
+              <TableContainer
+                component={Paper}
+                variant="outlined"
+                sx={{
+                  mb: 3,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                }}
+              >
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Produkt</TableCell>
+                      <TableCell width="20%" sx={{ fontWeight: 600 }}>
+                        Menge
                       </TableCell>
-                      <TableCell align="center">
-                        <TextField
-                          type="number"
-                          value={position.amount}
-                          onChange={e => handleAmountChange(index, e)}
-                          size="small"
-                          InputProps={{ inputProps: { min: 1 } }}
-                          sx={{ width: '80px' }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton color="error" onClick={() => removeProductPosition(index)}>
-                          <DeleteIcon />
-                        </IconButton>
+                      <TableCell width="10%" align="center" sx={{ fontWeight: 600 }}>
+                        Aktionen
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Grid>
+                  </TableHead>
+                  <TableBody>
+                    {formData.positions.map((position, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Select
+                            value={position.product ? position.product.id : ''}
+                            onChange={e => handleProductChange(index, e)}
+                            options={products.map(product => ({
+                              value: product.id,
+                              label: product.name,
+                            }))}
+                            size="small"
+                            fullWidth
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            type="number"
+                            value={position.amount}
+                            onChange={e => handleAmountChange(index, e)}
+                            fullWidth
+                            size="small"
+                            InputProps={{ inputProps: { min: 1 } }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            onClick={() => removeProductPosition(index)}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Box
+                sx={{
+                  p: 3,
+                  textAlign: 'center',
+                  bgcolor: alpha(theme.palette.warning.light, 0.05),
+                  borderRadius: 2,
+                  border: `1px dashed ${alpha(theme.palette.warning.main, 0.2)}`,
+                  mb: 3,
+                }}
+              >
+                <Typography color="text.secondary">
+                  Keine Produkte ausgewählt. Bitte fügen Sie mindestens ein Produkt hinzu.
+                </Typography>
+              </Box>
+            )}
 
-        {/* Action Buttons */}
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" onClick={onCancel}>
-              Cancel
-            </Button>
+            {errors.positions && (
+              <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                {errors.positions}
+              </Typography>
+            )}
+
             <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={formData.positions.length === 0}
+              startIcon={<AddIcon />}
+              onClick={addProductPosition}
+              sx={{
+                mb: 3,
+                borderRadius: 1.5,
+                textTransform: 'none',
+              }}
             >
-              {isEditing ? 'Update Order' : 'Create Order'}
+              Produkt hinzufügen
             </Button>
-          </Box>
+          </Grid>
+
+          {/* Action Buttons */}
+          <Grid item xs={12}>
+            <Divider sx={{ mb: 3 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button
+                onClick={onCancel}
+                variant="outlined"
+                sx={{
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  px: 3,
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  px: 3,
+                }}
+              >
+                {isEditing ? 'Bestellung aktualisieren' : 'Bestellung erstellen'}
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 };

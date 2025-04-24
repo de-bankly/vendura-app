@@ -1,393 +1,266 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import {
+  Container,
+  Typography,
   Box,
-  Button,
+  Grid,
+  Paper,
   Card,
   CardContent,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Typography,
-  Alert,
+  Button,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { GiftCardService } from '../../services';
+import {
+  CardGiftcard as CardGiftcardIcon,
+  Add as AddIcon,
+  LocalOffer as LocalOfferIcon,
+} from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import { VoucherManagement } from '../../components/admin';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 /**
- * GiftCardManagementPage - Admin page to manage gift cards
+ * Gift Card Management page for administrators
  */
 const GiftCardManagementPage = () => {
-  // State for gift cards
-  const [giftCards, setGiftCards] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Pagination state
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalElements, setTotalElements] = useState(0);
-
-  // Dialog states
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-
-  // Form states
-  const [currentGiftCard, setCurrentGiftCard] = useState({
-    code: '',
-    initialValue: 0,
-    remainingBalance: 0,
+  const theme = useTheme();
+  const voucherManagementRef = useRef(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    type: 'GIFT_CARD',
+    editMode: false,
   });
 
-  // Fetch gift cards
-  const fetchGiftCards = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await GiftCardService.getGiftCards({
-        page,
-        size: rowsPerPage,
-      });
-
-      setGiftCards(response.content || []);
-      setTotalElements(response.totalElements || 0);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching gift cards:', err);
-      setError('Fehler beim Laden der Gutscheinkarten. Bitte versuchen Sie es später erneut.');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, rowsPerPage]);
-
-  // Load gift cards on component mount and when pagination changes
-  useEffect(() => {
-    fetchGiftCards();
-  }, [fetchGiftCards]);
-
-  // Handle page change
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
-  const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Handle form input change
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-
-    // Convert numeric values
-    const parsedValue =
-      name === 'initialValue' || name === 'remainingBalance' ? parseFloat(value) || 0 : value;
-
-    setCurrentGiftCard({
-      ...currentGiftCard,
-      [name]: parsedValue,
+  // Handle opening the voucher creation dialog for gift cards
+  const handleCreateGiftCard = () => {
+    setDialogConfig({
+      type: 'GIFT_CARD',
+      editMode: false,
     });
+    setOpenDialog(true);
   };
 
-  // Open create dialog
-  const handleOpenCreateDialog = () => {
-    setCurrentGiftCard({
-      code: '',
-      initialValue: 0,
-      remainingBalance: 0,
+  // Handle opening the voucher creation dialog for discount cards
+  const handleCreateDiscountCard = () => {
+    setDialogConfig({
+      type: 'DISCOUNT_CARD',
+      editMode: false,
     });
-    setOpenCreateDialog(true);
+    setOpenDialog(true);
   };
 
-  // Close create dialog
-  const handleCloseCreateDialog = () => {
-    setOpenCreateDialog(false);
-  };
-
-  // Open edit dialog
-  const handleOpenEditDialog = giftCard => {
-    setCurrentGiftCard({
-      ...giftCard,
-    });
-    setOpenEditDialog(true);
-  };
-
-  // Close edit dialog
-  const handleCloseEditDialog = () => {
-    setOpenEditDialog(false);
-  };
-
-  // Open delete dialog
-  const handleOpenDeleteDialog = giftCard => {
-    setCurrentGiftCard(giftCard);
-    setOpenDeleteDialog(true);
-  };
-
-  // Close delete dialog
-  const handleCloseDeleteDialog = () => {
-    setOpenDeleteDialog(false);
-  };
-
-  // Create gift card
-  const handleCreateGiftCard = async () => {
-    try {
-      setLoading(true);
-      await GiftCardService.createGiftCard(currentGiftCard);
-      handleCloseCreateDialog();
-      fetchGiftCards();
-    } catch (err) {
-      console.error('Error creating gift card:', err);
-      setError('Fehler beim Erstellen der Gutscheinkarte. Bitte versuchen Sie es später erneut.');
-      setLoading(false);
-    }
-  };
-
-  // Update gift card
-  const handleUpdateGiftCard = async () => {
-    try {
-      setLoading(true);
-      await GiftCardService.updateGiftCard(currentGiftCard.id, currentGiftCard);
-      handleCloseEditDialog();
-      fetchGiftCards();
-    } catch (err) {
-      console.error('Error updating gift card:', err);
-      setError(
-        'Fehler beim Aktualisieren der Gutscheinkarte. Bitte versuchen Sie es später erneut.'
-      );
-      setLoading(false);
-    }
-  };
-
-  // Delete gift card
-  const handleDeleteGiftCard = async () => {
-    try {
-      setLoading(true);
-      await GiftCardService.deleteGiftCard(currentGiftCard.id);
-      handleCloseDeleteDialog();
-      fetchGiftCards();
-    } catch (err) {
-      console.error('Error deleting gift card:', err);
-      setError('Fehler beim Löschen der Gutscheinkarte. Bitte versuchen Sie es später erneut.');
-      setLoading(false);
-    }
+  // Handle dialog close
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Gutscheinkarten-Verwaltung
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateDialog}
-          disabled={loading}
-        >
-          Neue Gutscheinkarte
-        </Button>
-      </Box>
+    <Container maxWidth="xl">
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        {/* Header Section */}
+        <motion.div variants={itemVariants}>
+          <Grid container spacing={3} sx={{ mb: 3, mt: 1 }}>
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  background:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : alpha(theme.palette.primary.light, 0.1),
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                }}
+              >
+                <Grid container alignItems="center" spacing={2}>
+                  <Grid item>
+                    <CardGiftcardIcon
+                      sx={{
+                        fontSize: 40,
+                        color: theme.palette.primary.main,
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs>
+                    <Typography variant="h4" component="h1" gutterBottom>
+                      Gutschein-Verwaltung
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                      Erstellen und verwalten Sie Geschenkkarten und Rabattgutscheine
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+          </Grid>
+        </motion.div>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+        {/* Quick Actions Section */}
+        <motion.div variants={itemVariants}>
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  height: '100%',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  },
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '5px',
+                    background: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <CardContent sx={{ height: '100%', p: 3 }}>
+                  <Grid container alignItems="center" spacing={2}>
+                    <Grid item>
+                      <Box
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: alpha(theme.palette.primary.main, 0.1),
+                        }}
+                      >
+                        <CardGiftcardIcon color="primary" sx={{ fontSize: 32 }} />
+                      </Box>
+                    </Grid>
+                    <Grid item xs>
+                      <Typography variant="h6" gutterBottom>
+                        Geschenkkarten
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Verwalten Sie Geschenkkarten mit flexiblen Guthaben-Optionen
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        sx={{ mt: 1 }}
+                        onClick={handleCreateGiftCard}
+                      >
+                        Neue Geschenkkarte
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
 
-      <Card>
-        <CardContent>
-          {loading && giftCards.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Code</TableCell>
-                      <TableCell align="right">Anfangswert (€)</TableCell>
-                      <TableCell align="right">Aktueller Wert (€)</TableCell>
-                      <TableCell align="center">Aktionen</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {giftCards.map(giftCard => (
-                      <TableRow key={giftCard.id}>
-                        <TableCell>{giftCard.id}</TableCell>
-                        <TableCell>{giftCard.code}</TableCell>
-                        <TableCell align="right">
-                          {(giftCard.initialValue ?? 0).toFixed(2)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {(giftCard.remainingBalance ?? 0).toFixed(2)}
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleOpenEditDialog(giftCard)}
-                            disabled={loading}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => handleOpenDeleteDialog(giftCard)}
-                            disabled={loading}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  height: '100%',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  },
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '5px',
+                    background: theme.palette.secondary.main,
+                  },
+                }}
+              >
+                <CardContent sx={{ height: '100%', p: 3 }}>
+                  <Grid container alignItems="center" spacing={2}>
+                    <Grid item>
+                      <Box
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: alpha(theme.palette.secondary.main, 0.1),
+                        }}
+                      >
+                        <LocalOfferIcon color="secondary" sx={{ fontSize: 32 }} />
+                      </Box>
+                    </Grid>
+                    <Grid item xs>
+                      <Typography variant="h6" gutterBottom>
+                        Rabattgutscheine
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Erstellen Sie Rabattgutscheine mit prozentualen Rabatten
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<AddIcon />}
+                        sx={{ mt: 1 }}
+                        onClick={handleCreateDiscountCard}
+                      >
+                        Neuer Rabattgutschein
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </motion.div>
 
-                    {giftCards.length === 0 && !loading && (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          Keine Gutscheinkarten gefunden
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={totalElements}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Zeilen pro Seite:"
-                labelDisplayedRows={({ from, to, count }) => `${from}-${to} von ${count}`}
-                disabled={loading}
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create Dialog */}
-      <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
-        <DialogTitle>Neue Gutscheinkarte erstellen</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="code"
-            label="Code"
-            fullWidth
-            variant="outlined"
-            value={currentGiftCard.code}
-            onChange={handleInputChange}
-          />
-          <TextField
-            margin="dense"
-            name="initialValue"
-            label="Wert (€)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={currentGiftCard.initialValue}
-            onChange={handleInputChange}
-            inputProps={{ min: 0, step: 0.01 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCreateDialog}>Abbrechen</Button>
-          <Button
-            onClick={handleCreateGiftCard}
-            variant="contained"
-            disabled={!currentGiftCard.code || currentGiftCard.initialValue <= 0}
+        {/* Main Content Section */}
+        <motion.div variants={itemVariants}>
+          <Box
+            sx={{
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.background.paper, 0.6)
+                  : alpha(theme.palette.background.paper, 0.8),
+              borderRadius: 2,
+              boxShadow: theme.shadows[2],
+              p: 3,
+            }}
           >
-            Erstellen
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
-        <DialogTitle>Gutscheinkarte bearbeiten</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="code"
-            label="Code"
-            fullWidth
-            variant="outlined"
-            value={currentGiftCard.code}
-            onChange={handleInputChange}
-          />
-          <TextField
-            margin="dense"
-            name="initialValue"
-            label="Anfangswert (€)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={currentGiftCard.initialValue}
-            onChange={handleInputChange}
-            inputProps={{ min: 0, step: 0.01 }}
-          />
-          <TextField
-            margin="dense"
-            name="remainingBalance"
-            label="Aktueller Wert (€)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={currentGiftCard.remainingBalance}
-            onChange={handleInputChange}
-            inputProps={{ min: 0, step: 0.01 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Abbrechen</Button>
-          <Button
-            onClick={handleUpdateGiftCard}
-            variant="contained"
-            disabled={!currentGiftCard.code || currentGiftCard.initialValue <= 0}
-          >
-            Aktualisieren
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Gutscheinkarte löschen</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Sind Sie sicher, dass Sie die Gutscheinkarte mit dem Code "{currentGiftCard.code}"
-            löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Abbrechen</Button>
-          <Button onClick={handleDeleteGiftCard} color="error" variant="contained">
-            Löschen
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            <VoucherManagement
+              ref={voucherManagementRef}
+              initialOpenDialog={openDialog}
+              initialDialogConfig={dialogConfig}
+              onCloseDialog={handleCloseDialog}
+            />
+          </Box>
+        </motion.div>
+      </motion.div>
+    </Container>
   );
 };
 

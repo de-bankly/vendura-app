@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import {
   TextField,
   Button,
@@ -7,20 +8,23 @@ import {
   Alert,
   InputAdornment,
   CircularProgress,
+  useTheme,
+  Divider,
 } from '@mui/material';
-import { AuthService } from '../../services';
+import { useState } from 'react';
+
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 /**
- * Login form component for user authentication
+ * Modern login form component for cashier platform
  */
-const LoginForm = ({ onLoginSuccess, onSubmit }) => {
+const LoginForm = ({ onSubmit }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
+  const errorAlertId = 'login-error-alert';
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -35,28 +39,41 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
     try {
       if (onSubmit) {
         await onSubmit(username, password);
-      } else {
-        const response = await AuthService.login(username, password);
-        if (onLoginSuccess) {
-          onLoginSuccess(response);
-        }
       }
     } catch (err) {
-      setLoading(false);
-
-      // Use the error utils to get a user-friendly message
       const errorMessage = getUserFriendlyErrorMessage(err);
       setError(errorMessage);
-
-      // Log the error for debugging
       console.error('Login error details:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ width: '100%' }}
+      aria-describedby={error ? errorAlertId : undefined}
+    >
       {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
+        <Alert
+          id={errorAlertId}
+          severity="error"
+          sx={{
+            mb: 3,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.1)',
+            animation: 'shake 0.5s',
+            '@keyframes shake': {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+              '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' },
+            },
+          }}
+          role="alert"
+        >
           {error}
         </Alert>
       )}
@@ -70,9 +87,16 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         onChange={e => setUsername(e.target.value)}
         autoFocus
         sx={{
-          mb: 2,
+          mb: 2.5,
           '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
+            borderRadius: theme.shape.borderRadius,
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            },
+            '&.Mui-focused': {
+              boxShadow: '0 2px 10px rgba(15, 23, 42, 0.1)',
+            },
           },
         }}
         InputProps={{
@@ -93,9 +117,16 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         value={password}
         onChange={e => setPassword(e.target.value)}
         sx={{
-          mb: 3,
+          mb: 2,
           '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
+            borderRadius: theme.shape.borderRadius,
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            },
+            '&.Mui-focused': {
+              boxShadow: '0 2px 10px rgba(15, 23, 42, 0.1)',
+            },
           },
         }}
         InputProps={{
@@ -113,11 +144,17 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
         fullWidth
         size="large"
         sx={{
-          py: 1.5,
-          borderRadius: 1,
-          textTransform: 'none',
+          py: 1.75,
+          borderRadius: theme.shape.borderRadius * 1.5,
+          fontSize: '1rem',
           fontWeight: 600,
-          boxShadow: 'none',
+          textTransform: 'none',
+          boxShadow: '0 4px 10px rgba(15, 23, 42, 0.15)',
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            boxShadow: '0 6px 15px rgba(15, 23, 42, 0.2)',
+            transform: 'translateY(-2px)',
+          },
         }}
         disabled={loading}
       >
@@ -125,8 +162,26 @@ const LoginForm = ({ onLoginSuccess, onSubmit }) => {
       </Button>
 
       <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Divider sx={{ mb: 2, '&::before, &::after': { borderColor: 'grey.200' } }}>
+          <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+            oder
+          </Typography>
+        </Divider>
+
         <Typography variant="body2" color="text.secondary">
-          Demo Zugangsdaten: admin / password
+          Probleme bei der Anmeldung?{' '}
+          <Typography
+            component="span"
+            variant="body2"
+            color="primary"
+            sx={{
+              cursor: 'pointer',
+              fontWeight: 500,
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            Support kontaktieren
+          </Typography>
         </Typography>
       </Box>
     </Box>

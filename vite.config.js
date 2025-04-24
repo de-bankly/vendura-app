@@ -1,21 +1,24 @@
-import MillionLint from "@million/lint";
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import faroUploader from '@grafana/faro-rollup-plugin';
 import { resolve } from 'path';
+import { fileURLToPath, URL } from 'url';
+
+import faroUploader from '@grafana/faro-rollup-plugin';
+import MillionLint from "@million/lint";
+import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig, loadEnv , splitVendorChunkPlugin } from 'vite';
 import viteCompression from 'vite-plugin-compression';
-import { splitVendorChunkPlugin } from 'vite';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current directory
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, __dirname, '');
   
   // Determine if bundle analysis is enabled
-  const isAnalyze = process.env.ANALYZE === 'true';
+  const isAnalyze = env.ANALYZE === 'true';
   const isProd = mode === 'production';
   
   const plugins = [

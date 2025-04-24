@@ -1,123 +1,147 @@
-import React from 'react';
-import { TextField as MuiTextField, InputAdornment, alpha } from '@mui/material';
+import { TextField as MuiTextField, InputAdornment, alpha, styled } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
-/**
- * Enhanced TextField component that extends MUI TextField with a modern, minimalist design
- * optimized for POS and inventory management systems. Features clean lines, subtle transitions,
- * and consistent styling across the application.
- */
-const TextField = ({
-  label,
-  value,
-  onChange,
-  error = false,
-  helperText = '',
-  required = false,
-  disabled = false,
-  fullWidth = true,
-  variant = 'outlined',
-  size = 'medium',
-  startAdornment = null,
-  endAdornment = null,
-  type = 'text',
-  placeholder = '',
-  multiline = false,
-  rows = 1,
-  maxRows = undefined,
-  name = '',
-  id = '',
-  autoFocus = false,
-  autoComplete = '',
-  sx = {},
-  ...props
-}) => {
-  // Prepare input props with adornments if provided
-  const inputProps = {};
-
-  if (startAdornment) {
-    inputProps.startAdornment = <InputAdornment position="start">{startAdornment}</InputAdornment>;
-  }
-
-  if (endAdornment) {
-    inputProps.endAdornment = <InputAdornment position="end">{endAdornment}</InputAdornment>;
-  }
-
-  // Size-specific styles
-  const sizeStyles = {
-    small: {
-      '& .MuiInputBase-input': {
-        padding: '8px 12px',
-        fontSize: '0.875rem',
+// Define styled component
+const StyledMuiTextField = styled(MuiTextField, {
+  // Prevent custom props from reaching the DOM if needed
+  // shouldForwardProp: (prop) => prop !== 'customProp',
+})(({ theme, size, ownerState }) => {
+  // ownerState contains props like disabled, error, etc.
+  // Base styles (can also be theme overrides)
+  const baseStyles = {
+    // Style the root
+    '& .MuiOutlinedInput-root': {
+      borderRadius: theme.shape.borderRadius, // Use theme token
+      transition: 'all 0.2s ease-in-out',
+      backgroundColor: ownerState?.disabled
+        ? alpha(theme.palette.action.disabled, 0.05)
+        : alpha(theme.palette.background.paper, 0.8),
+      '&:hover:not(.Mui-disabled)': {
+        backgroundColor: alpha(theme.palette.background.paper, 1),
       },
-      '& .MuiInputLabel-root': {
-        fontSize: '0.875rem',
+      '&.Mui-focused': {
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+        // Potentially remove outline if using boxShadow for focus
+        // '& .MuiOutlinedInput-notchedOutline': {
+        //   borderColor: 'transparent',
+        // },
       },
     },
-    medium: {
-      '& .MuiInputBase-input': {
-        padding: '12px 14px',
-        fontSize: '1rem',
-      },
+    // Style the label
+    '& .MuiInputLabel-root': {
+      fontWeight: 500,
+      transition: 'all 0.2s ease-in-out',
+      // Adjust label position/style for sizes if needed
+      ...(size === 'small' && {
+        fontSize: '0.875rem',
+        // Adjust transform for small size if needed
+        // '&.MuiInputLabel-shrink': { transform: 'translate(14px, -6px) scale(0.75)' }
+      }),
+    },
+    // Style the input element itself
+    '& .MuiInputBase-input': {
+      fontWeight: 400,
+      // Size-specific padding and font-size
+      ...(size === 'small'
+        ? {
+            padding: theme.spacing(1, 1.5), // 8px 12px
+            fontSize: theme.typography.pxToRem(14), // 0.875rem
+          }
+        : {
+            // Medium (default)
+            padding: theme.spacing(1.5, 1.75), // 12px 14px
+            fontSize: theme.typography.pxToRem(16), // 1rem
+          }),
+    },
+    // Style the helper text
+    '& .MuiFormHelperText-root': {
+      marginLeft: theme.spacing(0.25), // 2px
+      fontSize: theme.typography.pxToRem(12), // 0.75rem
     },
   };
 
-  return (
-    <MuiTextField
-      label={label}
-      value={value}
-      onChange={onChange}
-      error={error}
-      helperText={helperText}
-      required={required}
-      disabled={disabled}
-      fullWidth={fullWidth}
-      variant={variant}
-      size={size}
-      type={type}
-      placeholder={placeholder}
-      multiline={multiline}
-      rows={rows}
-      maxRows={maxRows}
-      name={name}
-      id={id || name}
-      autoFocus={autoFocus}
-      autoComplete={autoComplete}
-      InputProps={Object.keys(inputProps).length > 0 ? inputProps : undefined}
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: '8px',
-          transition: 'all 0.2s ease-in-out',
-          backgroundColor: theme =>
-            disabled
-              ? alpha(theme.palette.action.disabled, 0.05)
-              : alpha(theme.palette.background.paper, 0.8),
-          '&:hover': {
-            backgroundColor: theme => !disabled && alpha(theme.palette.background.paper, 1),
-          },
-          '&.Mui-focused': {
-            backgroundColor: theme => theme.palette.background.paper,
-            boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-          },
-        },
-        '& .MuiInputLabel-root': {
-          fontWeight: 500,
-          transition: 'all 0.2s ease-in-out',
-        },
-        '& .MuiInputBase-input': {
-          fontWeight: 400,
-        },
-        '& .MuiFormHelperText-root': {
-          marginLeft: '2px',
-          fontSize: '0.75rem',
-        },
-        ...(sizeStyles[size] || {}),
-        ...sx,
-      }}
-      {...props}
-    />
-  );
-};
+  return { ...baseStyles };
+});
+
+/**
+ * Enhanced TextField component using styled API.
+ */
+const TextField = React.forwardRef(
+  (
+    {
+      label,
+      value,
+      onChange,
+      error = false,
+      helperText = '',
+      required = false,
+      disabled = false,
+      fullWidth = true,
+      variant = 'outlined',
+      size = 'medium',
+      startAdornment = null,
+      endAdornment = null,
+      type = 'text',
+      placeholder = '',
+      multiline = false,
+      rows = 1,
+      maxRows = undefined,
+      name = '',
+      id = '',
+      autoFocus = false,
+      autoComplete = '',
+      sx = {},
+      ...props
+    },
+    ref
+  ) => {
+    // Prepare input props with adornments if provided
+    const inputProps = {};
+
+    if (startAdornment) {
+      inputProps.startAdornment = (
+        <InputAdornment position="start">{startAdornment}</InputAdornment>
+      );
+    }
+
+    if (endAdornment) {
+      inputProps.endAdornment = <InputAdornment position="end">{endAdornment}</InputAdornment>;
+    }
+
+    return (
+      <StyledMuiTextField
+        ref={ref}
+        label={label}
+        value={value}
+        onChange={onChange}
+        error={error}
+        helperText={helperText}
+        required={required}
+        disabled={disabled}
+        fullWidth={fullWidth}
+        variant={variant}
+        size={size}
+        type={type}
+        placeholder={placeholder}
+        multiline={multiline}
+        rows={rows}
+        maxRows={maxRows}
+        name={name}
+        id={id || name}
+        autoFocus={autoFocus}
+        autoComplete={autoComplete}
+        InputProps={Object.keys(inputProps).length > 0 ? inputProps : undefined}
+        ownerState={{ size, disabled, error }}
+        sx={sx}
+        {...props}
+      />
+    );
+  }
+);
+
+TextField.displayName = 'TextField';
 
 TextField.propTypes = {
   /** The label content */

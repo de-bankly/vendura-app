@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FormControl,
   InputLabel,
@@ -6,166 +5,185 @@ import {
   MenuItem,
   FormHelperText,
   alpha,
+  styled,
 } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
+// Define styled FormControl
+const StyledFormControl = styled(FormControl, {
+  // Filter out props if necessary
+  // shouldForwardProp: (prop) => prop !== 'customProp',
+})(({ theme, size, ownerState }) => {
+  // ownerState passes disabled, error, required
+  // Styles previously in sx prop
+  const styles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: theme.shape.borderRadius,
+      transition: 'all 0.2s ease-in-out',
+      backgroundColor: ownerState?.disabled
+        ? alpha(theme.palette.action.disabled, 0.05)
+        : alpha(theme.palette.background.paper, 0.8),
+      '&:hover:not(.Mui-disabled)': {
+        backgroundColor: alpha(theme.palette.background.paper, 1),
+      },
+      '&.Mui-focused': {
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      fontWeight: 500,
+      transition: 'all 0.2s ease-in-out',
+      ...(size === 'small' && {
+        fontSize: theme.typography.pxToRem(14), // 0.875rem
+      }),
+    },
+    // Target MuiSelect specifically for padding/font inside outlined input
+    '& .MuiOutlinedInput-input.MuiSelect-select': {
+      fontWeight: 400,
+      ...(size === 'small'
+        ? {
+            padding: `${theme.spacing(1)} ${theme.spacing(4)} ${theme.spacing(1)} ${theme.spacing(1.5)}`, // 8px 32px 8px 12px
+            fontSize: theme.typography.pxToRem(14), // 0.875rem
+          }
+        : {
+            // Medium (default)
+            padding: `${theme.spacing(1.5)} ${theme.spacing(4)} ${theme.spacing(1.5)} ${theme.spacing(1.75)}`, // 12px 32px 12px 14px
+            fontSize: theme.typography.pxToRem(16), // 1rem
+          }),
+    },
+    '& .MuiMenuItem-root': {
+      // Styling menu items if needed (can also be done in MenuProps)
+      ...(size === 'small'
+        ? {
+            fontSize: theme.typography.pxToRem(14),
+            minHeight: '32px',
+          }
+        : {
+            minHeight: '40px',
+          }),
+      transition: 'background-color 0.15s ease-in-out',
+    },
+    '& .MuiFormHelperText-root': {
+      marginLeft: theme.spacing(0.25), // 2px
+      fontSize: theme.typography.pxToRem(12), // 0.75rem
+    },
+  };
+  return styles;
+});
 
 /**
  * Enhanced Select component with a modern, minimalist design optimized for POS and inventory
  * management systems. Features clean lines, subtle transitions, and consistent styling
  * across the application.
  */
-const Select = ({
-  label,
-  value = '',
-  onChange,
-  options = [],
-  error = false,
-  helperText = '',
-  required = false,
-  disabled = false,
-  fullWidth = true,
-  variant = 'outlined',
-  size = 'medium',
-  placeholder = '',
-  multiple = false,
-  name = '',
-  id = '',
-  sx = {},
-  ...props
-}) => {
-  // Generate a unique ID for the label if not provided
-  const selectId =
-    id ||
-    name ||
-    `select-${label?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(2, 9)}`;
-
-  // Handle onChange to ensure we return a proper event object
-  const handleChange = event => {
-    if (onChange) {
-      // Pass the event directly to maintain compatibility with standard MUI events
-      onChange(event);
-    }
-  };
-
-  // Size-specific styles
-  const sizeStyles = {
-    small: {
-      '& .MuiInputBase-input': {
-        padding: '8px 32px 8px 12px',
-        fontSize: '0.875rem',
-      },
-      '& .MuiInputLabel-root': {
-        fontSize: '0.875rem',
-      },
-      '& .MuiMenuItem-root': {
-        fontSize: '0.875rem',
-        minHeight: '32px',
-      },
+const Select = React.forwardRef(
+  (
+    {
+      label,
+      value = '',
+      onChange,
+      options = [],
+      error = false,
+      helperText = '',
+      required = false,
+      disabled = false,
+      fullWidth = true,
+      variant = 'outlined',
+      size = 'medium',
+      placeholder = '',
+      multiple = false,
+      name = '',
+      id = '',
+      sx = {},
+      ...props
     },
-    medium: {
-      '& .MuiInputBase-input': {
-        padding: '12px 32px 12px 14px',
-        fontSize: '1rem',
-      },
-      '& .MuiMenuItem-root': {
-        minHeight: '40px',
-      },
-    },
-  };
+    ref
+  ) => {
+    // Generate a unique ID for the label if not provided
+    const selectId =
+      id ||
+      name ||
+      `select-${label?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(2, 9)}`;
 
-  return (
-    <FormControl
-      variant={variant}
-      fullWidth={fullWidth}
-      error={error}
-      required={required}
-      disabled={disabled}
-      size={size}
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: '8px',
-          transition: 'all 0.2s ease-in-out',
-          backgroundColor: theme =>
-            disabled
-              ? alpha(theme.palette.action.disabled, 0.05)
-              : alpha(theme.palette.background.paper, 0.8),
-          '&:hover': {
-            backgroundColor: theme => !disabled && alpha(theme.palette.background.paper, 1),
-          },
-          '&.Mui-focused': {
-            backgroundColor: theme => theme.palette.background.paper,
-            boxShadow: theme => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-          },
-        },
-        '& .MuiInputLabel-root': {
-          fontWeight: 500,
-          transition: 'all 0.2s ease-in-out',
-        },
-        '& .MuiSelect-select': {
-          fontWeight: 400,
-        },
-        '& .MuiFormHelperText-root': {
-          marginLeft: '2px',
-          fontSize: '0.75rem',
-        },
-        ...(sizeStyles[size] || {}),
-        ...sx,
-      }}
-    >
-      {label && <InputLabel id={`${selectId}-label`}>{label}</InputLabel>}
+    // Handle onChange to ensure we return a proper event object
+    const handleChange = event => {
+      if (onChange) {
+        // Pass the event directly to maintain compatibility with standard MUI events
+        onChange(event);
+      }
+    };
 
-      <MuiSelect
-        labelId={`${selectId}-label`}
-        id={selectId}
-        value={value}
-        onChange={handleChange}
-        label={label}
-        name={name}
-        multiple={multiple}
-        displayEmpty={!!placeholder}
-        MenuProps={{
-          PaperProps: {
-            sx: {
-              borderRadius: '8px',
-              boxShadow: theme => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
-              marginTop: '4px',
-              maxHeight: '300px',
-            },
-          },
-          anchorOrigin: {
-            vertical: 'bottom',
-            horizontal: 'left',
-          },
-          transformOrigin: {
-            vertical: 'top',
-            horizontal: 'left',
-          },
-        }}
-        {...props}
+    return (
+      <StyledFormControl
+        ref={ref}
+        variant={variant}
+        fullWidth={fullWidth}
+        error={error}
+        required={required}
+        disabled={disabled}
+        size={size}
+        ownerState={{ disabled, error, required, size }}
+        sx={sx}
       >
-        {placeholder && (
-          <MenuItem value="" disabled>
-            {placeholder}
-          </MenuItem>
-        )}
+        {label && <InputLabel id={`${selectId}-label`}>{label}</InputLabel>}
 
-        {options.map(option => (
-          <MenuItem
-            key={option.value}
-            value={option.value}
-            sx={{
-              transition: 'background-color 0.15s ease-in-out',
-            }}
-          >
-            {option.label}
-          </MenuItem>
-        ))}
-      </MuiSelect>
+        <MuiSelect
+          labelId={`${selectId}-label`}
+          id={selectId}
+          value={value}
+          onChange={handleChange}
+          label={label}
+          name={name}
+          multiple={multiple}
+          displayEmpty={!!placeholder}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                borderRadius: theme => theme.shape.borderRadius,
+                boxShadow: theme => theme.shadows[4],
+                marginTop: theme => theme.spacing(0.5),
+                maxHeight: '300px',
+              },
+            },
+            anchorOrigin: {
+              vertical: 'bottom',
+              horizontal: 'left',
+            },
+            transformOrigin: {
+              vertical: 'top',
+              horizontal: 'left',
+            },
+          }}
+          {...props}
+        >
+          {placeholder && (
+            <MenuItem value="" disabled>
+              {placeholder}
+            </MenuItem>
+          )}
 
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
-    </FormControl>
-  );
-};
+          {options.map(option => (
+            <MenuItem
+              key={
+                option.key ||
+                `option-${typeof option.value === 'object' ? Math.random() : option.value}`
+              }
+              value={option.value}
+            >
+              {option.label}
+            </MenuItem>
+          ))}
+        </MuiSelect>
+
+        {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      </StyledFormControl>
+    );
+  }
+);
+
+Select.displayName = 'Select';
 
 Select.propTypes = {
   /** The label content */

@@ -1,11 +1,13 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Button, Box, Typography, useTheme } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import { Box, Typography, useTheme } from '@mui/material';
+import PropTypes from 'prop-types';
+import React from 'react';
+
 import Dialog from './Dialog';
+import { Button } from '../buttons';
 
 /**
  * DialogSystem component that provides a standardized way to display different types of dialogs
@@ -75,8 +77,8 @@ const DialogSystem = ({
 
   // Dialog content with icon and message
   const dialogContent = (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', mt: 1 }}>
-      <Box sx={{ mr: 2, mt: 0.5 }}>{config.icon}</Box>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', mt: theme.spacing(1) }}>
+      <Box sx={{ mr: theme.spacing(2), mt: theme.spacing(0.5) }}>{config.icon}</Box>
       <Typography variant="body1">{message}</Typography>
     </Box>
   );

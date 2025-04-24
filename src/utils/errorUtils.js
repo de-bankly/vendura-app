@@ -10,7 +10,7 @@
  */
 export const logError = (error, errorInfo = {}, source = 'Application') => {
   // Log to console in development
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.DEV) {
     console.group(`Error caught by ${source}:`);
     console.error(error);
     if (Object.keys(errorInfo).length > 0) {
@@ -47,7 +47,7 @@ export const formatErrorForDisplay = (error, includeStack = false) => {
 
   // For security reasons, in production we might want to sanitize error messages
   // to avoid leaking sensitive information
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = import.meta.env.PROD;
 
   return {
     message: isProduction ? 'An application error occurred' : error.message || 'Unknown error',
@@ -72,41 +72,54 @@ export const isNetworkError = error => {
 /**
  * Gets a user-friendly message based on error type
  * @param {Error} error - The error object
- * @returns {string} - User-friendly error message
+ * @param {string} defaultMessage - The default error message
+ * @returns {string} User-friendly error message
  */
-export const getUserFriendlyErrorMessage = error => {
-  if (!error) return 'An unknown error occurred';
+export const getUserFriendlyErrorMessage = (
+  error,
+  defaultMessage = 'Ein Fehler ist aufgetreten'
+) => {
+  console.log('Detailed Error:', error);
 
-  if (isNetworkError(error)) {
-    return 'Unable to connect to the server. Please check your internet connection and try again.';
+  // If we have a detailed error message from our enhanced error handling
+  if (error.message && error.message.includes('Payment failed')) {
+    // Extract the actual error message part after the colon
+    const matchResult = error.message.match(/Payment failed \(\d+\): (.*)/);
+    if (matchResult && matchResult[1]) {
+      return matchResult[1];
+    }
+    return error.message; // Return the whole message if we can't extract
   }
 
-  if (error.status === 404 || error.message.includes('404')) {
-    return 'The requested resource was not found.';
+  // Handle other known error scenarios
+  if (error.response) {
+    const { status, data } = error.response;
+
+    // Handle specific status codes
+    switch (status) {
+      case 400:
+        return (
+          data.message || data.error || 'Ungültige Anfrage. Bitte überprüfen Sie Ihre Eingaben.'
+        );
+      case 401:
+        return 'Sie sind nicht berechtigt, diese Aktion durchzuführen.';
+      case 403:
+        return 'Zugriff verweigert. Sie haben keine Berechtigung für diese Aktion.';
+      case 404:
+        return 'Die angeforderte Ressource wurde nicht gefunden.';
+      case 500:
+        return 'Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+      default:
+        // Try to get a message from the response
+        return data.message || data.error || defaultMessage;
+    }
   }
 
-  if (
-    error.status === 403 ||
-    error.message.includes('403') ||
-    error.message.includes('forbidden')
-  ) {
-    return 'You do not have permission to access this resource.';
+  // Check for network errors
+  if (error.request && !error.response) {
+    return 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung.';
   }
 
-  if (
-    error.status === 401 ||
-    error.message.includes('401') ||
-    error.message.includes('unauthorized')
-  ) {
-    return 'Please log in to access this resource.';
-  }
-
-  if (error.status === 500 || error.message.includes('500')) {
-    return 'The server encountered an error. Please try again later.';
-  }
-
-  // Default message for production
-  return process.env.NODE_ENV === 'production'
-    ? 'An error occurred. Please try again later.'
-    : error.message || 'An unknown error occurred';
+  // For all other error types
+  return error.message || defaultMessage;
 };

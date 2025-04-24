@@ -1,4 +1,4 @@
-import React from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Dialog as MuiDialog,
   DialogTitle,
@@ -7,10 +7,10 @@ import {
   DialogActions,
   IconButton,
   Typography,
-  Box,
+  useTheme,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * Enhanced Dialog component that extends MUI Dialog with consistent styling
@@ -33,14 +33,20 @@ const Dialog = ({
   contentProps = {},
   actionsProps = {},
   sx = {},
+  children,
   ...props
 }) => {
+  const theme = useTheme();
+
   // Handle backdrop click
   const handleBackdropClick = event => {
     if (!disableBackdropClick && onClose) {
       onClose(event, 'backdropClick');
     }
   };
+
+  // Check if children are provided
+  const hasChildren = React.Children.count(children) > 0;
 
   return (
     <MuiDialog
@@ -55,68 +61,74 @@ const Dialog = ({
       aria-describedby="dialog-description"
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: 2,
+          borderRadius: theme.shape.borderRadius * 1.5,
           ...sx,
         },
       }}
       {...props}
     >
-      {title && (
-        <DialogTitle
-          id="dialog-title"
-          sx={{
-            pr: showCloseButton ? 6 : 3,
-            py: 2,
-            ...titleProps.sx,
-          }}
-          {...titleProps}
-        >
-          <Typography variant="h6" component="h2">
-            {title}
-          </Typography>
-          {showCloseButton && (
-            <IconButton
-              aria-label="close"
-              onClick={onClose}
+      {hasChildren ? (
+        children
+      ) : (
+        <>
+          {title && (
+            <DialogTitle
+              id="dialog-title"
               sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: 'text.secondary',
+                pr: theme.spacing(showCloseButton ? 6 : 3),
+                py: theme.spacing(2),
+                ...titleProps.sx,
               }}
+              {...titleProps}
             >
-              <CloseIcon />
-            </IconButton>
+              <Typography variant="h6" component="h2">
+                {title}
+              </Typography>
+              {showCloseButton && (
+                <IconButton
+                  aria-label="close"
+                  onClick={onClose}
+                  sx={{
+                    position: 'absolute',
+                    right: theme.spacing(1),
+                    top: theme.spacing(1),
+                    color: 'text.secondary',
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              )}
+            </DialogTitle>
           )}
-        </DialogTitle>
-      )}
 
-      <DialogContent
-        sx={{
-          py: 2,
-          ...contentProps.sx,
-        }}
-        {...contentProps}
-      >
-        {contentText && (
-          <DialogContentText id="dialog-description" sx={{ mb: 2 }}>
-            {contentText}
-          </DialogContentText>
-        )}
-        {content}
-      </DialogContent>
+          <DialogContent
+            sx={{
+              py: theme.spacing(2),
+              ...contentProps.sx,
+            }}
+            {...contentProps}
+          >
+            {contentText && (
+              <DialogContentText id="dialog-description" sx={{ mb: theme.spacing(2) }}>
+                {contentText}
+              </DialogContentText>
+            )}
+            {content}
+          </DialogContent>
 
-      {actions && (
-        <DialogActions
-          sx={{
-            px: 3,
-            py: 2,
-            ...actionsProps.sx,
-          }}
-          {...actionsProps}
-        >
-          {actions}
-        </DialogActions>
+          {actions && (
+            <DialogActions
+              sx={{
+                px: theme.spacing(3),
+                py: theme.spacing(2),
+                ...actionsProps.sx,
+              }}
+              {...actionsProps}
+            >
+              {actions}
+            </DialogActions>
+          )}
+        </>
       )}
     </MuiDialog>
   );
@@ -155,6 +167,8 @@ Dialog.propTypes = {
   actionsProps: PropTypes.object,
   /** The system prop that allows defining system overrides as well as additional CSS styles */
   sx: PropTypes.object,
+  /** The children of the dialog */
+  children: PropTypes.node,
 };
 
 export default Dialog;

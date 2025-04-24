@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
+import SearchIcon from '@mui/icons-material/Search';
 import {
-  Box,
-  TextField,
   Autocomplete,
   Chip,
   CircularProgress,
   Typography,
   useTheme,
   Paper,
+  alpha,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect, useRef } from 'react';
+
+import TextField from './TextField';
 
 /**
  * SearchableDropdown component that provides a dropdown menu with search functionality.
@@ -102,13 +103,18 @@ const SearchableDropdown = ({
   );
 
   // Custom rendering of the option
-  const defaultRenderOption = (props, option) => (
-    <li {...props}>
-      <Typography variant="body2" noWrap>
-        {getOptionLabel(option)}
-      </Typography>
-    </li>
-  );
+  const defaultRenderOption = (props, option, state) => {
+    const { key, ...otherProps } = props;
+    // Generate a unique key if none is provided
+    const uniqueKey = key || `option-${option.id || JSON.stringify(option)}`;
+    return (
+      <li key={uniqueKey} {...otherProps}>
+        <Typography variant="body2" noWrap>
+          {getOptionLabel(option)}
+        </Typography>
+      </li>
+    );
+  };
 
   // Custom rendering of the tags in multiple mode
   const defaultRenderTags = (tagValue, getTagProps) =>
@@ -118,10 +124,10 @@ const SearchableDropdown = ({
         size="small"
         {...getTagProps({ index })}
         sx={{
-          backgroundColor: theme.palette.primary.light,
+          backgroundColor: alpha(theme.palette.primary.main, 0.2),
           color: theme.palette.primary.contrastText,
           '& .MuiChip-deleteIcon': {
-            color: theme.palette.primary.contrastText,
+            color: alpha(theme.palette.primary.contrastText, 0.7),
             '&:hover': {
               color: theme.palette.primary.contrastText,
             },
@@ -158,24 +164,31 @@ const SearchableDropdown = ({
       clearOnEscape={clearOnEscape}
       disableClearable={disableClearable}
       groupBy={groupBy}
-      isOptionEqualToValue={(option, val) => option.id === val?.id}
+      isOptionEqualToValue={
+        props.isOptionEqualToValue ||
+        ((option, val) => {
+          if (!val) return false;
+          if (!option) return false;
+          return option.id === val.id;
+        })
+      }
       PaperComponent={props => (
         <Paper
           elevation={4}
           {...props}
           sx={{
-            borderRadius: 1,
-            mt: 0.5,
+            borderRadius: theme.shape.borderRadius,
+            marginTop: theme.spacing(0.5),
             '& .MuiAutocomplete-listbox': {
-              padding: '4px 0',
+              padding: theme.spacing(0.5, 0),
               '& .MuiAutocomplete-option': {
-                padding: '8px 16px',
+                padding: theme.spacing(1, 2),
                 minHeight: 48,
                 '&[aria-selected="true"]': {
-                  backgroundColor: theme.palette.primary.lighter,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
                 },
                 '&.Mui-focused': {
-                  backgroundColor: theme.palette.primary.lighter,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
                 },
               },
             },
@@ -183,17 +196,6 @@ const SearchableDropdown = ({
         />
       )}
       sx={{
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': {
-            borderColor: error ? theme.palette.error.main : theme.palette.divider,
-          },
-          '&:hover fieldset': {
-            borderColor: error ? theme.palette.error.main : theme.palette.primary.main,
-          },
-          '&.Mui-focused fieldset': {
-            borderColor: error ? theme.palette.error.main : theme.palette.primary.main,
-          },
-        },
         ...sx,
       }}
       {...props}

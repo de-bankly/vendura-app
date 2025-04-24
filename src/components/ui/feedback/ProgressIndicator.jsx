@@ -1,6 +1,6 @@
-import React from 'react';
-import { CircularProgress, LinearProgress, Box, Typography } from '@mui/material';
+import { CircularProgress, LinearProgress, Box, Typography, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * ProgressIndicator component for showing loading or progress states.
@@ -18,6 +18,8 @@ const ProgressIndicator = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   // Define size values for circular progress
   const sizeValues = {
     small: 24,
@@ -48,7 +50,7 @@ const ProgressIndicator = ({
         variant={variant}
         value={value}
         color={color}
-        sx={{ width: '100%', borderRadius: 1 }}
+        sx={{ width: '100%', borderRadius: theme.shape.borderRadius }}
         {...props}
       />
     );

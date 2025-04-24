@@ -1,57 +1,93 @@
-# Sicherheitsrichtlinien für Vendura
+# 🔒 Sicherheitsrichtlinien für Vendura App
 
-## Übersicht
+## 📋 Übersicht
 
-Die Sicherheit unserer Anwendung und der Daten unserer Nutzer hat für uns höchste Priorität. Dieses Dokument beschreibt unsere Sicherheitsrichtlinien und wie Sicherheitslücken gemeldet werden können.
+Die Sicherheit unserer Anwendung und der Schutz der Nutzerdaten haben für uns höchste Priorität. Dieses Dokument beschreibt unsere Sicherheitsrichtlinien, implementierte Schutzmaßnahmen und den Prozess zur Meldung von Sicherheitslücken.
 
-## Unterstützte Versionen
+## ✅ Unterstützte Versionen
 
-Da sich Vendura noch in der frühen Entwicklungsphase befindet, werden derzeit nur die neuesten Entwicklungsversionen mit Sicherheitsupdates versorgt.
+| Version | Unterstützt        |
+| ------- | ------------------ |
+| main    | :white_check_mark: |
+| dev     | :x:                |
 
-| Version | Unterstützt          |
-| ------- | -------------------- |
-| main    | :x:                  |
-| dev     | :white_check_mark:   |
+## 🛡️ Implementierte Sicherheitsmaßnahmen
 
-## Meldung von Sicherheitslücken
+Vendura implementiert zahlreiche Sicherheitsmaßnahmen, um die Anwendung und Nutzerdaten zu schützen:
+
+### Frontend-Sicherheit
+
+- **Content Security Policy (CSP)**: Verhindert XSS-Angriffe durch Einschränkung der erlaubten Quellen für Skripte, Styles und andere Ressourcen
+- **HTTPS-Erzwingung**: Alle Verbindungen werden über HTTPS verschlüsselt
+- **JWT-Authentifizierung**: Sichere, token-basierte Authentifizierung mit kurzer Gültigkeitsdauer
+- **Automatisches Token-Refresh**: Sichere Erneuerung von Authentifizierungstoken
+- **Zugriffskontrolle**: Rollenbasierte Zugriffskontrolle für alle geschützten Routen und Funktionen
+- **Input-Validierung**: Client-seitige Validierung aller Eingaben vor der Übermittlung
+- **Sanitization**: Bereinigung von HTML-Inhalten zur Vermeidung von XSS-Angriffen
+
+### API-Sicherheit
+
+- **Rate Limiting**: Begrenzung der API-Anfragen pro Zeiteinheit
+- **CSRF-Schutz**: Maßnahmen gegen Cross-Site Request Forgery
+- **Sichere Header**: Verwendung sicherheitsrelevanter HTTP-Header (X-Content-Type-Options, X-Frame-Options, etc.)
+
+### Datensicherheit
+
+- **Minimale Datenspeicherung**: Speicherung nur der notwendigsten Daten im Frontend
+- **Sichere Speicherung**: Verwendung sicherer Methoden zur lokalen Datenspeicherung
+- **Automatische Abmeldung**: Timeout für inaktive Sitzungen
+
+## 🔍 Sicherheitsaudits
+
+Die Vendura App durchläuft regelmäßige Sicherheitsaudits:
+
+- Regelmäßige automatisierte Sicherheitsscans mit OWASP-Tools
+- Manuelle Code-Reviews mit Fokus auf Sicherheitsaspekte
+- Dependency-Scanning zur Erkennung von Schwachstellen in Abhängigkeiten
+- Jährliche umfassende Sicherheitsaudits durch externe Experten
+
+## 📢 Meldung von Sicherheitslücken
 
 Wir nehmen alle Sicherheitsbedenken ernst. Wenn Sie eine Sicherheitslücke in Vendura entdecken, bitten wir Sie, diese verantwortungsvoll zu melden:
 
 1. **Vertrauliche Meldung**: Bitte senden Sie Ihre Entdeckung nicht über öffentliche Issue-Tracker oder Foren.
-2. **Kontaktaufnahme**: Senden Sie eine E-Mail an [security@de-bankly.example.com](mailto:security@de-bankly.example.com) mit einer detaillierten Beschreibung der Sicherheitslücke.
+2. **Kontaktaufnahme**: Senden Sie eine E-Mail an [security@de-bankly.example.com](mailto:security@de-bankly.example.com) mit dem Betreff "Vendura Sicherheitslücke".
 3. **Informationen**: Beschreiben Sie die Sicherheitslücke so detailliert wie möglich, einschließlich:
-   - Schritte zur Reproduktion
-   - Potenzielle Auswirkungen
+   - Schritte zur Reproduktion des Problems
+   - Betroffene Komponenten oder Funktionen
+   - Potenzielle Auswirkungen und Schweregrad
    - Vorschläge zur Behebung (falls vorhanden)
+   - Ihre Kontaktdaten für Rückfragen (optional)
 
-## Prozess nach der Meldung
+## ⏱️ Prozess nach der Meldung
 
-Nach Erhalt einer Sicherheitsmeldung werden wir:
+Nach Erhalt einer Sicherheitsmeldung befolgen wir diesen Prozess:
 
-1. Die Meldung bestätigen und mit der Untersuchung beginnen
-2. Mit Ihnen kommunizieren, um weitere Details zu erhalten, falls erforderlich
-3. Die Sicherheitslücke verifizieren und beheben
-4. Einen Zeitplan für die Veröffentlichung des Fixes festlegen
-5. Ihnen für Ihre Unterstützung danken und Sie in unserer Hall of Fame erwähnen (mit Ihrer Zustimmung)
+1. **Bestätigung**: Wir bestätigen den Erhalt Ihrer Meldung innerhalb von 24 Stunden.
+2. **Untersuchung**: Unser Sicherheitsteam untersucht die gemeldete Sicherheitslücke.
+3. **Klassifizierung**: Wir bewerten den Schweregrad und die Auswirkungen der Sicherheitslücke.
+4. **Behebung**: Wir entwickeln und testen einen Fix für die Sicherheitslücke.
+5. **Kommunikation**: Wir informieren Sie über den Fortschritt und die geplante Veröffentlichung des Fixes.
+6. **Veröffentlichung**: Wir stellen den Fix bereit und dokumentieren die Sicherheitslücke in unserem Security Advisory.
+7. **Anerkennung**: Mit Ihrer Zustimmung nehmen wir Sie in unsere Liste der Sicherheitsmitwirkenden auf.
 
-## Sicherheitsmaßnahmen
+## ⏳ Zeitplan für die Veröffentlichung
 
-Vendura implementiert verschiedene Sicherheitsmaßnahmen, darunter:
+Unser Ziel ist es, Sicherheitslücken zeitnah zu beheben:
 
-- Regelmäßige Sicherheitsaudits des Codes
-- Verwendung moderner Sicherheitspraktiken in der Webentwicklung
-- Regelmäßige Updates aller Abhängigkeiten
-- Implementierung von Content Security Policies
-- Sichere Authentifizierungsmechanismen
+- **Kritische Sicherheitslücken**: Fix innerhalb von 48 Stunden
+- **Hohe Sicherheitslücken**: Fix innerhalb von 7 Tagen
+- **Mittlere Sicherheitslücken**: Fix innerhalb von 30 Tagen
+- **Niedrige Sicherheitslücken**: Fix innerhalb von 90 Tagen
 
-## Verantwortungsvolle Offenlegung
+## 🤝 Verantwortungsvolle Offenlegung
 
-Wir bitten um eine verantwortungsvolle Offenlegung von Sicherheitslücken und gewähren in der Regel eine Frist von 90 Tagen, bevor Details zu Sicherheitslücken öffentlich gemacht werden.
+Wir bitten um eine verantwortungsvolle Offenlegung von Sicherheitslücken und gewähren eine Frist von 90 Tagen, bevor Details zu Sicherheitslücken öffentlich gemacht werden, sofern nicht anders vereinbart.
 
-## Danksagungen
+## 👏 Danksagungen
 
-Wir möchten allen Sicherheitsforschern danken, die zur Verbesserung der Sicherheit von Vendura beitragen.
+Wir möchten allen Sicherheitsforschern danken, die zur Verbesserung der Sicherheit von Vendura beitragen. Mit Ihrer Erlaubnis werden Sie in unserer öffentlichen Liste der Sicherheitsmitwirkenden erwähnt.
 
 ---
 
-© 2024 de-bankly. Alle Rechte vorbehalten. 
+© 2024 de-bankly. Alle Rechte vorbehalten.

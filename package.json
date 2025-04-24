@@ -1,7 +1,7 @@
 {
   "name": "vendura-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,7 +27,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "print": "node src/utils/printer.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -40,10 +41,13 @@
     "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.5",
     "@mui/x-date-pickers": "^7.28.3",
+    "@qrcode/react": "^1.0.0-beta.2",
     "axios": "^1.8.4",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.3.1",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.4.10",
+    "node-thermal-printer": "^4.4.5",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0"
@@ -54,6 +58,8 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.21.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.19",

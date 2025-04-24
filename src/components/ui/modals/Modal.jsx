@@ -1,7 +1,9 @@
-import React from 'react';
-import { Modal as MuiModal, Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { Modal as MuiModal, Box, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
+
+import { IconButton } from '../buttons';
 
 /**
  * Enhanced Modal component that extends MUI Modal with consistent styling
@@ -14,89 +16,86 @@ const Modal = ({
   maxWidth = 'sm',
   fullWidth = true,
   showCloseButton = true,
-  closeButtonPosition = { top: 8, right: 8 },
+  closeButtonPosition = { top: theme => theme.spacing(1), right: theme => theme.spacing(1) },
   disableBackdropClick = false,
   disableEscapeKeyDown = false,
   sx = {},
   ...props
 }) => {
-  // Handle backdrop click
-  const handleBackdropClick = event => {
-    // Check if the click was on the backdrop
-    if (event.target === event.currentTarget) {
-      if (!disableBackdropClick && onClose) {
-        onClose(event, 'backdropClick');
-      }
+  const theme = useTheme();
+
+  // Handle onClose and check reason
+  const handleClose = (event, reason) => {
+    if (reason === 'backdropClick' && disableBackdropClick) {
+      return; // Do nothing if backdrop click is disabled
+    }
+    if (onClose) {
+      onClose(event, reason);
     }
   };
 
-  // Define max width values
-  const maxWidthValues = {
-    xs: '444px',
-    sm: '600px',
-    md: '900px',
-    lg: '1200px',
-    xl: '1536px',
-  };
-
-  // Determine the actual max width value
+  // Define max width values using theme breakpoints
+  const maxWidthValues = theme.breakpoints.values;
   const modalMaxWidth = maxWidthValues[maxWidth] || maxWidth;
+
+  // Resolve position props if they are functions
+  const resolvedCloseButtonPosition = {
+    top:
+      typeof closeButtonPosition.top === 'function'
+        ? closeButtonPosition.top(theme)
+        : closeButtonPosition.top,
+    right:
+      typeof closeButtonPosition.right === 'function'
+        ? closeButtonPosition.right(theme)
+        : closeButtonPosition.right,
+  };
 
   return (
     <MuiModal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       disableEscapeKeyDown={disableEscapeKeyDown}
       aria-labelledby="modal-title"
       aria-describedby="modal-description"
       {...props}
     >
       <Box
-        onClick={handleBackdropClick}
         sx={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          bgcolor: 'background.paper',
+          boxShadow: theme.shadows[24],
+          borderRadius: theme.shape.borderRadius * 2,
+          p: theme.spacing(3),
+          maxWidth: modalMaxWidth,
+          width: fullWidth ? `calc(100% - ${theme.spacing(4)})` : 'auto',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          outline: 'none',
+          ...sx,
         }}
       >
-        <Box
-          sx={{
-            position: 'relative',
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            borderRadius: 2,
-            p: 3,
-            maxWidth: modalMaxWidth,
-            width: fullWidth ? '100%' : 'auto',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            ...sx,
-          }}
-        >
-          {showCloseButton && (
-            <IconButton
-              aria-label="close"
-              onClick={onClose}
-              sx={{
-                position: 'absolute',
-                ...closeButtonPosition,
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'text.primary',
-                },
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          )}
-          {children}
-        </Box>
+        {showCloseButton && (
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              top: resolvedCloseButtonPosition.top,
+              right: resolvedCloseButtonPosition.right,
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'text.primary',
+              },
+            }}
+            size="small"
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
+        {children}
       </Box>
     </MuiModal>
   );

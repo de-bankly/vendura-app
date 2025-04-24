@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import { Info as InfoIcon, Store as StoreIcon, Link as LinkIcon } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -10,8 +9,10 @@ import {
   Stack,
   Typography,
   useTheme,
+  Tooltip,
 } from '@mui/material';
-import { Info as InfoIcon, Store as StoreIcon } from '@mui/icons-material';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 /**
  * InventoryProductCard displays product information in a card format
@@ -19,19 +20,25 @@ import { Info as InfoIcon, Store as StoreIcon } from '@mui/icons-material';
 const InventoryProductCard = ({ product }) => {
   const theme = useTheme();
 
+  // Get the most accurate stock count, prioritizing currentStock (from API) if available
+  const availableStock =
+    product.currentStock !== undefined && product.currentStock !== null
+      ? product.currentStock
+      : product.stockQuantity;
+
   // Determine stock status
   const getStockStatus = () => {
-    if (!product.stockQuantity && product.stockQuantity !== 0) {
+    if (availableStock === undefined || availableStock === null) {
       return { color: 'default', label: 'Unbekannt' };
     }
 
-    if (product.stockQuantity === 0) {
+    if (availableStock === 0) {
       return { color: 'error', label: 'Nicht vorrätig' };
     }
 
     const lowThreshold = product.lowStockThreshold || 5;
 
-    if (product.stockQuantity <= lowThreshold) {
+    if (availableStock <= lowThreshold) {
       return { color: 'warning', label: 'Fast leer' };
     }
 
@@ -47,6 +54,9 @@ const InventoryProductCard = ({ product }) => {
       currency: 'EUR',
     }).format(price);
   };
+
+  // Check if the product has connected products
+  const hasConnectedProducts = product.connectedProducts && product.connectedProducts.length > 0;
 
   return (
     <Card
@@ -149,12 +159,51 @@ const InventoryProductCard = ({ product }) => {
                 sx={{ fontWeight: 500 }}
               />
             </Box>
-            {(product.stockQuantity || product.stockQuantity === 0) && (
+            {availableStock !== undefined && availableStock !== null && (
               <Typography variant="body2" color="text.secondary">
-                {product.stockQuantity} Stk.
+                {availableStock} Stk.
               </Typography>
             )}
           </Stack>
+
+          {/* Connected Products */}
+          {hasConnectedProducts && (
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
+              <LinkIcon fontSize="small" color="primary" />
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="subtitle2">Verbundene Produkte:</Typography>
+                    <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
+                      {product.connectedProducts.map(connectedProduct => (
+                        <li key={connectedProduct.id}>
+                          <Typography variant="body2">
+                            {connectedProduct.name} ({formatPrice(connectedProduct.price)})
+                          </Typography>
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                }
+                arrow
+              >
+                <Chip
+                  label={`Bundle (${product.connectedProducts.length})`}
+                  color="primary"
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 500, cursor: 'help' }}
+                />
+              </Tooltip>
+              {!product.standalone && (
+                <Tooltip title="Nicht einzeln verkäuflich">
+                  <Typography variant="caption" color="text.secondary">
+                    Nur als Bundle
+                  </Typography>
+                </Tooltip>
+              )}
+            </Stack>
+          )}
 
           {/* SKU if available */}
           {product.sku && (
@@ -186,6 +235,14 @@ InventoryProductCard.propTypes = {
       id: PropTypes.string,
       name: PropTypes.string,
     }),
+    standalone: PropTypes.bool,
+    connectedProducts: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        price: PropTypes.number.isRequired,
+      })
+    ),
   }).isRequired,
 };
 

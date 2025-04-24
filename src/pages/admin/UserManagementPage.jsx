@@ -1,39 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import { Add as AddIcon, Edit as EditIcon, Person as PersonIcon } from '@mui/icons-material';
 import {
   Container,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
+  Box,
+  Tooltip,
   Dialog,
   DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Chip,
-  Box,
-  Pagination,
-  Alert,
-  IconButton,
-  Tooltip,
-  CircularProgress,
+  Alert as MuiAlert,
+  Paper,
+  Grid,
+  useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Person as PersonIcon } from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+
+import UserForm from '../../components/admin/UserForm';
+import { Button, IconButton } from '../../components/ui/buttons';
+import { Chip, Table } from '../../components/ui/feedback';
 import { UserService, RoleService } from '../../services';
-import { Select } from '../../components/ui/inputs';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 /**
  * User management page for administrators
  */
 const UserManagementPage = () => {
+  const theme = useTheme();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,6 +47,7 @@ const UserManagementPage = () => {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [originalRoles, setOriginalRoles] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -52,21 +57,101 @@ const UserManagementPage = () => {
     email: '',
     password: '',
     active: true,
+    locked: false,
     roles: [],
   });
 
-  // Load users and roles
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles();
-  }, [page]);
+  // Define columns for the local Table component
+  const columns = [
+    { field: 'username', headerName: 'Username', sortable: true },
+    {
+      field: 'name',
+      headerName: 'Name',
+      sortable: true,
+      renderCell: row => `${row.firstName || ''} ${row.lastName || ''}`,
+    },
+    { field: 'email', headerName: 'Email', sortable: true },
+    {
+      field: 'roles',
+      headerName: 'Roles',
+      sortable: false,
+      renderCell: row => (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {row.roles?.map((role, index) => {
+            if (typeof role === 'string') {
+              const roleObj = roles.find(r => r.id === role);
+              const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
+              return (
+                <Chip
+                  key={role || index}
+                  label={roleName}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                />
+              );
+            }
+          })}
+          {(!row.roles || row.roles.length === 0) && (
+            <Typography variant="caption" color="text.secondary">
+              -
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'active',
+      headerName: 'Status',
+      sortable: true,
+      renderCell: row => (
+        <Chip
+          label={row.active !== false ? 'Active' : 'Inactive'}
+          color={row.active !== false ? 'success' : 'error'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'locked',
+      headerName: 'Lock Status',
+      sortable: true,
+      renderCell: row => (
+        <Chip
+          label={row.locked ? 'Locked' : 'Unlocked'}
+          color={row.locked ? 'error' : 'success'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      renderCell: row => (
+        <Tooltip title="Edit User">
+          {/* Ensure local IconButton is used */}
+          <IconButton
+            size="small"
+            onClick={e => {
+              e.stopPropagation();
+              handleOpenEditDialog(row);
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
 
-  // Fetch users with pagination
-  const fetchUsers = async () => {
+  // Fetch users (needs to be wrapped in useCallback)
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
+      // Pass current page state to service
       const response = await UserService.getAllUsers(page, 10);
       setUsers(response.content || []);
       setTotalPages(response.totalPages || 0);
@@ -75,27 +160,34 @@ const UserManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   // Fetch available roles
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const response = await RoleService.getAllRoles(0, 100);
       setRoles(response.content || []);
     } catch (err) {
       console.error('Failed to load roles:', err);
     }
-  };
+  }, []);
+
+  // Load users and roles on mount and page change
+  useEffect(() => {
+    fetchUsers();
+    fetchRoles();
+  }, [fetchUsers, fetchRoles]);
 
   // Handle page change
-  const handlePageChange = (event, value) => {
+  const handlePageChange = useCallback((event, value) => {
     setPage(value - 1);
-  };
+  }, []);
 
   // Open dialog for new user
-  const handleOpenAddDialog = () => {
+  const handleOpenAddDialog = useCallback(() => {
     setEditMode(false);
     setCurrentUser(null);
+    setOriginalRoles([]);
     setFormData({
       username: '',
       firstName: '',
@@ -103,15 +195,18 @@ const UserManagementPage = () => {
       email: '',
       password: '',
       active: true,
+      locked: false,
       roles: [],
     });
     setOpen(true);
-  };
+  }, []);
 
   // Open dialog for editing user
-  const handleOpenEditDialog = user => {
+  const handleOpenEditDialog = useCallback(user => {
     setEditMode(true);
     setCurrentUser(user);
+    const userRoles = user.roles?.map(role => role.id) || [];
+    setOriginalRoles(userRoles);
     setFormData({
       username: user.username || '',
       firstName: user.firstName || '',
@@ -119,269 +214,210 @@ const UserManagementPage = () => {
       email: user.email || '',
       password: '', // Don't pre-fill password
       active: user.active !== false,
-      roles: user.roles?.map(role => role.id) || [],
+      locked: user.locked === true,
+      roles: userRoles,
     });
     setOpen(true);
-  };
+  }, []);
 
   // Close dialog
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setOpen(false);
-  };
+  }, []);
 
-  // Handle form input changes
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  // Handle role selection
-  const handleRoleChange = e => {
-    setFormData({
-      ...formData,
-      roles: e.target.value,
-    });
-  };
+  // Handle form data changes
+  const handleFormChange = useCallback(newFormData => {
+    setFormData(newFormData);
+  }, []);
 
   // Submit form
-  const handleSubmit = async () => {
-    // Basic validation
-    if (!formData.username || (formData.password === '' && !editMode)) {
-      setError('Username and password are required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      // Format data for API
-      const userData = {
-        ...formData,
-        roles: formData.roles.map(roleId => {
-          const role = roles.find(r => r.id === roleId);
-          return { id: roleId, name: role?.name };
-        }),
-      };
-
-      if (editMode && currentUser) {
-        // Remove password if empty (not changing password)
-        if (!userData.password) {
-          delete userData.password;
-        }
-        await UserService.updateUser(currentUser.id, userData);
-      } else {
-        await UserService.createUser(userData);
+  const handleSubmit = useCallback(
+    async e => {
+      if (e) {
+        e.preventDefault();
       }
 
-      // Refresh users list
-      fetchUsers();
-      handleClose();
-    } catch (err) {
-      setError('Error saving user: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Basic validation
+      if (!formData.username || (formData.password === '' && !editMode)) {
+        setError('Username and password are required');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      try {
+        // Format data for API
+        const userData = {
+          ...formData,
+        };
+
+        if (editMode && currentUser) {
+          // Remove password if empty (not changing password)
+          if (!userData.password) {
+            delete userData.password;
+          }
+
+          // Only include roles if they've been modified from the original
+          // This prevents accidentally removing all roles
+          const rolesChanged =
+            JSON.stringify(formData.roles.sort()) !== JSON.stringify(originalRoles.sort());
+          if (rolesChanged) {
+            userData.roles = formData.roles;
+          } else {
+            delete userData.roles;
+          }
+
+          await UserService.updateUser(currentUser.id, userData);
+        } else {
+          // For new users, always include roles even if empty
+          userData.roles = formData.roles;
+          await UserService.createUser(userData);
+        }
+
+        // Refresh users list
+        fetchUsers();
+        handleClose();
+      } catch (err) {
+        setError('Error saving user: ' + (err.response?.data?.message || err.message));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, editMode, currentUser, originalRoles, fetchUsers, handleClose]
+  );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          User Management
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Add User
-        </Button>
-      </Box>
+    <Box sx={{ py: 3 }}>
+      {/* Header Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Container maxWidth="xl">
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Box display="flex" alignItems="center">
+              <PersonIcon
+                sx={{
+                  fontSize: 40,
+                  color: theme.palette.primary.main,
+                  mr: 2,
+                }}
+              />
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  fontWeight: 700,
+                  color: theme.palette.text.primary,
+                }}
+              >
+                User Management
+              </Typography>
+            </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Username</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Roles</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && !users.length ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <CircularProgress size={40} sx={{ my: 3 }} />
-                  </TableCell>
-                </TableRow>
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No users found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map(user => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>
-                      {user.firstName} {user.lastName}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      {user.roles?.map(role => (
-                        <Chip
-                          key={role.id}
-                          label={role.name}
-                          size="small"
-                          sx={{ mr: 0.5, mb: 0.5 }}
-                        />
-                      ))}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.active !== false ? 'Active' : 'Inactive'}
-                        color={user.active !== false ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Edit User">
-                        <IconButton size="small" onClick={() => handleOpenEditDialog(user)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={page + 1}
-              onChange={handlePageChange}
+            <Button
+              variant="contained"
               color="primary"
-            />
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddDialog}
+              aria-label="Add new user"
+            >
+              Add User
+            </Button>
           </Box>
-        )}
-      </Paper>
+        </Container>
+      </motion.div>
 
-      {/* Add/Edit User Dialog */}
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMode ? 'Edit User' : 'Add New User'}</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+      <Container maxWidth="xl">
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <MuiAlert severity="error" sx={{ mb: 3 }}>
               {error}
-            </Alert>
-          )}
+            </MuiAlert>
+          </motion.div>
+        )}
 
-          <TextField
-            autoFocus
-            margin="dense"
-            name="username"
-            label="Username"
-            type="text"
-            fullWidth
-            value={formData.username}
-            onChange={handleInputChange}
-            disabled={editMode} // Don't allow changing username in edit mode
-            sx={{ mb: 2 }}
-          />
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          {/* Users Table Section */}
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                minHeight: '60vh',
+                borderRadius: 2,
+                bgcolor: theme.palette.background.paper,
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                }}
+              >
+                User Overview
+              </Typography>
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              margin="dense"
-              name="firstName"
-              label="First Name"
-              type="text"
-              fullWidth
-              value={formData.firstName}
-              onChange={handleInputChange}
-            />
+              <Table
+                columns={columns}
+                data={users || []}
+                loading={loading}
+                page={page + 1}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                elevation={0}
+                sx={{
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: theme.palette.background.default,
+                    borderRadius: '4px',
+                  },
+                }}
+                emptyStateMessage="No users found. Create a new one to get started."
+              />
+            </Paper>
+          </motion.div>
+        </motion.div>
+      </Container>
 
-            <TextField
-              margin="dense"
-              name="lastName"
-              label="Last Name"
-              type="text"
-              fullWidth
-              value={formData.lastName}
-              onChange={handleInputChange}
-            />
+      {/* User Form Dialog */}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        maxWidth="md"
+        aria-labelledby="user-dialog-title"
+      >
+        <DialogTitle id="user-dialog-title">
+          <Box display="flex" alignItems="center">
+            <PersonIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Typography variant="h6" component="span">
+              {editMode ? 'Edit User' : 'Add New User'}
+            </Typography>
           </Box>
-
-          <TextField
-            margin="dense"
-            name="email"
-            label="Email"
-            type="email"
-            fullWidth
-            value={formData.email}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
+        </DialogTitle>
+        <Box p={3}>
+          <UserForm
+            formData={formData}
+            onChange={handleFormChange}
+            onSubmit={handleSubmit}
+            roles={roles}
+            editMode={editMode}
+            error={error}
+            loading={loading}
+            onCancel={handleClose}
           />
-
-          <TextField
-            margin="dense"
-            name="password"
-            label={editMode ? 'Password (leave empty to keep unchanged)' : 'Password'}
-            type="password"
-            fullWidth
-            value={formData.password}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Select
-              label="Roles"
-              multiple
-              value={formData.roles}
-              onChange={handleRoleChange}
-              options={roles.map(role => ({
-                value: role.id,
-                label: role.name,
-              }))}
-              renderTags={selected => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map(value => {
-                    const role = roles.find(r => r.id === value);
-                    return <Chip key={value} label={role?.name || value} size="small" />;
-                  })}
-                </Box>
-              )}
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Save'}
-          </Button>
-        </DialogActions>
+        </Box>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

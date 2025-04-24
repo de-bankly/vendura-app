@@ -1,3 +1,5 @@
+import { getUserFriendlyErrorMessage } from '../utils/errorUtils';
+
 import apiClient from './ApiConfig';
 
 /**
@@ -13,8 +15,8 @@ class UserService {
       const response = await apiClient.get('/v1/user/me');
       return response.data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      throw error;
+      console.error('Error fetching user profile:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch user profile'));
     }
   }
 
@@ -27,15 +29,12 @@ class UserService {
   async getAllUsers(page = 0, size = 10) {
     try {
       const response = await apiClient.get('/v1/user', {
-        params: {
-          page,
-          size,
-        },
+        params: { page, size },
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
+      console.error('Error fetching users:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch users'));
     }
   }
 
@@ -49,8 +48,8 @@ class UserService {
       const response = await apiClient.get(`/v1/user/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching user ${id}:`, error);
-      throw error;
+      console.error(`Error fetching user ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to fetch user details'));
     }
   }
 
@@ -61,11 +60,25 @@ class UserService {
    */
   async createUser(userData) {
     try {
-      const response = await apiClient.post('/v1/user', userData);
+      // Create a clean data object with only the fields the API expects
+      const cleanedData = {
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        active: userData.active,
+        locked: userData.locked,
+        roles: Array.isArray(userData.roles)
+          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
+          : [],
+      };
+
+      const response = await apiClient.post('/v1/user', cleanedData);
       return response.data;
     } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
+      console.error('Error creating user:', error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to create user'));
     }
   }
 
@@ -77,11 +90,34 @@ class UserService {
    */
   async updateUser(id, userData) {
     try {
-      const response = await apiClient.put(`/v1/user/${id}`, userData);
+      // Create a clean data object with only the fields the API expects
+      const cleanedData = {
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        active: userData.active,
+        locked: userData.locked,
+      };
+
+      // Only include roles if they're explicitly provided
+      // This prevents the API from removing roles when they're not specified
+      if (userData.roles !== undefined) {
+        cleanedData.roles = Array.isArray(userData.roles)
+          ? userData.roles.filter(role => role !== undefined).map(role => String(role))
+          : [];
+      }
+
+      // Only include password if it's provided
+      if (userData.password) {
+        cleanedData.password = userData.password;
+      }
+
+      const response = await apiClient.put(`/v1/user/${id}`, cleanedData);
       return response.data;
     } catch (error) {
-      console.error(`Error updating user ${id}:`, error);
-      throw error;
+      console.error(`Error updating user ${id}:`, error.response || error.message);
+      throw new Error(getUserFriendlyErrorMessage(error, 'Failed to update user'));
     }
   }
 }

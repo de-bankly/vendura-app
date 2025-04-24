@@ -1,7 +1,8 @@
-import { Component } from 'react';
-import { Box, Typography, Container, Button, Paper } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Typography, Container, Button, Paper } from '@mui/material';
+import { Component } from 'react';
 import { useNavigate, useRouteError } from 'react-router-dom';
+
 import {
   logError,
   formatErrorForDisplay,
@@ -107,7 +108,7 @@ export const RouterErrorBoundary = () => {
   // Log the routing error
   logError(error, {}, 'RouterErrorBoundary');
 
-  return <ErrorUI error={error} showDetails={process.env.NODE_ENV !== 'production'} />;
+  return <ErrorUI error={error} showDetails={import.meta.env.DEV} />;
 };
 
 /**
@@ -130,7 +131,7 @@ class ErrorBoundary extends Component {
 
   resetErrorBoundary = () => {
     this.setState({ hasError: false, error: null });
-    if (this.props.onReset) {
+    if (import.meta.env.DEV && this.props.onReset) {
       this.props.onReset();
     }
   };
@@ -148,7 +149,7 @@ class ErrorBoundary extends Component {
         <ErrorUI
           error={error}
           resetErrorBoundary={this.resetErrorBoundary}
-          showDetails={process.env.NODE_ENV !== 'production'}
+          showDetails={import.meta.env.DEV}
         />
       );
     }

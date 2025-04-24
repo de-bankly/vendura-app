@@ -1,96 +1,124 @@
-import React from 'react';
-import { IconButton as MuiIconButton, CircularProgress, useTheme } from '@mui/material';
+import { IconButton as MuiIconButton, CircularProgress, styled, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
+import React from 'react';
 
-/**
- * Icon button component for icon-only actions.
- * Extends MUI IconButton with additional functionality like loading state.
- * Designed for a modern, minimalistic look suitable for a POS and inventory system.
- */
-const IconButton = ({
-  children,
-  color = 'default',
-  size = 'medium',
-  disabled = false,
-  loading = false,
-  onClick,
-  edge = false,
-  variant = 'standard',
-  sx = {},
-  ...props
-}) => {
-  const theme = useTheme();
+// Styled component definition
+const StyledIconButton = styled(MuiIconButton, {
+  shouldForwardProp: prop => prop !== 'loading' && prop !== 'variant',
+})(({ theme, size, variant, color, loading }) => {
+  // Base styles
+  const baseStyles = {
+    borderRadius: theme.shape.borderRadius,
+    transition: 'all 0.2s ease-in-out',
+  };
 
   // Size-specific styles
   const sizeMap = {
     small: {
-      padding: variant === 'contained' || variant === 'outlined' ? 6 : 4,
+      padding:
+        variant === 'contained' || variant === 'outlined'
+          ? theme.spacing(0.75)
+          : theme.spacing(0.5),
       fontSize: '1.25rem',
     },
     medium: {
-      padding: variant === 'contained' || variant === 'outlined' ? 8 : 6,
+      padding:
+        variant === 'contained' || variant === 'outlined' ? theme.spacing(1) : theme.spacing(0.75),
       fontSize: '1.5rem',
     },
     large: {
-      padding: variant === 'contained' || variant === 'outlined' ? 12 : 8,
+      padding:
+        variant === 'contained' || variant === 'outlined' ? theme.spacing(1.5) : theme.spacing(1),
       fontSize: '1.75rem',
     },
   };
 
   // Variant-specific styles
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'contained':
-        return {
-          backgroundColor: theme.palette[color]?.main || 'inherit',
-          color: theme.palette[color]?.contrastText || 'inherit',
-          '&:hover': {
-            backgroundColor: theme.palette[color]?.dark || 'inherit',
-            transform: 'translateY(-2px)',
-          },
-          boxShadow: theme.shadows[2],
-        };
-      case 'outlined':
-        return {
-          border: `1.5px solid ${theme.palette[color]?.main || theme.palette.divider}`,
-          '&:hover': {
-            backgroundColor: `${theme.palette[color]?.main}10`,
-            transform: 'translateY(-2px)',
-          },
-        };
-      default:
-        return {};
-    }
-  };
+  let variantStyles = {};
+  const paletteColor = theme.palette[color];
 
-  return (
-    <MuiIconButton
-      color={variant === 'standard' ? color : 'inherit'}
-      size={size}
-      disabled={disabled || loading}
-      onClick={onClick}
-      edge={edge}
-      sx={{
-        borderRadius: '8px',
-        transition: 'all 0.2s ease-in-out',
-        ...sizeMap[size],
-        ...getVariantStyles(),
-        ...sx,
-      }}
-      {...props}
-    >
-      {loading ? (
-        <CircularProgress
-          size={size === 'small' ? 16 : size === 'large' ? 28 : 22}
-          color="inherit"
-          thickness={4}
-        />
-      ) : (
-        children
-      )}
-    </MuiIconButton>
-  );
-};
+  switch (variant) {
+    case 'contained':
+      variantStyles = {
+        backgroundColor: paletteColor?.main || 'inherit',
+        color: paletteColor?.contrastText || 'inherit',
+        '&:hover': {
+          backgroundColor: paletteColor?.dark || 'inherit',
+          transform: 'translateY(-2px)',
+        },
+        boxShadow: theme.shadows[2],
+      };
+      break;
+    case 'outlined':
+      variantStyles = {
+        border: `1.5px solid ${paletteColor?.main || theme.palette.divider}`,
+        color: paletteColor?.main,
+        '&:hover': {
+          backgroundColor: alpha(paletteColor?.main || theme.palette.action.active, 0.08),
+          transform: 'translateY(-2px)',
+        },
+      };
+      break;
+    default:
+      variantStyles = {
+        '&:hover': {
+          backgroundColor: alpha(paletteColor?.main || theme.palette.action.active, 0.08),
+        },
+      };
+      break;
+  }
+
+  return {
+    ...baseStyles,
+    ...sizeMap[size],
+    ...variantStyles,
+    ...(loading && {}),
+  };
+});
+
+/**
+ * Enhanced IconButton component using styled-components API.
+ */
+const IconButton = React.forwardRef(
+  (
+    {
+      children,
+      loading = false,
+      size = 'medium',
+      variant = 'standard',
+      color = 'default',
+      ...props
+    },
+    ref
+  ) => {
+    const muiColor = variant === 'standard' ? color : 'inherit';
+
+    return (
+      <StyledIconButton
+        ref={ref}
+        size={size}
+        color={muiColor}
+        disabled={props.disabled || loading}
+        variant={variant}
+        loading={loading}
+        data-color-prop={color}
+        {...props}
+      >
+        {loading ? (
+          <CircularProgress
+            size={size === 'small' ? 16 : size === 'large' ? 28 : 22}
+            color="inherit"
+            thickness={4}
+          />
+        ) : (
+          children
+        )}
+      </StyledIconButton>
+    );
+  }
+);
+
+IconButton.displayName = 'IconButton';
 
 IconButton.propTypes = {
   /** The icon element */
