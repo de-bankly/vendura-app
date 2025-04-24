@@ -9,8 +9,6 @@ import {
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// --- Styled Components --- //
-
 const StyledFormControl = styled(FormControl, {
   shouldForwardProp: prop => prop !== 'labelPlacement',
 })(({ theme, labelPlacement }) => ({
@@ -54,6 +52,23 @@ const StyledFormHelperText = styled(FormHelperText, {
 
 /**
  * Enhanced Checkbox component using styled components.
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} [props.label] - The label content.
+ * @param {boolean} [props.checked] - If true, the checkbox is checked.
+ * @param {function} [props.onChange] - Callback fired when the state is changed.
+ * @param {boolean} [props.error=false] - If true, the checkbox will indicate an error.
+ * @param {React.ReactNode} [props.helperText=''] - The helper text content.
+ * @param {boolean} [props.required=false] - If true, the checkbox is marked as required.
+ * @param {boolean} [props.disabled=false] - If true, the checkbox is disabled.
+ * @param {'primary'|'secondary'|'success'|'error'|'info'|'warning'|'default'} [props.color='primary'] - The color of the checkbox.
+ * @param {'small'|'medium'} [props.size='medium'] - The size of the checkbox.
+ * @param {boolean} [props.indeterminate=false] - If true, the checkbox appears indeterminate.
+ * @param {string} [props.name=''] - Name attribute of the checkbox element.
+ * @param {string} [props.id=''] - The id of the checkbox element.
+ * @param {'end'|'start'|'top'|'bottom'} [props.labelPlacement='end'] - The placement of the label.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @param {React.Ref<any>} ref - Forwarded ref.
+ * @returns {JSX.Element} The rendered Checkbox component.
  */
 const Checkbox = React.forwardRef(
   (
