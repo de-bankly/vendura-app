@@ -4,10 +4,17 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 /**
- * ErrorDisplay component for showing error messages
+ * Displays an error message with an icon in a styled Paper component.
+ * Returns null if no message is provided.
+ *
+ * @param {object} props - The component props.
+ * @param {string} [props.message] - The error message to display. If empty or null, the component renders nothing.
+ * @returns {React.ReactElement|null} The rendered error display component or null.
  */
 const ErrorDisplay = ({ message }) => {
-  if (!message) return null;
+  if (!message) {
+    return null;
+  }
 
   return (
     <Paper
@@ -29,6 +36,9 @@ const ErrorDisplay = ({ message }) => {
 };
 
 ErrorDisplay.propTypes = {
+  /**
+   * The error message string to be displayed.
+   */
   message: PropTypes.string,
 };
 
