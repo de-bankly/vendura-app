@@ -6,7 +6,7 @@ import axios from 'axios';
  * @type {import('axios').AxiosInstance}
  */
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL || 'https://api.vendura.me',
   headers: {
     'Content-Type': 'application/json',
   },
