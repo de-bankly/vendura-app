@@ -568,59 +568,61 @@ const SalesScreen = () => {
   useEffect(() => {
     if (scannedValue) {
       (async () => {
-        let processed = false;
         try {
+          // Try to get deposit receipt
           const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
-          if (depositReceipt && depositReceipt.id) {
-            handleDepositRedeemed(depositReceipt);
-            showToast({
-              severity: 'success',
-              message: `Pfandbon ${depositReceipt.id} erfolgreich gescannt und eingelöst.`,
-            });
-            processed = true;
+
+          // If found, redeem and finish
+          if (depositReceipt && depositReceipt.data.id) {
+            handleDepositRedeemed(depositReceipt.data);
           } else {
+            // This case handles scenarios where the API might return successfully
+            // but without a receipt object (e.g., null or empty response for not found).
+            // We assume it's not a deposit receipt and try product lookup.
+            console.warn(
+              `SalesScreen: Deposit receipt check for ${scannedValue} returned non-error but no receipt. Assuming not a deposit receipt.`
+            );
             await handleProductLookup(scannedValue);
-            processed = true;
           }
         } catch (err) {
-          if (
+          // Handle errors during deposit receipt check
+          const isNotFound =
             err.response?.status === 404 ||
             err.message?.toLowerCase().includes('not found') ||
-            err.message?.toLowerCase().includes('nicht gefunden')
-          ) {
+            err.message?.toLowerCase().includes('nicht gefunden');
+
+          if (isNotFound) {
+            // If Deposit receipt was NOT found (404), try looking up as a product
+            console.log(
+              `SalesScreen: Deposit receipt ${scannedValue} not found, trying product lookup.`
+            );
             try {
               await handleProductLookup(scannedValue);
-              processed = true;
             } catch (productErr) {
-              console.error(`SalesScreen: Product lookup failed:`, productErr);
-              processed = true;
+              // Error during product lookup is handled within handleProductLookup
+              console.error(`SalesScreen: Product lookup failed for ${scannedValue}:`, productErr);
             }
           } else {
+            // Other error occurred while checking deposit receipt
             console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
             showToast({
               severity: 'error',
-              message: `Fehler beim Überprüfen des Pfandbons: ${err.message}`,
+              message: `Fehler beim Überprüfen des Codes ${scannedValue}: ${err.message}`,
             });
-            try {
-              await handleProductLookup(scannedValue);
-              processed = true;
-            } catch (productErr) {
-              console.error(`SalesScreen: Product lookup also failed:`, productErr);
-              processed = true;
-            }
+            // DO NOT proceed to product lookup in case of other errors
           }
         } finally {
-          resetScan();
+          resetScan(); // Reset scanner state regardless of outcome
         }
       })();
     }
   }, [
     scannedValue,
+    DepositService, // Assuming DepositService is stable or memoized
     handleDepositRedeemed,
-    resetScan,
-    showToast,
-    DepositService,
     handleProductLookup,
+    showToast,
+    resetScan,
   ]);
 
   useEffect(() => {

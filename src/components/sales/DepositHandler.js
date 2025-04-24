@@ -28,14 +28,14 @@ export const handleDepositRedemption = ({
   setAppliedDeposits(prev => [...prev, depositReceipt]);
 
   // Update the deposit credit amount
-  setDepositCredit(prev => prev + depositReceipt.value);
+  setDepositCredit(prev => prev + depositReceipt.total);
 
   // Close the dialog
   setRedeemDepositDialogOpen(false);
 
   // Show success message
   showToast({
-    message: `Pfandbeleg im Wert von ${depositReceipt.value.toFixed(2)} € zum Warenkorb hinzugefügt`,
+    message: `Pfandbeleg im Wert von ${depositReceipt.total?.toFixed(2) ?? 'unbekannt'} € zum Warenkorb hinzugefügt`,
     severity: 'success',
   });
 
