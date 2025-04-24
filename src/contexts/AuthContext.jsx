@@ -5,13 +5,14 @@ import { AuthService, UserService } from '../services';
 const AuthContext = createContext();
 
 /**
- * Provider component for authentication state management
+ * Provider component for authentication state management.
+ * @param {object} props - Component props.
+ * @param {React.ReactNode} props.children - Child components to be wrapped by the provider.
  */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Memoized loadUser function for useEffect dependency
   const loadUser = useCallback(async () => {
     if (AuthService.isLoggedIn()) {
       try {
@@ -19,82 +20,86 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
       } catch (error) {
         console.error('Failed to load user profile:', error);
-        AuthService.logout(); // Logout if profile fetch fails
-        setUser(null); // Clear user state
+        AuthService.logout();
+        setUser(null);
       }
     }
     setLoading(false);
-  }, []); // Empty dependency array: runs once on mount
+  }, []);
 
   useEffect(() => {
     loadUser();
-  }, [loadUser]); // Depend on the memoized loadUser
+  }, [loadUser]);
 
   /**
-   * Login handler
-   * @param {string} username - Username
-   * @param {string} password - Password
+   * Logs in the user with the provided credentials.
+   * @param {string} username - The user's username.
+   * @param {string} password - The user's password.
+   * @returns {Promise<any>} The response from the AuthService login method.
    */
   const login = useCallback(async (username, password) => {
     const response = await AuthService.login(username, password);
     const userData = await UserService.getCurrentUserProfile();
     setUser(userData);
     return response;
-  }, []); // Depends only on static services
+  }, []);
 
   /**
-   * Logout handler
+   * Logs out the current user.
    */
   const logout = useCallback(() => {
     AuthService.logout();
     setUser(null);
-  }, []); // No dependencies
+  }, []);
 
   /**
-   * Check if current user has specified role
-   * @param {string} role - Role to check
-   * @returns {boolean} True if user has role
+   * Checks if the current user has a specific role.
+   * @param {string} role - The role to check for.
+   * @returns {boolean} True if the user has the specified role, false otherwise.
    */
-  // No user state dependency needed, relies on AuthService
   const hasRole = useCallback(role => {
     return AuthService.hasRole(role);
-  }, []); // No dependencies
+  }, []);
 
   /**
-   * Check if current user is admin
-   * @returns {boolean} True if user is admin
+   * Checks if the current user is an administrator.
+   * @returns {boolean} True if the user is an admin, false otherwise.
    */
-  // No user state dependency needed, relies on AuthService
   const isAdmin = useCallback(() => {
     return AuthService.isAdmin();
-  }, []); // No dependencies
+  }, []);
 
-  // Memoize isLoggedIn for consistency, though impact might be small
+  /**
+   * Checks if a user is currently logged in.
+   * @returns {boolean} True if a user is logged in, false otherwise.
+   */
   const isLoggedIn = useCallback(() => {
     return AuthService.isLoggedIn();
-  }, []); // No dependencies
+  }, []);
 
-  // Memoized function to refresh user profile
+  /**
+   * Refreshes the current user's profile data from the server.
+   * Logs the user out if the refresh fails (e.g., token expired).
+   */
   const refreshUserProfile = useCallback(async () => {
     if (AuthService.isLoggedIn()) {
-      // Check login status first
       try {
         const userData = await UserService.getCurrentUserProfile();
         setUser(userData);
       } catch (error) {
         console.error('Failed to refresh user profile:', error);
-        AuthService.logout(); // Logout if refresh fails (e.g., token expired)
+        AuthService.logout();
         setUser(null);
       }
     }
-  }, []); // Depends only on static services
+  }, []);
 
   const value = {
     user,
     loading,
     login,
     logout,
-    isLoggedIn, // Use memoized version
+    isLoggedIn,
     hasRole,
     isAdmin,
     refreshUserProfile,
@@ -104,7 +109,10 @@ export const AuthProvider = ({ children }) => {
 };
 
 /**
- * Hook to use the auth context
+ * Hook to use the authentication context.
+ * Provides access to the auth state and functions.
+ * @returns {object} The authentication context value.
+ * @throws {Error} If used outside of an AuthProvider.
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);

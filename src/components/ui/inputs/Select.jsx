@@ -10,13 +10,10 @@ import {
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// Define styled FormControl
-const StyledFormControl = styled(FormControl, {
-  // Filter out props if necessary
-  // shouldForwardProp: (prop) => prop !== 'customProp',
-})(({ theme, size, ownerState }) => {
-  // ownerState passes disabled, error, required
-  // Styles previously in sx prop
+const StyledFormControl = styled(
+  FormControl,
+  {}
+)(({ theme, size, ownerState }) => {
   const styles = {
     '& .MuiOutlinedInput-root': {
       borderRadius: theme.shape.borderRadius,
@@ -36,25 +33,22 @@ const StyledFormControl = styled(FormControl, {
       fontWeight: 500,
       transition: 'all 0.2s ease-in-out',
       ...(size === 'small' && {
-        fontSize: theme.typography.pxToRem(14), // 0.875rem
+        fontSize: theme.typography.pxToRem(14),
       }),
     },
-    // Target MuiSelect specifically for padding/font inside outlined input
     '& .MuiOutlinedInput-input.MuiSelect-select': {
       fontWeight: 400,
       ...(size === 'small'
         ? {
-            padding: `${theme.spacing(1)} ${theme.spacing(4)} ${theme.spacing(1)} ${theme.spacing(1.5)}`, // 8px 32px 8px 12px
-            fontSize: theme.typography.pxToRem(14), // 0.875rem
+            padding: `${theme.spacing(1)} ${theme.spacing(4)} ${theme.spacing(1)} ${theme.spacing(1.5)}`,
+            fontSize: theme.typography.pxToRem(14),
           }
         : {
-            // Medium (default)
-            padding: `${theme.spacing(1.5)} ${theme.spacing(4)} ${theme.spacing(1.5)} ${theme.spacing(1.75)}`, // 12px 32px 12px 14px
-            fontSize: theme.typography.pxToRem(16), // 1rem
+            padding: `${theme.spacing(1.5)} ${theme.spacing(4)} ${theme.spacing(1.5)} ${theme.spacing(1.75)}`,
+            fontSize: theme.typography.pxToRem(16),
           }),
     },
     '& .MuiMenuItem-root': {
-      // Styling menu items if needed (can also be done in MenuProps)
       ...(size === 'small'
         ? {
             fontSize: theme.typography.pxToRem(14),
@@ -66,8 +60,8 @@ const StyledFormControl = styled(FormControl, {
       transition: 'background-color 0.15s ease-in-out',
     },
     '& .MuiFormHelperText-root': {
-      marginLeft: theme.spacing(0.25), // 2px
-      fontSize: theme.typography.pxToRem(12), // 0.75rem
+      marginLeft: theme.spacing(0.25),
+      fontSize: theme.typography.pxToRem(12),
     },
   };
   return styles;
@@ -77,6 +71,25 @@ const StyledFormControl = styled(FormControl, {
  * Enhanced Select component with a modern, minimalist design optimized for POS and inventory
  * management systems. Features clean lines, subtle transitions, and consistent styling
  * across the application.
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} [props.label] - The label content.
+ * @param {*} [props.value=''] - The input value. It can be a single value or an array for multiple selection.
+ * @param {function} [props.onChange] - Callback fired when the value is changed.
+ * @param {Array<object>} [props.options=[]] - Array of options for the select. Each object should have `value` and `label`.
+ * @param {boolean} [props.error=false] - If `true`, the component is displayed in an error state.
+ * @param {React.ReactNode} [props.helperText=''] - The helper text content.
+ * @param {boolean} [props.required=false] - If `true`, the label is displayed as required and the input element is required.
+ * @param {boolean} [props.disabled=false] - If `true`, the component is disabled.
+ * @param {boolean} [props.fullWidth=true] - If `true`, the component will take up the full width of its container.
+ * @param {'standard' | 'outlined' | 'filled'} [props.variant='outlined'] - The variant to use.
+ * @param {'small' | 'medium'} [props.size='medium'] - The size of the component.
+ * @param {string} [props.placeholder=''] - The short hint displayed in the input before the user enters a value.
+ * @param {boolean} [props.multiple=false] - If `true`, `value` must be an array and the menu will support multiple selections.
+ * @param {string} [props.name=''] - Name attribute of the `select` element.
+ * @param {string} [props.id=''] - The id of the `select` element.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @param {React.Ref} ref - The ref forwarded to the root element.
+ * @returns {React.ReactElement} The rendered Select component.
  */
 const Select = React.forwardRef(
   (
@@ -101,16 +114,13 @@ const Select = React.forwardRef(
     },
     ref
   ) => {
-    // Generate a unique ID for the label if not provided
     const selectId =
       id ||
       name ||
       `select-${label?.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(2, 9)}`;
 
-    // Handle onChange to ensure we return a proper event object
     const handleChange = event => {
       if (onChange) {
-        // Pass the event directly to maintain compatibility with standard MUI events
         onChange(event);
       }
     };
@@ -197,6 +207,7 @@ Select.propTypes = {
     PropTypes.shape({
       value: PropTypes.any.isRequired,
       label: PropTypes.node.isRequired,
+      key: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     })
   ),
   /** If true, the select will indicate an error */

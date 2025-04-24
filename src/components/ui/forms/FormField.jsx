@@ -5,6 +5,16 @@ import React from 'react';
 /**
  * FormField component that provides consistent layout and error handling
  * for form inputs.
+ *
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} props.children - The input component. Must be a single React element.
+ * @param {React.ReactNode} [props.label] - The label for the field.
+ * @param {boolean} [props.required=false] - If true, the field is marked as required.
+ * @param {boolean} [props.error=false] - If true, the field will indicate an error state.
+ * @param {React.ReactNode} [props.helperText=''] - The helper text content displayed below the input.
+ * @param {boolean} [props.fullWidth=true] - If true, the field will take up the full width of its container.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles for the root Box element.
+ * @returns {React.ReactElement} The rendered FormField component.
  */
 const FormField = ({
   children,
@@ -18,16 +28,14 @@ const FormField = ({
 }) => {
   const theme = useTheme();
 
-  // Clone the child element to pass down props
   const childElement = React.Children.only(children);
 
   const enhancedChild = React.cloneElement(childElement, {
     required,
     error,
-    helperText: '', // We'll handle the helper text ourselves
+    helperText: '', // Pass empty helperText to child, FormField handles it
     fullWidth,
-    ...childElement.props,
-    // Don't override any props explicitly set on the child
+    ...childElement.props, // Preserve original props of the child
   });
 
   return (
@@ -70,19 +78,19 @@ const FormField = ({
 };
 
 FormField.propTypes = {
-  /** The input component */
+  /** The input component (must be a single React element) */
   children: PropTypes.node.isRequired,
   /** The label for the field */
   label: PropTypes.node,
   /** If true, the field is marked as required */
   required: PropTypes.bool,
-  /** If true, the field will indicate an error */
+  /** If true, the field will indicate an error state */
   error: PropTypes.bool,
-  /** The helper text content */
+  /** The helper text content displayed below the input */
   helperText: PropTypes.node,
   /** If true, the field will take up the full width of its container */
   fullWidth: PropTypes.bool,
-  /** The system prop that allows defining system overrides as well as additional CSS styles */
+  /** The system prop that allows defining system overrides as well as additional CSS styles for the root Box element */
   sx: PropTypes.object,
 };
 

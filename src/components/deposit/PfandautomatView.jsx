@@ -4,42 +4,22 @@ import {
   Typography,
   Box,
   Grid,
-  Button,
-  CircularProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Card,
-  CardContent,
-  Divider,
-  IconButton,
-  Tooltip,
   useTheme,
   useMediaQuery,
   Avatar,
   alpha,
-  Badge,
-  Stack,
-  Fade,
 } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import BottleAltIcon from '@mui/icons-material/WineBarOutlined';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import BarcodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import { DepositService, ProductService } from '../../services';
-import DepositItemsList from './DepositItemsList';
-import DepositReceipt from './DepositReceipt';
 import { useBarcodeScan } from '../../contexts/BarcodeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePrinter } from '../../hooks';
+import DepositStats from './subcomponents/DepositStats';
+import InstructionsCard from './subcomponents/InstructionsCard';
+import DepositReceiptDialog from './subcomponents/DepositReceiptDialog';
+import DepositListCard from './subcomponents/DepositListCard';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -50,35 +30,12 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 24,
-    },
-  },
-};
-
-const pulseVariants = {
-  pulse: {
-    scale: [1, 1.02, 1],
-    boxShadow: [
-      '0px 4px 12px rgba(0,0,0,0.05)',
-      '0px 8px 24px rgba(0,0,0,0.12)',
-      '0px 4px 12px rgba(0,0,0,0.05)',
-    ],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      repeatType: 'reverse',
-    },
-  },
-};
-
+/**
+ * Renders the main view for the Pfandautomat (deposit return machine).
+ * Handles barcode scanning, product lookup, item management, receipt generation,
+ * and displays relevant information and controls.
+ * @returns {JSX.Element} The PfandautomatView component.
+ */
 const PfandautomatView = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -105,45 +62,11 @@ const PfandautomatView = () => {
     return () => {};
   }, [enableScanner]);
 
-  const handlePfandProductLookup = useCallback(async code => {
-    setIsLoading(true);
-    try {
-      const product = await ProductService.getProductById(code, true);
-
-      if (!product) {
-        setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
-        return false;
-      }
-
-      const isPfandProduct = product.category && product.category.name === 'Pfand';
-
-      if (isPfandProduct) {
-        addToScannedItems(product);
-        return true;
-      }
-
-      const pfandProducts = product.connectedProducts
-        ? product.connectedProducts.filter(cp => cp.category && cp.category.name === 'Pfand')
-        : [];
-
-      if (pfandProducts.length > 0) {
-        pfandProducts.forEach(pfandProduct => {
-          addToScannedItems(pfandProduct);
-        });
-        return true;
-      }
-
-      setError('Kein Pfandprodukt mit diesem Barcode gefunden.');
-      return false;
-    } catch (err) {
-      console.error(`PfandautomatView: Error looking up product ${code}:`, err);
-      setError(`Fehler beim Produkt-Lookup: ${err.message}`);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  /**
+   * Adds a product to the list of scanned deposit items or increments its quantity if already present.
+   * Triggers a visual feedback state (`itemAdded`).
+   * @param {object} product - The Pfand product object to add.
+   */
   const addToScannedItems = useCallback(product => {
     setScannedItems(prev => {
       const existingItemIndex = prev.findIndex(item => item.product.id === product.id);
@@ -164,14 +87,62 @@ const PfandautomatView = () => {
     setTimeout(() => setItemAdded(false), 1500);
   }, []);
 
+  /**
+   * Looks up a product by its barcode to determine if it's a valid deposit item.
+   * Adds the corresponding Pfand product(s) to the scanned items list if found.
+   * Sets an error state if the product is not found or not a deposit item.
+   * @param {string} code - The scanned barcode string.
+   * @returns {Promise<boolean>} A promise that resolves to true if a Pfand item was found and added, false otherwise.
+   */
+  const handlePfandProductLookup = useCallback(
+    async code => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const product = await ProductService.getProductById(code, true);
+
+        if (!product) {
+          setError(`Kein Produkt mit Barcode ${code} gefunden.`);
+          return false;
+        }
+
+        const isPfandProduct = product.category?.name === 'Pfand';
+        if (isPfandProduct) {
+          addToScannedItems(product);
+          return true;
+        }
+
+        const pfandProducts =
+          product.connectedProducts?.filter(cp => cp.category?.name === 'Pfand') || [];
+
+        if (pfandProducts.length > 0) {
+          pfandProducts.forEach(pfandProduct => {
+            addToScannedItems(pfandProduct);
+          });
+          return true;
+        }
+
+        setError(`Produkt ${product.name} (${code}) ist kein Pfandartikel.`);
+        return false;
+      } catch (err) {
+        console.error(`PfandautomatView: Error looking up product ${code}:`, err);
+        setError(`Fehler beim Produkt-Lookup: ${err.message}`);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addToScannedItems]
+  );
+
   useEffect(() => {
     if (scannedValue) {
       (async () => {
         try {
           await handlePfandProductLookup(scannedValue);
         } catch (err) {
-          console.error('PfandautomatView: Error during Pfand lookup:', err);
-          setError(`Fehler beim Scannen: ${err.message}`);
+          console.error('PfandautomatView: Error during Pfand lookup execution:', err);
+          setError(`Unerwarteter Fehler beim Scannen: ${err.message}`);
         } finally {
           resetScan();
         }
@@ -181,7 +152,7 @@ const PfandautomatView = () => {
 
   useEffect(() => {
     if (scanError) {
-      setError(scanError);
+      setError(`Scanner Fehler: ${scanError}`);
       resetScan();
     }
   }, [scanError, resetScan]);
@@ -189,6 +160,7 @@ const PfandautomatView = () => {
   useEffect(() => {
     if (pendingDepositItems.length > 0) {
       const updatedItems = [...scannedItems];
+      let itemsWereAdded = false;
 
       pendingDepositItems.forEach(pendingItem => {
         const existingItemIndex = updatedItems.findIndex(
@@ -203,11 +175,14 @@ const PfandautomatView = () => {
         } else {
           updatedItems.push({ ...pendingItem });
         }
+        itemsWereAdded = true;
       });
 
-      setScannedItems(updatedItems);
-      setItemAdded(true);
-      setTimeout(() => setItemAdded(false), 1500);
+      if (itemsWereAdded) {
+        setScannedItems(updatedItems);
+        setItemAdded(true);
+        setTimeout(() => setItemAdded(false), 1500);
+      }
       clearPendingDepositItems();
     }
   }, [pendingDepositItems, clearPendingDepositItems, scannedItems]);
@@ -216,19 +191,15 @@ const PfandautomatView = () => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-
+        setError(null);
         const response = await ProductService.getProducts({ page: 0, size: 100 });
-        const productsWithDeposits = response.content.filter(
-          product =>
-            product.connectedProducts &&
-            product.connectedProducts.some(
-              connectedProduct => connectedProduct?.category?.name === 'Pfand'
-            )
+        const productsWithDeposits = response.content.filter(product =>
+          product.connectedProducts?.some(cp => cp?.category?.name === 'Pfand')
         );
         setProducts(productsWithDeposits);
       } catch (err) {
-        setError('Failed to load products. Please try again later.');
-        console.error(err);
+        setError('Fehler beim Laden der Produktdaten.');
+        console.error('PfandautomatView: Failed to load products:', err);
       } finally {
         setIsLoading(false);
       }
@@ -237,15 +208,22 @@ const PfandautomatView = () => {
     fetchProducts();
   }, []);
 
+  /**
+   * Generates a deposit receipt based on the currently scanned items.
+   * Calls the DepositService to create the receipt, updates state,
+   * triggers printing, displays a confirmation dialog, and clears the scanned items list.
+   * Sets an error state if receipt generation fails.
+   * @returns {Promise<void>}
+   */
   const handleGenerateReceipt = async () => {
     if (scannedItems.length === 0) {
-      setError('No items have been scanned yet.');
+      setError('Keine Artikel gescannt. Fügen Sie Artikel hinzu, um einen Bon zu erstellen.');
       return;
     }
 
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-
       const depositReceiptData = {
         positions: scannedItems.map(item => ({
           quantity: item.quantity,
@@ -262,24 +240,34 @@ const PfandautomatView = () => {
       try {
         await printDepositReceipt(response.data);
       } catch (printError) {
-        console.error('Error printing deposit receipt:', printError);
+        console.error('PfandautomatView: Error printing deposit receipt:', printError);
+        setError(`Bon erstellt, aber Fehler beim Drucken: ${printError.message || printError}`);
       }
 
       setScannedItems([]);
     } catch (err) {
-      setError('Failed to generate receipt. Please try again.');
-      console.error(err);
+      setError(`Fehler beim Erstellen des Bons: ${err.message}`);
+      console.error('PfandautomatView: Failed to generate receipt:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Calculates the total monetary value of all scanned deposit items.
+   * @returns {number} The total deposit value.
+   */
   const calculateTotal = () => {
     return scannedItems.reduce((total, item) => {
-      return total + (item.product.price || 0) * item.quantity;
+      const price = Number(item.product?.price) || 0;
+      return total + price * item.quantity;
     }, 0);
   };
 
+  /**
+   * Calculates the total number of individual bottles/items scanned.
+   * @returns {number} The total count of items.
+   */
   const calculateTotalBottles = () => {
     return scannedItems.reduce((total, item) => {
       return total + item.quantity;
@@ -332,10 +320,11 @@ const PfandautomatView = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
             transition={{ duration: 0.3 }}
+            style={{ marginBottom: theme.spacing(3) }}
           >
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            <Alert severity="error" onClose={() => setError(null)}>
               {error}
             </Alert>
           </motion.div>
@@ -350,449 +339,32 @@ const PfandautomatView = () => {
         initial="hidden"
         animate="visible"
       >
-        {/* Stats Cards Row */}
         <Grid item xs={12}>
-          <motion.div variants={itemVariants}>
-            <Grid container spacing={2}>
-              {/* Total Bottles Card */}
-              <Grid item xs={12} sm={4}>
-                <Card
-                  component={motion.div}
-                  whileHover={{ y: -5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  sx={{
-                    borderRadius: theme.shape.borderRadius,
-                    border: `1px solid ${theme.palette.divider}`,
-                    boxShadow: theme.shadows[2],
-                  }}
-                >
-                  <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: alpha(theme.palette.info.main, 0.1),
-                        color: theme.palette.info.main,
-                        width: 48,
-                        height: 48,
-                        mr: 2,
-                      }}
-                    >
-                      <BottleAltIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Flaschen gesamt
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {calculateTotalBottles()}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Total Value Card */}
-              <Grid item xs={12} sm={4}>
-                <Card
-                  component={motion.div}
-                  whileHover={{ y: -5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  sx={{
-                    borderRadius: theme.shape.borderRadius,
-                    border: `1px solid ${theme.palette.divider}`,
-                    boxShadow: theme.shadows[2],
-                  }}
-                >
-                  <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: alpha(theme.palette.success.main, 0.1),
-                        color: theme.palette.success.main,
-                        width: 48,
-                        height: 48,
-                        mr: 2,
-                      }}
-                    >
-                      <LocalAtmIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Pfandwert
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {calculateTotal().toFixed(2)} €
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Action Card */}
-              <Grid item xs={12} sm={4}>
-                <Card
-                  component={motion.div}
-                  variants={pulseVariants}
-                  animate="pulse"
-                  whileHover={{ y: -5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  sx={{
-                    borderRadius: theme.shape.borderRadius,
-                    border: `1px solid ${theme.palette.divider}`,
-                    boxShadow: theme.shadows[2],
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.light, 0.3)} 100%)`,
-                  }}
-                >
-                  <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: theme.palette.primary.main,
-                        color: theme.palette.primary.contrastText,
-                        width: 48,
-                        height: 48,
-                        mr: 2,
-                      }}
-                    >
-                      <BarcodeScannerIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" fontWeight="medium">
-                        Pfandflaschen scannen
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Halte den Barcode vor den Scanner
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </motion.div>
+          <DepositStats totalBottles={calculateTotalBottles()} totalValue={calculateTotal()} />
         </Grid>
 
-        {/* Deposit Items List */}
         <Grid item xs={12} md={7} lg={8}>
-          <motion.div variants={itemVariants}>
-            <Card
-              elevation={2}
-              sx={{
-                height: '100%',
-                borderRadius: theme.shape.borderRadius,
-                border: `1px solid ${theme.palette.divider}`,
-                overflow: 'hidden',
-                position: 'relative',
-              }}
-            >
-              <Box
-                component={motion.div}
-                initial={{ opacity: 0 }}
-                animate={itemAdded ? { opacity: 1 } : { opacity: 0 }}
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  zIndex: 10,
-                  p: 1,
-                  textAlign: 'center',
-                  bgcolor: alpha(theme.palette.success.main, 0.9),
-                  color: 'white',
-                }}
-              >
-                <Typography variant="body2" fontWeight="medium">
-                  <CheckCircleIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'text-bottom' }} />
-                  Pfandartikel hinzugefügt!
-                </Typography>
-              </Box>
-
-              <CardContent sx={{ p: 0 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    bgcolor: 'background.paper',
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Badge
-                      badgeContent={calculateTotalBottles()}
-                      color="primary"
-                      showZero
-                      sx={{ mr: 2 }}
-                    >
-                      <BottleAltIcon color="primary" />
-                    </Badge>
-                    <Typography variant="h6" fontWeight="medium">
-                      Gescannte Flaschen
-                    </Typography>
-                  </Box>
-                  <Tooltip title="Bitte scannen Sie die Barcodes Ihrer Pfandflaschen ein">
-                    <IconButton
-                      size="small"
-                      component={motion.button}
-                      whileHover={{ rotate: 15 }}
-                      transition={{ type: 'spring', stiffness: 500 }}
-                    >
-                      <InfoOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-
-                <Box sx={{ p: 2, minHeight: '350px' }}>
-                  {isLoading ? (
-                    <Box
-                      display="flex"
-                      justifyContent="center"
-                      alignItems="center"
-                      sx={{ height: '300px' }}
-                    >
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <AnimatePresence>
-                      <DepositItemsList
-                        items={scannedItems}
-                        onRemoveItem={null}
-                        onUpdateQuantity={null}
-                        readOnly={true}
-                      />
-                    </AnimatePresence>
-                  )}
-                </Box>
-
-                <Divider />
-
-                <Box
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    bgcolor: theme.palette.grey[50],
-                  }}
-                >
-                  <Box>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      Gesamtwert:
-                    </Typography>
-                    <Typography variant="h5" color="primary" fontWeight="bold">
-                      {calculateTotal().toFixed(2)} €
-                    </Typography>
-                  </Box>
-
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      startIcon={<ReceiptIcon />}
-                      onClick={handleGenerateReceipt}
-                      disabled={isLoading || scannedItems.length === 0}
-                      sx={{
-                        px: 3,
-                        py: 1.5,
-                        borderRadius: theme.shape.borderRadius,
-                        boxShadow: theme.shadows[4],
-                      }}
-                    >
-                      {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Bon erstellen'}
-                    </Button>
-                  </motion.div>
-                </Box>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <DepositListCard
+            scannedItems={scannedItems}
+            isLoading={isLoading}
+            itemAdded={itemAdded}
+            totalBottles={calculateTotalBottles()}
+            totalValue={calculateTotal()}
+            handleGenerateReceipt={handleGenerateReceipt}
+            isGeneratingReceipt={isLoading}
+          />
         </Grid>
 
-        {/* Instructions and Information */}
         <Grid item xs={12} md={5} lg={4}>
-          <motion.div variants={itemVariants}>
-            <Card
-              elevation={2}
-              sx={{
-                mb: 3,
-                borderRadius: theme.shape.borderRadius,
-                border: `1px solid ${theme.palette.divider}`,
-                overflow: 'hidden',
-              }}
-            >
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: alpha(theme.palette.primary.main, 0.08),
-                  borderBottom: `1px solid ${theme.palette.divider}`,
-                }}
-              >
-                <Typography variant="h6" fontWeight="medium">
-                  Anleitung
-                </Typography>
-              </Box>
-
-              <CardContent>
-                <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Avatar
-                      sx={{
-                        width: 28,
-                        height: 28,
-                        bgcolor: theme.palette.primary.main,
-                        fontSize: '0.875rem',
-                        mr: 1.5,
-                      }}
-                    >
-                      1
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body1" fontWeight="medium">
-                        Flasche scannen
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Halten Sie den Barcode vor den Scanner
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <motion.div
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-                      <ArrowForwardIcon color="primary" />
-                    </Box>
-                  </motion.div>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Avatar
-                      sx={{
-                        width: 28,
-                        height: 28,
-                        bgcolor: theme.palette.primary.main,
-                        fontSize: '0.875rem',
-                        mr: 1.5,
-                      }}
-                    >
-                      2
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body1" fontWeight="medium">
-                        Pfandwert wird berechnet
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Der Wert wird automatisch addiert
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <motion.div
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5, delay: 0.5 }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-                      <ArrowForwardIcon color="primary" />
-                    </Box>
-                  </motion.div>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Avatar
-                      sx={{
-                        width: 28,
-                        height: 28,
-                        bgcolor: theme.palette.primary.main,
-                        fontSize: '0.875rem',
-                        mr: 1.5,
-                      }}
-                    >
-                      3
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body1" fontWeight="medium">
-                        Pfandbon erstellen
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Lösen Sie den Bon an der Kasse ein
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <InstructionsCard />
         </Grid>
       </Grid>
 
-      {/* Receipt Dialog */}
-      <Dialog
+      <DepositReceiptDialog
         open={showReceiptDialog}
         onClose={() => setShowReceiptDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        TransitionComponent={Fade}
-        TransitionProps={{ timeout: 300 }}
-        PaperProps={{
-          component: motion.div,
-          initial: { opacity: 0, y: 50, scale: 0.9 },
-          animate: { opacity: 1, y: 0, scale: 1 },
-          transition: { type: 'spring', duration: 0.5 },
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            display: 'flex',
-            alignItems: 'center',
-            background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
-            color: 'white',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              sx={{
-                bgcolor: alpha('#ffffff', 0.2),
-                width: 40,
-                height: 40,
-                mr: 2,
-              }}
-            >
-              <ReceiptIcon />
-            </Avatar>
-            <Typography variant="h5" fontWeight="bold">
-              Pfandbon erstellt
-            </Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ py: 3 }}>
-          {receiptData && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <DepositReceipt receipt={receiptData} />
-              <Box
-                sx={{
-                  mt: 3,
-                  p: 2,
-                  bgcolor: alpha(theme.palette.info.light, 0.1),
-                  borderRadius: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <InfoOutlinedIcon color="info" sx={{ mr: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  Der Pfandbon wurde automatisch gedruckt. Bitte lösen Sie ihn an der Kasse ein.
-                </Typography>
-              </Box>
-            </motion.div>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-          <Button onClick={() => setShowReceiptDialog(false)} variant="outlined">
-            Schließen
-          </Button>
-        </DialogActions>
-      </Dialog>
+        receiptData={receiptData}
+      />
     </Container>
   );
 };

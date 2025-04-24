@@ -33,17 +33,65 @@ import React, { useState } from 'react';
 
 import { SupplierOrderService } from '../../services';
 
+/**
+ * @typedef {'PLACED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'} OrderStatus
+ */
+
+/**
+ * @typedef {object} Supplier
+ * @property {string} legalName
+ */
+
+/**
+ * @typedef {object} OrderPosition
+ * // Define properties of OrderPosition if known, e.g.,
+ * // @property {string} productId
+ * // @property {number} quantity
+ */
+
+/**
+ * @typedef {object} SupplierOrder
+ * @property {string|number} id
+ * @property {Supplier} [supplier]
+ * @property {string} [timestamp] - ISO date string
+ * @property {string} [expectedDeliveryDate] - ISO date string
+ * @property {OrderStatus} orderStatus
+ * @property {OrderPosition[]} [positions]
+ */
+
+/**
+ * Renders a list of supplier orders with actions to manage them.
+ * @param {object} props - The component props.
+ * @param {SupplierOrder[]} props.orders - The array of supplier orders to display.
+ * @param {Function} [props.onRefresh] - Callback function to refresh the order list after an action.
+ * @returns {React.ReactElement} The SupplierOrdersList component.
+ */
 const SupplierOrdersList = ({ orders, onRefresh }) => {
   const theme = useTheme();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [statusAction, setStatusAction] = useState(null);
 
+  /**
+   * Formats a date string into 'dd.MM.yyyy' format.
+   * @param {string | undefined} dateString - The date string to format.
+   * @returns {string} The formatted date or '—' if the input is invalid.
+   */
   const formatDate = dateString => {
     if (!dateString) return '—';
-    return format(new Date(dateString), 'dd.MM.yyyy');
+    try {
+      return format(new Date(dateString), 'dd.MM.yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '—';
+    }
   };
 
+  /**
+   * Returns a Material UI Chip component styled based on the order status.
+   * @param {OrderStatus} status - The order status.
+   * @returns {React.ReactElement} A Chip component representing the status.
+   */
   const getStatusChip = status => {
     let color;
     let label;
@@ -73,66 +121,83 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
     return <Chip size="small" color={color} label={label} />;
   };
 
+  /**
+   * Sets the selected order for deletion and opens the confirmation dialog.
+   * @param {SupplierOrder} order - The order to delete.
+   */
   const handleDelete = order => {
     setSelectedOrder(order);
     setStatusAction('delete');
     setConfirmDialogOpen(true);
   };
 
+  /**
+   * Sets the selected order and the new status, then opens the confirmation dialog.
+   * @param {SupplierOrder} order - The order whose status is to be changed.
+   * @param {OrderStatus} newStatus - The new status for the order.
+   */
   const handleStatusChange = (order, newStatus) => {
     setSelectedOrder(order);
     setStatusAction({ type: 'status', status: newStatus });
     setConfirmDialogOpen(true);
   };
 
+  /**
+   * Handles the confirmation of the pending action (delete or status change).
+   * Calls the appropriate service and triggers a refresh.
+   */
   const handleConfirmAction = async () => {
+    if (!selectedOrder) return;
+
     try {
       if (statusAction === 'delete') {
         await SupplierOrderService.deleteSupplierOrder(selectedOrder.id);
-      } else if (statusAction && statusAction.type === 'status') {
+      } else if (statusAction?.type === 'status') {
         await SupplierOrderService.updateSupplierOrderStatus(selectedOrder.id, statusAction.status);
-
-        // Force refresh inventory data if order was marked as delivered
-        if (statusAction.status === 'DELIVERED' && onRefresh) {
-          onRefresh();
-        }
       }
 
       setConfirmDialogOpen(false);
       setSelectedOrder(null);
       setStatusAction(null);
 
-      // Ensure refresh happens in all cases
       if (onRefresh) {
         onRefresh();
       }
     } catch (err) {
       console.error('Error processing order action:', err);
-      // Could add error handling here
+      setConfirmDialogOpen(false);
+      setSelectedOrder(null);
+      setStatusAction(null);
     }
   };
 
+  /**
+   * Closes the confirmation dialog and resets the selected order and action.
+   */
   const handleCancelAction = () => {
     setConfirmDialogOpen(false);
     setSelectedOrder(null);
     setStatusAction(null);
   };
 
+  /**
+   * Generates the content text for the confirmation dialog based on the selected action.
+   * @returns {string} The confirmation message.
+   */
   const getConfirmDialogContent = () => {
     if (!selectedOrder) return '';
 
     if (statusAction === 'delete') {
       return `Möchten Sie die Bestellung ${selectedOrder.id} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`;
-    } else if (statusAction && statusAction.type === 'status') {
-      let message = '';
-
-      if (statusAction.status === 'SHIPPED') {
-        message = `Bestellung ${selectedOrder.id} als versendet markieren?`;
-      } else if (statusAction.status === 'DELIVERED') {
-        message = `Bestellung ${selectedOrder.id} als geliefert markieren? Dies wird die Lagerbestände aktualisieren.`;
+    } else if (statusAction?.type === 'status') {
+      switch (statusAction.status) {
+        case 'SHIPPED':
+          return `Bestellung ${selectedOrder.id} als versendet markieren?`;
+        case 'DELIVERED':
+          return `Bestellung ${selectedOrder.id} als geliefert markieren? Dies wird die Lagerbestände aktualisieren.`;
+        default:
+          return `Status der Bestellung ${selectedOrder.id} ändern?`;
       }
-
-      return message;
     }
 
     return '';
@@ -245,9 +310,10 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
                       </Tooltip>
                     )}
 
-                    {order.orderStatus !== 'DELIVERED' && (
+                    {order.orderStatus !== 'DELIVERED' && order.orderStatus !== 'CANCELLED' && (
                       <>
                         <Tooltip title="Bearbeiten">
+                          {/* Add onClick handler for edit functionality */}
                           <IconButton size="small" color="info" sx={{ mx: 0.5 }}>
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -316,12 +382,26 @@ const SupplierOrdersList = ({ orders, onRefresh }) => {
 };
 
 SupplierOrdersList.propTypes = {
-  orders: PropTypes.array,
+  /** The array of supplier orders to display. */
+  orders: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      supplier: PropTypes.shape({
+        legalName: PropTypes.string,
+      }),
+      timestamp: PropTypes.string,
+      expectedDeliveryDate: PropTypes.string,
+      orderStatus: PropTypes.oneOf(['PLACED', 'SHIPPED', 'DELIVERED', 'CANCELLED']).isRequired,
+      positions: PropTypes.array,
+    })
+  ),
+  /** Callback function to refresh the order list after an action. */
   onRefresh: PropTypes.func,
 };
 
 SupplierOrdersList.defaultProps = {
   orders: [],
+  onRefresh: undefined,
 };
 
 export default SupplierOrdersList;

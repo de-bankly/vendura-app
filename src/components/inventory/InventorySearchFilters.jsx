@@ -24,6 +24,17 @@ import React from 'react';
 
 /**
  * InventorySearchFilters component provides search, category filter, and view mode controls
+ * @param {object} props - Component props
+ * @param {string} props.searchQuery - The current search query string.
+ * @param {function} props.onSearchChange - Callback function when the search query changes.
+ * @param {string} props.selectedCategory - The ID of the currently selected category.
+ * @param {function} props.onCategoryChange - Callback function when the selected category changes.
+ * @param {Array<object>} props.categories - An array of available category objects.
+ * @param {string} props.categories[].id - The unique ID of the category.
+ * @param {string} props.categories[].name - The display name of the category.
+ * @param {('grid'|'list')} props.viewMode - The current view mode ('grid' or 'list').
+ * @param {function} props.onViewModeChange - Callback function when the view mode changes.
+ * @param {function} props.onFilterToggle - Callback function to toggle the filter drawer/modal.
  */
 const InventorySearchFilters = ({
   searchQuery,
@@ -39,7 +50,6 @@ const InventorySearchFilters = ({
 
   return (
     <Grid container spacing={2} alignItems="center">
-      {/* Search Field */}
       <Grid item xs={12} sm={5} md={4}>
         <TextField
           fullWidth
@@ -64,14 +74,13 @@ const InventorySearchFilters = ({
         />
       </Grid>
 
-      {/* Category Select */}
       <Grid item xs={12} sm={5} md={4}>
         <TextField
           select
           fullWidth
           value={selectedCategory}
           onChange={onCategoryChange}
-          placeholder="Kategorie"
+          displayEmpty
           variant="outlined"
           size="small"
           sx={{
@@ -87,8 +96,21 @@ const InventorySearchFilters = ({
               </InputAdornment>
             ),
           }}
+          renderValue={selected => {
+            if (selected === '') {
+              return (
+                <Box component="em" sx={{ color: theme.palette.text.secondary }}>
+                  Kategorie
+                </Box>
+              );
+            }
+            const category = categories.find(cat => cat.id === selected);
+            return category ? category.name : '';
+          }}
         >
-          <MenuItem value="">Alle Kategorien</MenuItem>
+          <MenuItem value="">
+            <em>Alle Kategorien</em>
+          </MenuItem>
           {categories.map(category => (
             <MenuItem key={category.id} value={category.id}>
               {category.name}
@@ -97,7 +119,6 @@ const InventorySearchFilters = ({
         </TextField>
       </Grid>
 
-      {/* Filter and View Buttons */}
       <Grid item xs={12} sm={2} md={4} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
         <Button
           variant="outlined"
@@ -159,10 +180,17 @@ const InventorySearchFilters = ({
         </Box>
       </Grid>
 
-      {/* Active Filter Display */}
       {selectedCategory && (
         <Grid item xs={12}>
-          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+          <Box
+            sx={{
+              mt: 1,
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1,
+            }}
+          >
             <Chip
               label={categories.find(cat => cat.id === selectedCategory)?.name || 'Kategorie'}
               onDelete={() => onCategoryChange({ target: { value: '' } })}

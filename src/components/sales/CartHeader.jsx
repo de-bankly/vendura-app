@@ -6,7 +6,15 @@ import { Box, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import { Chip } from '../ui/feedback';
 
 /**
- * Header component for the shopping cart with undo/redo functionality
+ * Header component for the shopping cart with undo/redo functionality.
+ *
+ * @param {object} props - The component props.
+ * @param {Array<object>} props.cartItems - Array of items in the cart. Each item should have a `quantity` property.
+ * @param {boolean} props.cartUndoEnabled - Flag indicating if undo is possible.
+ * @param {boolean} props.cartRedoEnabled - Flag indicating if redo is possible.
+ * @param {Function} props.onUndoCartState - Callback function to trigger undo.
+ * @param {Function} props.onRedoCartState - Callback function to trigger redo.
+ * @returns {React.ReactElement} The rendered CartHeader component.
  */
 const CartHeader = ({
   cartItems,
@@ -32,8 +40,6 @@ const CartHeader = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Tooltip title="Rückgängig">
           <span>
-            {' '}
-            {/* Tooltip requires a wrapper when child is disabled */}
             <IconButton
               size="small"
               disabled={!cartUndoEnabled}
@@ -46,8 +52,6 @@ const CartHeader = ({
         </Tooltip>
         <Tooltip title="Wiederherstellen">
           <span>
-            {' '}
-            {/* Tooltip requires a wrapper when child is disabled */}
             <IconButton
               size="small"
               disabled={!cartRedoEnabled}

@@ -10,7 +10,10 @@ import { Link } from 'react-router-dom';
 
 /**
  * InventoryHeader component displays the header section of the inventory page
- * with title and action buttons
+ * with title and action buttons.
+ * @param {object} props - The component props.
+ * @param {Function} props.onRefresh - Callback function triggered when the refresh button is clicked.
+ * @returns {React.ReactElement} The rendered InventoryHeader component.
  */
 const InventoryHeader = ({ onRefresh }) => {
   const theme = useTheme();
@@ -108,6 +111,9 @@ const InventoryHeader = ({ onRefresh }) => {
 };
 
 InventoryHeader.propTypes = {
+  /**
+   * Callback function triggered when the refresh button is clicked.
+   */
   onRefresh: PropTypes.func.isRequired,
 };
 

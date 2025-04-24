@@ -10,16 +10,23 @@ import {
   Paper,
   Grid,
   useTheme,
+  TableContainer,
+  Table as MuiTable,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
+  CircularProgress,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 import UserForm from '../../components/admin/UserForm';
 import { Button, IconButton } from '../../components/ui/buttons';
-import { Chip, Table } from '../../components/ui/feedback';
+import { Chip } from '../../components/ui/feedback';
 import { UserService, RoleService } from '../../services';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -43,13 +50,14 @@ const UserManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(0);
+  const [rowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [originalRoles, setOriginalRoles] = useState([]);
 
-  // Form state
   const [formData, setFormData] = useState({
     username: '',
     firstName: '',
@@ -61,7 +69,6 @@ const UserManagementPage = () => {
     roles: [],
   });
 
-  // Define columns for the local Table component
   const columns = [
     { field: 'username', headerName: 'Username', sortable: true },
     {
@@ -90,7 +97,20 @@ const UserManagementPage = () => {
                   size="small"
                 />
               );
+            } else if (typeof role === 'object' && role !== null && role.name) {
+              // Handle cases where roles might already be objects
+              return (
+                <Chip
+                  key={role.id || index}
+                  label={role.name}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                />
+              );
             }
+            // Fallback or handle other unexpected role formats if necessary
+            return null;
           })}
           {(!row.roles || row.roles.length === 0) && (
             <Typography variant="caption" color="text.secondary">
@@ -130,7 +150,6 @@ const UserManagementPage = () => {
       sortable: false,
       renderCell: row => (
         <Tooltip title="Edit User">
-          {/* Ensure local IconButton is used */}
           <IconButton
             size="small"
             onClick={e => {
@@ -145,45 +164,43 @@ const UserManagementPage = () => {
     },
   ];
 
-  // Fetch users (needs to be wrapped in useCallback)
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
-      // Pass current page state to service
-      const response = await UserService.getAllUsers(page, 10);
+      const response = await UserService.getAllUsers(page, rowsPerPage);
       setUsers(response.content || []);
       setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (err) {
       setError('Failed to load users: ' + (err.response?.data?.message || err.message));
+      setUsers([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, rowsPerPage]);
 
-  // Fetch available roles
   const fetchRoles = useCallback(async () => {
     try {
-      const response = await RoleService.getAllRoles(0, 100);
+      const response = await RoleService.getAllRoles(0, 100); // Fetch a reasonable number of roles
       setRoles(response.content || []);
     } catch (err) {
       console.error('Failed to load roles:', err);
+      // Optionally set an error state for roles
     }
   }, []);
 
-  // Load users and roles on mount and page change
   useEffect(() => {
     fetchUsers();
     fetchRoles();
   }, [fetchUsers, fetchRoles]);
 
-  // Handle page change
-  const handlePageChange = useCallback((event, value) => {
-    setPage(value - 1);
+  const handlePageChange = useCallback((event, newPage) => {
+    setPage(newPage);
   }, []);
 
-  // Open dialog for new user
   const handleOpenAddDialog = useCallback(() => {
     setEditMode(false);
     setCurrentUser(null);
@@ -198,48 +215,52 @@ const UserManagementPage = () => {
       locked: false,
       roles: [],
     });
+    setError(''); // Clear previous errors
     setOpen(true);
   }, []);
 
-  // Open dialog for editing user
   const handleOpenEditDialog = useCallback(user => {
     setEditMode(true);
     setCurrentUser(user);
-    const userRoles = user.roles?.map(role => role.id) || [];
-    setOriginalRoles(userRoles);
+    // Ensure roles are consistently IDs
+    const userRoleIds = user.roles?.map(role => (typeof role === 'object' ? role.id : role)) || [];
+    setOriginalRoles(userRoleIds);
     setFormData({
       username: user.username || '',
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
-      password: '', // Don't pre-fill password
+      password: '',
       active: user.active !== false,
       locked: user.locked === true,
-      roles: userRoles,
+      roles: userRoleIds,
     });
+    setError(''); // Clear previous errors
     setOpen(true);
   }, []);
 
-  // Close dialog
   const handleClose = useCallback(() => {
     setOpen(false);
+    // Reset error when closing dialog
+    setError('');
   }, []);
 
-  // Handle form data changes
   const handleFormChange = useCallback(newFormData => {
     setFormData(newFormData);
   }, []);
 
-  // Submit form
   const handleSubmit = useCallback(
     async e => {
       if (e) {
         e.preventDefault();
       }
 
-      // Basic validation
       if (!formData.username || (formData.password === '' && !editMode)) {
-        setError('Username and password are required');
+        setError('Username and password are required for new users.');
+        return;
+      }
+      if (!formData.email) {
+        setError('Email is required.');
         return;
       }
 
@@ -247,37 +268,36 @@ const UserManagementPage = () => {
       setError('');
 
       try {
-        // Format data for API
         const userData = {
           ...formData,
         };
 
         if (editMode && currentUser) {
-          // Remove password if empty (not changing password)
           if (!userData.password) {
             delete userData.password;
           }
 
-          // Only include roles if they've been modified from the original
-          // This prevents accidentally removing all roles
+          // Ensure roles are sent as IDs
+          userData.roles = formData.roles.map(role => (typeof role === 'object' ? role.id : role));
+
+          // Check if roles actually changed compared to original state
           const rolesChanged =
-            JSON.stringify(formData.roles.sort()) !== JSON.stringify(originalRoles.sort());
-          if (rolesChanged) {
-            userData.roles = formData.roles;
-          } else {
+            JSON.stringify(userData.roles.sort()) !== JSON.stringify(originalRoles.sort());
+
+          // Only include roles in the payload if they changed
+          if (!rolesChanged) {
             delete userData.roles;
           }
 
           await UserService.updateUser(currentUser.id, userData);
         } else {
-          // For new users, always include roles even if empty
-          userData.roles = formData.roles;
+          // Ensure roles are sent as IDs for new user
+          userData.roles = formData.roles.map(role => (typeof role === 'object' ? role.id : role));
           await UserService.createUser(userData);
         }
 
-        // Refresh users list
-        fetchUsers();
-        handleClose();
+        fetchUsers(); // Refresh the user list
+        handleClose(); // Close the dialog on success
       } catch (err) {
         setError('Error saving user: ' + (err.response?.data?.message || err.message));
       } finally {
@@ -289,7 +309,6 @@ const UserManagementPage = () => {
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -331,21 +350,20 @@ const UserManagementPage = () => {
       </motion.div>
 
       <Container maxWidth="xl">
-        {/* Error Message */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <MuiAlert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </MuiAlert>
-          </motion.div>
-        )}
+        {error &&
+          !open && ( // Only show global error if dialog is closed
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <MuiAlert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </MuiAlert>
+            </motion.div>
+          )}
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Users Table Section */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -354,6 +372,8 @@ const UserManagementPage = () => {
                 minHeight: '60vh',
                 borderRadius: 2,
                 bgcolor: theme.palette.background.paper,
+                display: 'flex',
+                flexDirection: 'column', // Ensure Paper takes full height for pagination
               }}
             >
               <Typography
@@ -367,28 +387,102 @@ const UserManagementPage = () => {
                 User Overview
               </Typography>
 
-              <Table
-                columns={columns}
-                data={users || []}
-                loading={loading}
-                page={page + 1}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                elevation={0}
-                sx={{
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: theme.palette.background.default,
-                    borderRadius: '4px',
-                  },
-                }}
-                emptyStateMessage="No users found. Create a new one to get started."
-              />
+              <TableContainer component={Paper} elevation={0} sx={{ flexGrow: 1 }}>
+                <MuiTable stickyHeader aria-label="user overview table">
+                  <TableHead
+                    sx={{
+                      '& .MuiTableCell-head': {
+                        backgroundColor: theme.palette.grey[100], // Lighter header
+                        fontWeight: 'bold',
+                        color: theme.palette.text.primary,
+                      },
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <TableRow>
+                      {columns.map(column => (
+                        <TableCell
+                          key={column.field}
+                          sx={{ py: 1.5 }}
+                          align={column.field === 'actions' ? 'right' : 'left'}
+                        >
+                          {column.headerName}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} align="center" sx={{ py: 5 }}>
+                          <CircularProgress />
+                        </TableCell>
+                      </TableRow>
+                    ) : users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} align="center" sx={{ py: 3 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No users found. Create a new one to get started.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map((user, index) => (
+                        <TableRow
+                          key={user.id || index}
+                          hover
+                          sx={{
+                            '&:last-child td, &:last-child th': { border: 0 },
+                            '&:nth-of-type(odd)': {
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                            cursor: 'pointer', // Indicate rows are interactive
+                            '&:hover': {
+                              backgroundColor: theme.palette.action.selected,
+                            },
+                          }}
+                          onClick={() => handleOpenEditDialog(user)} // Open edit on row click
+                        >
+                          {columns.map(column => (
+                            <TableCell
+                              key={`${user.id}-${column.field}`}
+                              sx={{ py: 1.5 }}
+                              align={column.field === 'actions' ? 'right' : 'left'}
+                            >
+                              {column.renderCell
+                                ? column.renderCell(user)
+                                : column.field === 'name'
+                                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-' // Handle empty names
+                                  : (user[column.field] ?? '-')}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </MuiTable>
+              </TableContainer>
+
+              {!loading && totalElements > 0 && (
+                <TablePagination
+                  component="div"
+                  count={totalElements}
+                  page={page}
+                  onPageChange={handlePageChange}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={[rowsPerPage]} // Fixed rows per page
+                  sx={{
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                    mt: 'auto', // Pushes pagination to the bottom
+                    pt: 1, // Add some padding top
+                  }}
+                />
+              )}
             </Paper>
           </motion.div>
         </motion.div>
       </Container>
 
-      {/* User Form Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -405,13 +499,14 @@ const UserManagementPage = () => {
           </Box>
         </DialogTitle>
         <Box p={3}>
+          {/* Pass the specific error state for the form */}
           <UserForm
             formData={formData}
             onChange={handleFormChange}
             onSubmit={handleSubmit}
             roles={roles}
             editMode={editMode}
-            error={error}
+            error={error} // Pass form-specific error
             loading={loading}
             onCancel={handleClose}
           />

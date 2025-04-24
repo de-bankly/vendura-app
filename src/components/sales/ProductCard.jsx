@@ -30,59 +30,49 @@ import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 /**
- * ProductCard displays a product in the sales grid with discount information if available
+ * Displays a product card in the sales grid, including details like price,
+ * discounts, stock status, bundle information, and Pfand (deposit).
+ * Handles visual states for availability and discontinuation.
+ * @param {object} props - The component props.
+ * @param {object} props.product - The product data object.
+ * @param {function} props.onAddToCart - Callback function when the add to cart button is clicked.
+ * @returns {React.ReactElement} The rendered ProductCard component.
  */
 const ProductCard = ({ product, onAddToCart }) => {
   const theme = useTheme();
 
-  // Determine if we should show discount information
   const hasDiscount = product.hasDiscount && product.discountPercentage > 0;
-
-  // Check if the product has connected products
   const hasConnectedProducts = product.connectedProducts && product.connectedProducts.length > 0;
-
-  // Check if the product has Pfand (deposit) connected to it
   const hasPfand =
     hasConnectedProducts && product.connectedProducts.some(p => p?.category?.name === 'Pfand');
-
-  // Check if there are non-Pfand connected products
   const hasNonPfandConnectedProducts =
     hasConnectedProducts && product.connectedProducts.some(p => p?.category?.name !== 'Pfand');
-
-  // Only show Bundle badge if there are connected products that are not Pfand
   const showBundleBadge = hasNonPfandConnectedProducts;
 
-  // Get the most accurate stock count, prioritizing currentStock (from API) if available
   const availableStock =
     product.currentStock !== undefined && product.currentStock !== null
       ? product.currentStock
       : product.stockQuantity;
 
-  // Check if product is out of stock
   const isOutOfStock = availableStock <= 0;
 
-  // Check if any connected products (except Pfand) are out of stock
   const hasOutOfStockConnectedProducts =
     hasConnectedProducts &&
     product.connectedProducts.some(p => {
-      // For each connected product, check both currentStock and stockQuantity
       const connectedAvailableStock =
         p.currentStock !== undefined && p.currentStock !== null ? p.currentStock : p.stockQuantity;
       return p?.category?.name !== 'Pfand' && connectedAvailableStock <= 0;
     });
 
-  // Product should be visually marked as unavailable if either:
-  // 1. The main product itself is out of stock, OR
-  // 2. It's a bundle with unavailable parts (incomplete bundles are treated as completely unavailable)
   const isUnavailable = isOutOfStock || (showBundleBadge && hasOutOfStockConnectedProducts);
-
-  // Bundle is unavailable if any essential (non-Pfand) connected products are out of stock
   const isBundleUnavailable = hasOutOfStockConnectedProducts;
-
-  // Check if product is marked to be discontinued
   const isBeingDiscontinued = product.toBeDiscontinued === true;
 
-  // Format price with german locale
+  /**
+   * Formats a number as a currency string in German locale (EUR).
+   * @param {number} price - The price to format.
+   * @returns {string} The formatted currency string.
+   */
   const formatPrice = price => {
     return price.toLocaleString('de-DE', {
       style: 'currency',
@@ -90,23 +80,18 @@ const ProductCard = ({ product, onAddToCart }) => {
     });
   };
 
-  // Find Pfand item if exists to display its price
   const pfandItem = hasPfand
     ? product.connectedProducts.find(p => p?.category?.name === 'Pfand')
     : null;
 
-  // Calculate total price with Pfand
   const totalPriceWithPfand = hasPfand
     ? parseFloat(product.price) + parseFloat(pfandItem?.price || 0)
     : product.price;
 
-  // Enhanced category detection for icons and colors
   const { productIcon, bgColor } = useMemo(() => {
     const category = product.category?.name?.toLowerCase() || '';
 
-    // Category to icon and color mapping
     const categoryMappings = [
-      // Beverages
       {
         keywords: ['wasser', 'mineralwasser', 'water'],
         icon: <LocalDrinkIcon sx={{ fontSize: 30 }} />,
@@ -137,8 +122,6 @@ const ProductCard = ({ product, onAddToCart }) => {
         icon: <LocalBarIcon sx={{ fontSize: 30 }} />,
         color: theme.palette.purple?.light || '#9C27B0',
       },
-
-      // Food Categories
       {
         keywords: ['kuchen', 'cake', 'torte', 'gebäck', 'dessert'],
         icon: <CakeIcon sx={{ fontSize: 30 }} />,
@@ -169,22 +152,16 @@ const ProductCard = ({ product, onAddToCart }) => {
         icon: <TapasIcon sx={{ fontSize: 30 }} />,
         color: theme.palette.success.main,
       },
-
-      // Special categories
       {
         keywords: ['pfand', 'deposit', 'leergut'],
         icon: <MoneyIcon sx={{ fontSize: 30 }} />,
         color: theme.palette.warning.light,
       },
-
-      // Generic food
       {
         keywords: ['essen', 'food', 'speise', 'gericht', 'mahlzeit', 'meal'],
         icon: <RestaurantIcon sx={{ fontSize: 30 }} />,
         color: theme.palette.success.light,
       },
-
-      // Generic drinks
       {
         keywords: ['getränk', 'drink', 'beverage'],
         icon: <LocalDrinkIcon sx={{ fontSize: 30 }} />,
@@ -192,7 +169,6 @@ const ProductCard = ({ product, onAddToCart }) => {
       },
     ];
 
-    // Find matching category
     for (const mapping of categoryMappings) {
       if (mapping.keywords && mapping.keywords.some(keyword => category.includes(keyword))) {
         return {
@@ -202,7 +178,6 @@ const ProductCard = ({ product, onAddToCart }) => {
       }
     }
 
-    // Default fallback
     return {
       productIcon: <ShoppingBagIcon sx={{ fontSize: 30 }} />,
       bgColor: theme.palette.primary.light,
@@ -230,7 +205,6 @@ const ProductCard = ({ product, onAddToCart }) => {
         filter: isUnavailable ? 'grayscale(40%)' : 'none',
       }}
     >
-      {/* Out of Stock Overlay */}
       {isUnavailable && (
         <Box
           sx={{
@@ -265,7 +239,6 @@ const ProductCard = ({ product, onAddToCart }) => {
         </Box>
       )}
 
-      {/* Product Image */}
       <Box
         sx={{
           height: 100,
@@ -302,7 +275,6 @@ const ProductCard = ({ product, onAddToCart }) => {
         )}
       </Box>
 
-      {/* Category Tag */}
       <Box
         sx={{
           position: 'absolute',
@@ -326,9 +298,7 @@ const ProductCard = ({ product, onAddToCart }) => {
         />
       </Box>
 
-      {/* Badges group container to improve organization */}
       <Box sx={{ position: 'absolute', top: 0, right: 0, zIndex: 2 }}>
-        {/* Out of Stock badge */}
         {isOutOfStock && (
           <Box
             sx={{
@@ -348,7 +318,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Box>
         )}
 
-        {/* Clearance sale badge for products to be discontinued */}
         {isBeingDiscontinued && !isOutOfStock && (
           <Box
             sx={{
@@ -368,7 +337,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Box>
         )}
 
-        {/* Combined Bundle Badge - Shows different styling based on bundle status */}
         {showBundleBadge && !isOutOfStock && (
           <Box
             sx={{
@@ -393,7 +361,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Box>
         )}
 
-        {/* Discount badge */}
         {hasDiscount && !isOutOfStock && (
           <Box
             sx={{
@@ -414,7 +381,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Box>
         )}
 
-        {/* Pfand badge - only shown if there's Pfand but no other connected products */}
         {hasPfand && !showBundleBadge && !isOutOfStock && (
           <Box
             sx={{
@@ -436,7 +402,6 @@ const ProductCard = ({ product, onAddToCart }) => {
       </Box>
 
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {/* Product Name */}
         <Typography
           variant="h6"
           component="h3"
@@ -456,7 +421,6 @@ const ProductCard = ({ product, onAddToCart }) => {
 
         <Divider sx={{ my: 1 }} />
 
-        {/* Price Section */}
         <Box sx={{ mb: 1 }}>
           {hasPfand ? (
             <Box>
@@ -520,7 +484,6 @@ const ProductCard = ({ product, onAddToCart }) => {
                   {formatPrice(product.price)}
                 </Typography>
               </Box>
-              {/* Bundle items */}
               {product.connectedProducts
                 .filter(p => p?.category?.name !== 'Pfand')
                 .map((bundleItem, index) => (
@@ -545,7 +508,6 @@ const ProductCard = ({ product, onAddToCart }) => {
                     </Typography>
                   </Box>
                 ))}
-              {/* Show total if there's also pfand */}
               {hasPfand && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography variant="caption" color="success.main">
@@ -580,7 +542,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           )}
         </Box>
 
-        {/* Add to Cart Button - Disabled only if individual product is unavailable */}
         <Button
           fullWidth
           variant={isUnavailable ? 'outlined' : 'contained'}
@@ -600,7 +561,6 @@ const ProductCard = ({ product, onAddToCart }) => {
           {isUnavailable ? 'Nicht verfügbar' : 'In den Warenkorb'}
         </Button>
 
-        {/* Stock information */}
         {!isOutOfStock && (
           <Typography
             variant="caption"
@@ -622,6 +582,9 @@ const ProductCard = ({ product, onAddToCart }) => {
 };
 
 ProductCard.propTypes = {
+  /**
+   * The product data object.
+   */
   product: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
@@ -637,6 +600,9 @@ ProductCard.propTypes = {
       id: PropTypes.string,
       name: PropTypes.string,
     }),
+    /**
+     * Products connected to this one (e.g., Pfand, bundle items).
+     */
     connectedProducts: PropTypes.arrayOf(
       PropTypes.shape({
         id: PropTypes.string.isRequired,
@@ -646,9 +612,33 @@ ProductCard.propTypes = {
           id: PropTypes.string,
           name: PropTypes.string,
         }),
+        /**
+         * Current stock level fetched from API, if available.
+         */
+        currentStock: PropTypes.number,
+        /**
+         * Default stock quantity from product data.
+         */
+        stockQuantity: PropTypes.number,
       })
     ),
+    /**
+     * Current stock level fetched from API, if available.
+     */
+    currentStock: PropTypes.number,
+    /**
+     * Default stock quantity from product data.
+     */
+    stockQuantity: PropTypes.number,
+    /**
+     * Flag indicating if the product is marked for discontinuation.
+     */
+    toBeDiscontinued: PropTypes.bool,
   }).isRequired,
+  /**
+   * Callback function triggered when the "Add to Cart" button is clicked.
+   * Receives the product object as an argument.
+   */
   onAddToCart: PropTypes.func.isRequired,
 };
 

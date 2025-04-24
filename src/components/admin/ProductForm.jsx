@@ -35,7 +35,27 @@ import { Form } from '../ui/forms';
 import { Select } from '../ui/inputs';
 
 /**
- * ProductForm component for adding and editing products
+ * ProductForm component for adding and editing products.
+ * Handles data fetching for related entities (categories, brands, suppliers, products),
+ * allows inline creation of new categories, brands, and suppliers,
+ * manages connected products, and handles form submission.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {Function} props.onClose - Callback function invoked when the dialog is closed.
+ * @param {Function} props.onSubmit - Callback function invoked when the form is submitted with valid data.
+ * @param {object} [props.initialData] - Initial data to populate the form, used for editing.
+ * @param {string|number} [props.initialData.id] - The product ID (optional for create, required for edit).
+ * @param {string} [props.initialData.name=''] - The product name.
+ * @param {string} [props.initialData.description=''] - The product description.
+ * @param {number} [props.initialData.price=0] - The product price.
+ * @param {object|null} [props.initialData.category=null] - The product category object.
+ * @param {object|null} [props.initialData.brand=null] - The product brand object.
+ * @param {object|null} [props.initialData.supplier=null] - The product supplier object.
+ * @param {boolean} [props.initialData.standalone=false] - Indicates if the product is standalone.
+ * @param {Array<object>} [props.initialData.connectedProducts=[]] - List of connected products.
+ * @param {'create'|'edit'} [props.mode='create'] - The mode of the form ('create' or 'edit').
+ * @returns {React.ReactElement} The ProductForm component.
  */
 const ProductForm = ({
   open,
@@ -53,7 +73,6 @@ const ProductForm = ({
   },
   mode = 'create',
 }) => {
-  // Form data
   const [formData, setFormData] = useState({
     id: initialData?.id || '',
     name: initialData?.name || '',
@@ -66,34 +85,27 @@ const ProductForm = ({
     connectedProducts: initialData?.connectedProducts || [],
   });
 
-  // Options for dropdowns
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
-  // Entity creation states
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [creatingSupplier, setCreatingSupplier] = useState(false);
 
-  // New entity names
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newBrandName, setNewBrandName] = useState('');
   const [newSupplierName, setNewSupplierName] = useState('');
-
-  // New supplier fields
   const [newSupplierStreet, setNewSupplierStreet] = useState('');
   const [newSupplierStreetNo, setNewSupplierStreetNo] = useState('');
   const [newSupplierCity, setNewSupplierCity] = useState('');
   const [newSupplierZip, setNewSupplierZip] = useState('');
   const [newSupplierCountry, setNewSupplierCountry] = useState('Deutschland');
 
-  // Load data and reset form when dialog opens
   useEffect(() => {
     if (open) {
-      // Reset form data
       setFormData({
         id: initialData?.id || '',
         name: initialData?.name || '',
@@ -105,14 +117,10 @@ const ProductForm = ({
         standalone: initialData?.standalone || false,
         connectedProducts: initialData?.connectedProducts || [],
       });
-
-      // Fetch options
       fetchOptions();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData]);
 
-  // Fetch dropdown options
   const fetchOptions = async () => {
     try {
       setLoadingOptions(true);
@@ -127,7 +135,6 @@ const ProductForm = ({
       setBrands(brandsData.content || []);
       setSuppliers(suppliersData.content || []);
 
-      // Filter out the current product (if in edit mode)
       const filteredProducts = initialData?.id
         ? productsData.filter(p => p.id !== initialData.id)
         : productsData;
@@ -139,7 +146,6 @@ const ProductForm = ({
     }
   };
 
-  // Format dropdown options
   const formatCategoryOptions = () => {
     return categories.map(category => ({
       value: category,
@@ -172,10 +178,8 @@ const ProductForm = ({
     }));
   };
 
-  // Handle text field changes
   const handleInputChange = e => {
     const { name, value } = e.target;
-    // Convert numeric values
     const parsedValue = name === 'price' ? parseFloat(value) || 0 : value;
 
     setFormData({
@@ -184,19 +188,14 @@ const ProductForm = ({
     });
   };
 
-  // Handle dropdown changes
   const handleSelectChange = e => {
     const { name, value } = e.target;
-
-    // Make sure we're capturing the full object for our references
-    // For our Select components, value is the full object (category, brand, supplier)
     setFormData({
       ...formData,
       [name]: value,
     });
   };
 
-  // Create new category
   const handleCreateCategory = async () => {
     try {
       if (!newCategoryName.trim()) return;
@@ -204,16 +203,12 @@ const ProductForm = ({
       const categoryData = { name: newCategoryName.trim() };
       const newCategory = await ProductCategoryService.createProductCategory(categoryData);
 
-      // Add to categories list
       setCategories(prev => [...prev, newCategory]);
-
-      // Update form data
       setFormData({
         ...formData,
         category: newCategory,
       });
 
-      // Reset state
       setNewCategoryName('');
       setCreatingCategory(false);
     } catch (err) {
@@ -221,7 +216,6 @@ const ProductForm = ({
     }
   };
 
-  // Create new brand
   const handleCreateBrand = async () => {
     try {
       if (!newBrandName.trim()) return;
@@ -229,16 +223,12 @@ const ProductForm = ({
       const brandData = { name: newBrandName.trim() };
       const newBrand = await BrandService.createBrand(brandData);
 
-      // Add to brands list
       setBrands(prev => [...prev, newBrand]);
-
-      // Update form data
       setFormData({
         ...formData,
         brand: newBrand,
       });
 
-      // Reset state
       setNewBrandName('');
       setCreatingBrand(false);
     } catch (err) {
@@ -246,7 +236,6 @@ const ProductForm = ({
     }
   };
 
-  // Create new supplier
   const handleCreateSupplier = async () => {
     try {
       if (!newSupplierName.trim()) return;
@@ -261,16 +250,12 @@ const ProductForm = ({
       };
       const newSupplier = await SupplierService.createSupplier(supplierData);
 
-      // Add to suppliers list
       setSuppliers(prev => [...prev, newSupplier]);
-
-      // Update form data
       setFormData({
         ...formData,
         supplier: newSupplier,
       });
 
-      // Reset state
       setNewSupplierName('');
       setNewSupplierStreet('');
       setNewSupplierStreetNo('');
@@ -283,26 +268,22 @@ const ProductForm = ({
     }
   };
 
-  // Handle connected products changes
   const handleConnectedProductSelect = product => {
     if (!product) return;
 
-    // Add the product if not already in the list
     if (!formData.connectedProducts.some(p => p.id === product.id)) {
       setFormData(prev => ({
         ...prev,
         connectedProducts: [...prev.connectedProducts, product],
-        standalone: false, // If connected products are added, set standalone to false
+        standalone: false,
       }));
     }
   };
 
-  // Remove a connected product
   const handleRemoveConnectedProduct = productId => {
     setFormData(prev => ({
       ...prev,
       connectedProducts: prev.connectedProducts.filter(p => p.id !== productId),
-      // If no connected products left, standalone can be true
       standalone:
         prev.connectedProducts.filter(p => p.id !== productId).length === 0
           ? prev.standalone
@@ -310,7 +291,6 @@ const ProductForm = ({
     }));
   };
 
-  // Handle standalone toggle
   const handleStandaloneToggle = e => {
     const isStandalone = e.target.checked;
     setFormData(prev => ({
@@ -319,7 +299,6 @@ const ProductForm = ({
     }));
   };
 
-  // Form validation
   const isFormValid = () => {
     const nameValid = formData?.name?.trim() !== '';
     const priceValid = formData?.price >= 0;
@@ -327,29 +306,22 @@ const ProductForm = ({
     const brandValid = Boolean(formData?.brand);
     const supplierValid = Boolean(formData?.supplier);
 
-    // ID is optional, so we don't validate it
-
     return nameValid && priceValid && categoryValid && brandValid && supplierValid;
   };
 
-  // Handle form submission
   const handleSubmit = () => {
     if (!isFormValid()) return;
 
-    // Create different submission data based on mode
     let submitData = {
       ...formData,
-      // Ensure proper field mapping for backend
-      productCategory: formData.category, // Backend expects 'productCategory', not 'category'
-      defaultSupplier: formData.supplier, // Backend expects 'defaultSupplier', not 'supplier'
+      productCategory: formData.category,
+      defaultSupplier: formData.supplier,
     };
 
-    // Convert empty ID string to null
     if (submitData.id === '') {
       submitData.id = null;
     }
 
-    // Only add price history for new products or when price changed in edit mode
     if (
       mode === 'create' ||
       (mode === 'edit' && initialData.price !== parseFloat(formData.price))
@@ -358,8 +330,8 @@ const ProductForm = ({
         {
           timestamp: new Date(),
           price: parseFloat(formData.price) || 0,
-          purchasePrice: (parseFloat(formData.price) || 0) * 0.7, // Default purchase price
-          supplier: formData.supplier, // Use the selected supplier
+          purchasePrice: (parseFloat(formData.price) || 0) * 0.7,
+          supplier: formData.supplier,
         },
       ];
     }
@@ -426,7 +398,6 @@ const ProductForm = ({
                 required
               />
 
-              {/* Category Selection with Add Button */}
               <Grid container spacing={1}>
                 <Grid item xs={10}>
                   <Select
@@ -448,7 +419,6 @@ const ProductForm = ({
                 </Grid>
               </Grid>
 
-              {/* Brand Selection with Add Button */}
               <Grid container spacing={1}>
                 <Grid item xs={10}>
                   <Select
@@ -470,7 +440,6 @@ const ProductForm = ({
                 </Grid>
               </Grid>
 
-              {/* Supplier Selection with Add Button */}
               <Grid container spacing={1}>
                 <Grid item xs={10}>
                   <Select
@@ -492,12 +461,10 @@ const ProductForm = ({
                 </Grid>
               </Grid>
 
-              {/* Divider for Connected Products Section */}
               <Divider sx={{ my: 2 }}>
                 <Chip label="Verbundene Produkte" />
               </Divider>
 
-              {/* Standalone Switch */}
               <FormControlLabel
                 control={
                   <Switch
@@ -509,7 +476,6 @@ const ProductForm = ({
                 label="Standalone Produkt (Lagerbestand wird bei Verkauf nicht verändert)"
               />
 
-              {/* Connected Products Dropdown */}
               <Grid container spacing={1}>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -527,7 +493,6 @@ const ProductForm = ({
                 </Grid>
               </Grid>
 
-              {/* Connected Products List */}
               {formData.connectedProducts.length > 0 && (
                 <Box sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                   <List dense>
@@ -570,7 +535,6 @@ const ProductForm = ({
         </DialogActions>
       </Dialog>
 
-      {/* Create New Category Dialog */}
       <Dialog open={creatingCategory} onClose={() => setCreatingCategory(false)}>
         <DialogTitle>Neue Kategorie erstellen</DialogTitle>
         <DialogContent>
@@ -598,7 +562,6 @@ const ProductForm = ({
         </DialogActions>
       </Dialog>
 
-      {/* Create New Brand Dialog */}
       <Dialog open={creatingBrand} onClose={() => setCreatingBrand(false)}>
         <DialogTitle>Neue Marke erstellen</DialogTitle>
         <DialogContent>
@@ -622,7 +585,6 @@ const ProductForm = ({
         </DialogActions>
       </Dialog>
 
-      {/* Create New Supplier Dialog */}
       <Dialog open={creatingSupplier} onClose={() => setCreatingSupplier(false)}>
         <DialogTitle>Neuer Lieferant erstellen</DialogTitle>
         <DialogContent>
@@ -712,19 +674,21 @@ const ProductForm = ({
 
 ProductForm.propTypes = {
   /**
-   * Dialog open state
+   * Controls the visibility of the dialog.
    */
   open: PropTypes.bool.isRequired,
   /**
-   * Callback when dialog is closed
+   * Callback function invoked when the dialog is closed.
    */
   onClose: PropTypes.func.isRequired,
   /**
-   * Callback when form is submitted
+   * Callback function invoked when the form is submitted with valid data.
+   * Receives the prepared form data object as an argument.
    */
   onSubmit: PropTypes.func.isRequired,
   /**
-   * Initial data for the form
+   * Initial data to populate the form, typically used when editing an existing product.
+   * If not provided, the form initializes with default empty/zero values.
    */
   initialData: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -738,7 +702,8 @@ ProductForm.propTypes = {
     connectedProducts: PropTypes.array,
   }),
   /**
-   * Form mode - 'create' or 'edit'
+   * Specifies the mode of the form, influencing behavior like title text and submission logic.
+   * Defaults to 'create'.
    */
   mode: PropTypes.oneOf(['create', 'edit']),
 };

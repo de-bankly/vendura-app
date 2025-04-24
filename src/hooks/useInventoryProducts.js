@@ -5,16 +5,11 @@ import { ProductService, ProductCategoryService } from '../services';
  * Custom hook to manage inventory products data, fetching, and filtering
  */
 const useInventoryProducts = () => {
-  // State for products
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // State for categories
   const [categories, setCategories] = useState([]);
-
-  // State for filtering
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [filters, setFilters] = useState({
@@ -24,13 +19,10 @@ const useInventoryProducts = () => {
     suppliers: [],
     brands: [],
   });
-
-  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(24);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Fetch products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -51,7 +43,6 @@ const useInventoryProducts = () => {
     }
   }, [page, rowsPerPage]);
 
-  // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
       const categoriesData = await ProductCategoryService.getProductCategories({
@@ -64,24 +55,16 @@ const useInventoryProducts = () => {
     }
   }, []);
 
-  // Load products and categories on hook initialization
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, [fetchProducts, fetchCategories]);
 
-  // Apply filters whenever filter conditions change
-  useEffect(() => {
-    applyFilters();
-  }, [products, searchQuery, selectedCategory, filters]);
-
-  // Apply all filters
   const applyFilters = useCallback(() => {
     if (!products.length) return;
 
     let result = [...products];
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -92,14 +75,12 @@ const useInventoryProducts = () => {
       );
     }
 
-    // Apply category filter
     if (selectedCategory !== '') {
       result = result.filter(
         product => product.category && product.category.id === selectedCategory
       );
     }
 
-    // Apply stock filters
     if (filters.inStock) {
       result = result.filter(product => product.stockQuantity && product.stockQuantity > 0);
     }
@@ -112,19 +93,16 @@ const useInventoryProducts = () => {
       );
     }
 
-    // Apply price range filter
     result = result.filter(
       product => product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
     );
 
-    // Apply supplier filter
     if (filters.suppliers.length > 0) {
       result = result.filter(
         product => product.supplier && filters.suppliers.includes(product.supplier.id)
       );
     }
 
-    // Apply brand filter
     if (filters.brands.length > 0) {
       result = result.filter(product => product.brand && filters.brands.includes(product.brand.id));
     }
@@ -132,7 +110,10 @@ const useInventoryProducts = () => {
     setFilteredProducts(result);
   }, [products, searchQuery, selectedCategory, filters]);
 
-  // Event handlers
+  useEffect(() => {
+    applyFilters();
+  }, [products, searchQuery, selectedCategory, filters, applyFilters]);
+
   const handleSearchChange = event => {
     setSearchQuery(event.target.value);
   };

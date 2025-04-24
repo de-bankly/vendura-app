@@ -1,26 +1,28 @@
+import('./cart/CartMementoService'); // Keep dynamic import hint for bundlers if needed
+
 /**
- * Service for managing shopping cart operations
+ * Service for managing shopping cart operations.
+ * Utilizes a Memento pattern via CartMementoService for state management (undo/redo).
  */
 class CartService {
+  /**
+   * Initializes the CartService.
+   */
   constructor() {
-    // Lazy load the CartMementoService to avoid circular dependency issues
     this._mementoService = null;
     this._mementoServicePromise = null;
   }
 
   /**
-   * Get the memento service instance
-   * @returns {Promise<CartMementoService>} The memento service instance
+   * Lazily loads and returns the CartMementoService instance.
+   * @returns {Promise<import('./cart/CartMementoService').default>} The memento service instance.
    * @private
    */
   async _getMementoService() {
     if (!this._mementoService) {
       if (!this._mementoServicePromise) {
-        // Use dynamic import instead of require
         this._mementoServicePromise = import('./cart/CartMementoService').then(module => {
-          // The service is already an instance, not a class
           this._mementoService = module.default;
-
           if (!this._mementoService) {
             console.error('Failed to load CartMementoService, module structure:', module);
             throw new Error('CartMementoService not found in imported module');
@@ -34,33 +36,29 @@ class CartService {
   }
 
   /**
-   * Add a product to the cart
-   * @param {Array} cartItems Current cart items
-   * @param {Object} product Product to add
-   * @returns {Array} Updated cart items
+   * Adds a product to the cart or increments its quantity.
+   * Handles parent products and their connected products (e.g., Pfand/deposit).
+   * Pfand products cannot be added individually or have their quantity incremented directly.
+   * @param {Array<Object>} cartItems - Current cart items.
+   * @param {Object} product - Product to add.
+   * @returns {Array<Object>} Updated cart items.
    */
   addToCart(cartItems, product) {
     let updatedCartItems = [...cartItems];
-
-    // Check if the product already exists in cart
     const existingItem = updatedCartItems.find(item => item.id === product.id);
 
     if (existingItem) {
-      // Check if the product is a Pfand product
       const isPfandProduct =
         existingItem.isPfandProduct === true || existingItem.category?.name === 'Pfand';
 
-      // If it's a Pfand product, don't increment quantity
       if (isPfandProduct) {
-        return cartItems; // Return original cart items without changes
+        return cartItems; // Pfand items quantity tied to parent
       }
 
-      // If product already exists and is not a Pfand product, increment quantity
       updatedCartItems = updatedCartItems.map(item =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       );
 
-      // If this is a parent product, also increment all its connected products
       if (product.connectedProducts && product.connectedProducts.length > 0) {
         for (const connectedProduct of product.connectedProducts) {
           const existingConnectedItem = updatedCartItems.find(
@@ -68,14 +66,7 @@ class CartService {
           );
 
           if (existingConnectedItem) {
-            // Check if connected product is a Pfand product
-            const isConnectedPfandProduct =
-              existingConnectedItem.isPfandProduct === true ||
-              connectedProduct?.category?.name === 'Pfand';
-
-            // For connected products, always update their quantity to match the parent
-            // This allows Pfand products to be updated when their parent product is updated
-            // but prevents them from being independently updated
+            // Update connected product quantity to match parent
             updatedCartItems = updatedCartItems.map(item =>
               item.id === connectedProduct.id && item.parentProductId === product.id
                 ? { ...item, quantity: item.quantity + 1 }
@@ -85,137 +76,117 @@ class CartService {
         }
       }
     } else {
-      // Add the product to cart
       updatedCartItems.push({ ...product, quantity: 1 });
 
-      // Add connected products if any
       if (product.connectedProducts && product.connectedProducts.length > 0) {
         product.connectedProducts.forEach(connectedProduct => {
-          // Check if this is a Pfand product - add null check for category
           const isPfandProduct = connectedProduct?.category?.name === 'Pfand';
-
-          // Create a copy with additional property to mark it as a connected product
           const connectedProductWithParent = {
             ...connectedProduct,
             quantity: 1,
             isConnectedProduct: true,
-            isPfandProduct: isPfandProduct, // Mark Pfand products
+            isPfandProduct: isPfandProduct,
             parentProductId: product.id,
           };
-
           updatedCartItems.push(connectedProductWithParent);
         });
       }
     }
 
-    // Update cart locally first
     this._updateMementoServiceAsync(updatedCartItems);
     return updatedCartItems;
   }
 
   /**
-   * Remove a product from the cart
-   * @param {Array} cartItems Current cart items
-   * @param {string} productId ID of product to remove
-   * @returns {Array} Updated cart items
+   * Decrements a product's quantity or removes it if quantity is 1.
+   * Prevents direct removal/decrement of connected or Pfand products.
+   * Handles parent products and their connected products accordingly.
+   * @param {Array<Object>} cartItems - Current cart items.
+   * @param {string} productId - ID of the product to remove/decrement.
+   * @returns {Array<Object>} Updated cart items.
    */
   removeFromCart(cartItems, productId) {
-    // Find the item to remove
     const itemToRemove = cartItems.find(item => item.id === productId);
-    let updatedCartItems = [...cartItems]; // Start with a copy
+    let updatedCartItems = [...cartItems];
 
-    // If it's a connected product or Pfand product, don't remove it
     if (itemToRemove && (itemToRemove.isConnectedProduct || itemToRemove.isPfandProduct)) {
-      // No change, return original items (no memento update needed)
-      return cartItems;
+      return cartItems; // Cannot directly remove connected/Pfand items
     }
 
-    // Handle parent product removal (decrement or remove completely)
     if (itemToRemove && !itemToRemove.isConnectedProduct) {
-      // If quantity is more than 1, just decrement
+      // Handle parent product
       if (itemToRemove.quantity > 1) {
-        // Decrement quantity of parent product
         updatedCartItems = updatedCartItems.map(item =>
           item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         );
 
-        // Find and decrement quantities of connected products as well
-        const connectedProductItems = updatedCartItems.filter(
-          item => item.parentProductId === productId
+        // Decrement connected products
+        updatedCartItems = updatedCartItems.map(item =>
+          item.parentProductId === productId ? { ...item, quantity: item.quantity - 1 } : item
         );
-
-        if (connectedProductItems.length > 0) {
-          updatedCartItems = updatedCartItems.map(item =>
-            item.parentProductId === productId ? { ...item, quantity: item.quantity - 1 } : item
-          );
-
-          // Remove connected products with zero quantity (shouldn't happen if parent > 1, but good practice)
-          updatedCartItems = updatedCartItems.filter(item => item.quantity > 0);
-        }
+        // Clean up any connected items that might reach zero (should align with parent)
+        updatedCartItems = updatedCartItems.filter(
+          item => item.quantity > 0 || item.parentProductId !== productId
+        );
       } else {
-        // Remove the parent product and all its connected products
+        // Remove parent and all connected products
         updatedCartItems = updatedCartItems.filter(
           item => item.id !== productId && item.parentProductId !== productId
         );
       }
-    } else {
-      // Handle normal products (not parent, not connected/pfand)
-      const existingItem = cartItems.find(item => item.id === productId);
-
-      if (existingItem && existingItem.quantity > 1) {
+    } else if (itemToRemove) {
+      // Handle regular product (not parent, not connected/pfand)
+      if (itemToRemove.quantity > 1) {
         updatedCartItems = cartItems.map(item =>
           item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         );
       } else {
-        // Remove the item completely if quantity is 1 or item not found (though handled above)
         updatedCartItems = cartItems.filter(item => item.id !== productId);
       }
     }
+    // If itemToRemove was not found, updatedCartItems remains a copy of cartItems
 
-    // Update cart locally first
     this._updateMementoServiceAsync(updatedCartItems);
     return updatedCartItems;
   }
 
   /**
-   * Delete a product from the cart entirely, regardless of quantity.
-   * @param {Array} cartItems Current cart items
-   * @param {string} productId ID of product to delete
-   * @returns {Array} Updated cart items
+   * Deletes a product from the cart entirely, regardless of quantity.
+   * Prevents direct deletion of connected or Pfand products.
+   * If a parent product is deleted, its connected products are also deleted.
+   * @param {Array<Object>} cartItems - Current cart items.
+   * @param {string} productId - ID of the product to delete.
+   * @returns {Array<Object>} Updated cart items.
    */
   deleteFromCart(cartItems, productId) {
-    // Find the item to delete
     const itemToDelete = cartItems.find(item => item.id === productId);
-    let updatedCartItems = [...cartItems]; // Start with a copy
+    let updatedCartItems = [...cartItems];
 
-    // If it's a connected product or Pfand product, don't allow deletion
     if (itemToDelete && (itemToDelete.isConnectedProduct || itemToDelete.isPfandProduct)) {
-      // No change, return original items (no memento update needed)
-      return cartItems;
+      return cartItems; // Cannot directly delete connected/Pfand items
     }
 
-    // If it's a parent product, delete it and all its connected products
     if (itemToDelete && !itemToDelete.isConnectedProduct) {
+      // Delete parent and all connected products
       updatedCartItems = cartItems.filter(
         item => item.id !== productId && item.parentProductId !== productId
       );
     } else {
-      // Default case: normal product deletion (or item not found)
+      // Delete regular product (or if item not found)
       updatedCartItems = cartItems.filter(item => item.id !== productId);
     }
 
-    // Update cart locally first
     this._updateMementoServiceAsync(updatedCartItems);
     return updatedCartItems;
   }
 
   /**
-   * Update memento service asynchronously without blocking
-   * @param {Array} cartItems Cart items to update
+   * Updates the CartMementoService with the current cart items asynchronously.
+   * This is a "fire and forget" operation to avoid blocking UI updates.
+   * @param {Array<Object>} cartItems - Cart items to save in the memento state.
    * @private
    */
   _updateMementoServiceAsync(cartItems) {
-    // Fire and forget - don't block UI operations
     this._getMementoService()
       .then(service => {
         service.updateCartItems(cartItems);
@@ -226,39 +197,32 @@ class CartService {
   }
 
   /**
-   * Check if an item in the cart is removable (decrementable) or deletable
-   * @param {Object} cartItem The cart item to check
-   * @returns {boolean} Whether the item can be removed/deleted by user actions
+   * Checks if a specific cart item can be directly removed or deleted by the user.
+   * Users can only interact directly with items that are not connected or Pfand products.
+   * @param {Object} cartItem - The cart item to check.
+   * @returns {boolean} True if the item is removable/deletable via UI controls.
    */
   isItemRemovable(cartItem) {
-    // User can only directly remove/delete items that are NOT connected or Pfand
     return !cartItem.isConnectedProduct && !cartItem.isPfandProduct;
   }
 
   /**
-   * Calculate subtotal of cart items
-   * @param {Array} cartItems Cart items
-   * @returns {number} Subtotal
+   * Calculates the subtotal of all items in the cart, considering discounts.
+   * @param {Array<Object>} cartItems - Cart items.
+   * @returns {number} The calculated subtotal.
    */
   calculateSubtotal(cartItems) {
     return cartItems.reduce((sum, item) => {
-      // Check if item has a discount, use discounted price if available
-      let price;
-      if (item.hasDiscount && item.discountedPrice !== undefined) {
-        price = parseFloat(item.discountedPrice) || 0;
-      } else {
-        price = parseFloat(item.price) || 0;
-      }
-
+      const price = this.getItemEffectivePrice(item);
       const quantity = parseInt(item.quantity) || 0;
       return sum + price * quantity;
     }, 0);
   }
 
   /**
-   * Get the effective price for an item (considering discounts)
-   * @param {Object} item Cart item
-   * @returns {number} Effective price
+   * Gets the effective price for a single cart item, considering potential discounts.
+   * @param {Object} item - The cart item.
+   * @returns {number} The effective price (discounted price if available, otherwise regular price).
    */
   getItemEffectivePrice(item) {
     if (item.hasDiscount && item.discountedPrice !== undefined) {
@@ -268,33 +232,29 @@ class CartService {
   }
 
   /**
-   * Calculate total discount amount for cart items based on price differences
-   * @param {Array} cartItems Cart items
-   * @returns {number} Total discount amount
+   * Calculates the total discount amount applied across all cart items.
+   * Compares originalPrice and discountedPrice for items marked with hasDiscount.
+   * Includes safety checks for valid prices and caps discount per item.
+   * @param {Array<Object>} cartItems - Cart items.
+   * @returns {number} The total discount amount.
    */
   calculateTotalDiscount(cartItems) {
     return cartItems.reduce((sum, item) => {
       if (
         item.hasDiscount &&
-        item.originalPrice !== undefined && // Ensure original price exists for comparison
+        item.originalPrice !== undefined &&
         item.discountedPrice !== undefined
       ) {
         const originalPrice = parseFloat(item.originalPrice) || 0;
         const discountedPrice = parseFloat(item.discountedPrice) || 0;
 
-        // Skip items with invalid prices
         if (originalPrice <= 0) {
-          return sum;
+          return sum; // Skip items with invalid original price
         }
 
-        // Calculate discount per item with sensible limits
         let discountPerItem = Math.max(0, originalPrice - discountedPrice);
-
-        // Cap discount at 50% of original price as a safety measure
-        const maxDiscount = originalPrice * 0.5;
-        if (discountPerItem > maxDiscount) {
-          discountPerItem = maxDiscount;
-        }
+        const maxDiscount = originalPrice * 0.5; // Safety cap
+        discountPerItem = Math.min(discountPerItem, maxDiscount);
 
         const quantity = parseInt(item.quantity) || 0;
         return sum + discountPerItem * quantity;
@@ -304,32 +264,34 @@ class CartService {
   }
 
   /**
-   * Calculate voucher discount
-   * @param {Array} vouchers Applied vouchers
-   * @returns {number} Total discount
+   * Calculates the total discount amount from applied vouchers.
+   * @param {Array<Object>} vouchers - Applied vouchers, each expected to have a 'value' property.
+   * @returns {number} Total discount from vouchers.
    */
   calculateVoucherDiscount(vouchers) {
     return vouchers.reduce((sum, voucher) => {
-      // Use the redeemed amount (value) for the discount
       const discountAmount = parseFloat(voucher.value) || 0;
       return sum + discountAmount;
     }, 0);
   }
 
   /**
-   * Calculate total after voucher discount
-   * @param {number} subtotal Subtotal
-   * @param {number} voucherDiscount Voucher discount
-   * @returns {number} Total
+   * Calculates the final total after applying voucher discounts to the subtotal.
+   * Ensures the total does not go below zero.
+   * @param {number} subtotal - The cart subtotal (after item discounts).
+   * @param {number} voucherDiscount - The total discount from vouchers.
+   * @returns {number} The final total amount.
    */
   calculateTotal(subtotal, voucherDiscount) {
     return Math.max(0, subtotal - voucherDiscount);
   }
 
   /**
-   * Format cart items for sale submission (adds necessary discount info)
-   * @param {Array} cartItems Cart items
-   * @returns {Array} Formatted cart items for sale
+   * Formats cart items for submission (e.g., to an API endpoint for sale processing).
+   * Includes essential details like ID, quantity, and calculated discount amounts per line item.
+   * Also includes flags for connected and Pfand products.
+   * @param {Array<Object>} cartItems - Cart items.
+   * @returns {Array<Object>} Formatted cart items suitable for sale submission.
    */
   formatCartItemsForSale(cartItems) {
     return cartItems.map(item => {
@@ -338,7 +300,6 @@ class CartService {
         quantity: item.quantity,
       };
 
-      // Add discount information if available and meaningful
       if (
         item.hasDiscount &&
         item.originalPrice !== undefined &&
@@ -347,20 +308,17 @@ class CartService {
         const originalPrice = parseFloat(item.originalPrice) || 0;
         const discountedPrice = parseFloat(item.discountedPrice) || 0;
         const discountAmount = Math.max(0, originalPrice - discountedPrice);
-        // Only add discountEuro if there's actually a discount
         if (discountAmount > 0) {
-          // Calculate total discount for the quantity of this item
+          // Total discount for the quantity of this specific item line
           formattedItem.discountEuro = discountAmount * item.quantity;
         }
       }
 
-      // Add connected product information if it's a connected product
       if (item.isConnectedProduct && item.parentProductId) {
         formattedItem.isConnectedProduct = true;
         formattedItem.parentProductId = item.parentProductId;
       }
 
-      // Add Pfand information if it's a deposit item
       if (item.isPfandProduct) {
         formattedItem.isPfandProduct = true;
       }
@@ -370,11 +328,11 @@ class CartService {
   }
 
   /**
-   * Save the current cart state
-   * @param {Array} cartItems Current cart items
-   * @param {Array} appliedVouchers Current applied vouchers
-   * @param {string} label Optional label for the saved state
-   * @returns {Promise<boolean>} Promise resolving to true if save was successful
+   * Saves the current state of the cart (items and vouchers) using the MementoService.
+   * @param {Array<Object>} cartItems - Current cart items.
+   * @param {Array<Object>} appliedVouchers - Current applied vouchers.
+   * @param {string} [label=null] - Optional label for the saved state.
+   * @returns {Promise<boolean>} Promise resolving to true if save was successful, false otherwise.
    */
   async saveCartState(cartItems, appliedVouchers, label = null) {
     try {
@@ -389,8 +347,8 @@ class CartService {
   }
 
   /**
-   * Undo to the previous cart state
-   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored cart items and applied vouchers, or null if undo failed
+   * Reverts the cart to the previous saved state (undo).
+   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored { cartItems, appliedVouchers }, or null if undo failed or not possible.
    */
   async undoCartState() {
     try {
@@ -403,8 +361,8 @@ class CartService {
   }
 
   /**
-   * Redo to the next cart state
-   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored cart items and applied vouchers, or null if redo failed
+   * Re-applies a previously undone cart state (redo).
+   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored { cartItems, appliedVouchers }, or null if redo failed or not possible.
    */
   async redoCartState() {
     try {
@@ -417,40 +375,38 @@ class CartService {
   }
 
   /**
-   * Check if undo is available
-   * @returns {boolean} True if undo is available
+   * Checks if an undo operation is currently possible.
+   * Requires the MementoService to be loaded.
+   * @returns {boolean} True if undo is available, false otherwise.
    */
   canUndoCartState() {
-    // Try to get the memento service if it's not already loaded
     if (!this._mementoService) {
-      // Trigger loading in the background, but return false for now
       this._getMementoService().catch(err => {
-        console.error('Failed to load memento service for undo check:', err);
+        console.error('Background load failed for canUndoCartState check:', err);
       });
-      return false;
+      return false; // Service not ready yet
     }
     return this._mementoService.canUndo();
   }
 
   /**
-   * Check if redo is available
-   * @returns {boolean} True if redo is available
+   * Checks if a redo operation is currently possible.
+   * Requires the MementoService to be loaded.
+   * @returns {boolean} True if redo is available, false otherwise.
    */
   canRedoCartState() {
-    // Try to get the memento service if it's not already loaded
     if (!this._mementoService) {
-      // Trigger loading in the background, but return false for now
       this._getMementoService().catch(err => {
-        console.error('Failed to load memento service for redo check:', err);
+        console.error('Background load failed for canRedoCartState check:', err);
       });
-      return false;
+      return false; // Service not ready yet
     }
     return this._mementoService.canRedo();
   }
 
   /**
-   * Get all saved cart states
-   * @returns {Promise<Array>} Promise resolving to an array of saved cart states
+   * Retrieves all saved cart states from the MementoService.
+   * @returns {Promise<Array<Object>>} Promise resolving to an array of saved cart state objects (each potentially having a label and timestamp).
    */
   async getAllSavedCartStates() {
     try {
@@ -463,22 +419,22 @@ class CartService {
   }
 
   /**
-   * Restore a specific saved cart state
-   * @param {number} index Index of the saved state to restore
-   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored cart items and applied vouchers, or null if restore failed
+   * Restores the cart to a specific saved state identified by its index.
+   * @param {number} index - The index of the saved state to restore.
+   * @returns {Promise<Object|null>} Promise resolving to an object containing the restored { cartItems, appliedVouchers }, or null if restore failed.
    */
   async restoreCartState(index) {
     try {
       const service = await this._getMementoService();
       return service.restoreStateByIndex(index);
     } catch (err) {
-      console.error('Failed to restore cart state:', err);
+      console.error('Failed to restore cart state by index:', err);
       return null;
     }
   }
 
   /**
-   * Clear all saved cart states
+   * Clears the entire cart history (undo/redo stack and saved states) from the MementoService.
    * @returns {Promise<void>}
    */
   async clearCartHistory() {
@@ -491,8 +447,8 @@ class CartService {
   }
 
   /**
-   * Enable or disable auto-saving of cart states
-   * @param {boolean} enabled Whether auto-saving should be enabled
+   * Enables or disables the auto-save feature in the MementoService.
+   * @param {boolean} enabled - True to enable auto-saving, false to disable.
    * @returns {Promise<void>}
    */
   async setCartAutoSaveEnabled(enabled) {

@@ -16,7 +16,12 @@ import { useState } from 'react';
 import { getUserFriendlyErrorMessage } from '../../utils/errorUtils';
 
 /**
- * Modern login form component for cashier platform
+ * A modern login form component for the cashier platform.
+ * Handles user input for username and password, displays errors,
+ * and triggers an asynchronous submission process.
+ *
+ * @param {object} props - The component props.
+ * @param {function(string, string): Promise<void>} props.onSubmit - Async function called when the form is submitted with valid credentials. Takes username and password as arguments.
  */
 const LoginForm = ({ onSubmit }) => {
   const [username, setUsername] = useState('');

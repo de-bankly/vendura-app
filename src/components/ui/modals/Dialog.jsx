@@ -15,6 +15,26 @@ import React from 'react';
 /**
  * Enhanced Dialog component that extends MUI Dialog with consistent styling
  * and additional functionality based on the Vendura theme.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - If true, the dialog is open.
+ * @param {Function} [props.onClose] - Callback fired when the dialog is closed.
+ * @param {React.ReactNode} [props.title] - The title of the dialog.
+ * @param {React.ReactNode} [props.content] - The content of the dialog.
+ * @param {React.ReactNode} [props.contentText] - The text content of the dialog.
+ * @param {React.ReactNode} [props.actions] - The actions of the dialog.
+ * @param {'xs' | 'sm' | 'md' | 'lg' | 'xl' | false} [props.maxWidth='sm'] - The maximum width of the dialog.
+ * @param {boolean} [props.fullWidth=true] - If true, the dialog will take up the full width of its container.
+ * @param {boolean} [props.showCloseButton=true] - If true, the close button will be displayed.
+ * @param {boolean} [props.disableBackdropClick=false] - If true, clicking the backdrop will not close the dialog.
+ * @param {boolean} [props.disableEscapeKeyDown=false] - If true, pressing the escape key will not close the dialog.
+ * @param {'paper' | 'body'} [props.scroll='paper'] - The scroll behavior of the dialog.
+ * @param {object} [props.titleProps={}] - Additional props for the DialogTitle component.
+ * @param {object} [props.contentProps={}] - Additional props for the DialogContent component.
+ * @param {object} [props.actionsProps={}] - Additional props for the DialogActions component.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @param {React.ReactNode} [props.children] - The children of the dialog. If provided, `title`, `content`, `contentText`, and `actions` props are ignored.
+ * @returns {React.ReactElement} The rendered Dialog component.
  */
 const Dialog = ({
   open,
@@ -38,14 +58,12 @@ const Dialog = ({
 }) => {
   const theme = useTheme();
 
-  // Handle backdrop click
   const handleBackdropClick = event => {
     if (!disableBackdropClick && onClose) {
       onClose(event, 'backdropClick');
     }
   };
 
-  // Check if children are provided
   const hasChildren = React.Children.count(children) > 0;
 
   return (
@@ -57,8 +75,8 @@ const Dialog = ({
       scroll={scroll}
       disableEscapeKeyDown={disableEscapeKeyDown}
       onBackdropClick={handleBackdropClick}
-      aria-labelledby="dialog-title"
-      aria-describedby="dialog-description"
+      aria-labelledby={title ? 'dialog-title' : undefined}
+      aria-describedby={contentText ? 'dialog-description' : undefined}
       sx={{
         '& .MuiDialog-paper': {
           borderRadius: theme.shape.borderRadius * 1.5,
@@ -84,7 +102,7 @@ const Dialog = ({
               <Typography variant="h6" component="h2">
                 {title}
               </Typography>
-              {showCloseButton && (
+              {showCloseButton && onClose && (
                 <IconButton
                   aria-label="close"
                   onClick={onClose}
@@ -148,7 +166,7 @@ Dialog.propTypes = {
   /** The actions of the dialog */
   actions: PropTypes.node,
   /** The maximum width of the dialog */
-  maxWidth: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
+  maxWidth: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl', false]),
   /** If true, the dialog will take up the full width of its container */
   fullWidth: PropTypes.bool,
   /** If true, the close button will be displayed */
@@ -167,7 +185,7 @@ Dialog.propTypes = {
   actionsProps: PropTypes.object,
   /** The system prop that allows defining system overrides as well as additional CSS styles */
   sx: PropTypes.object,
-  /** The children of the dialog */
+  /** The children of the dialog. If provided, `title`, `content`, `contentText`, and `actions` props are ignored. */
   children: PropTypes.node,
 };
 

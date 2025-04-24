@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { Button, IconButton } from '../ui/buttons';
 import { Chip } from '../ui/feedback';
@@ -18,8 +18,38 @@ import { Form, FormField, FormSection } from '../ui/forms';
 import { Select, TextField } from '../ui/inputs';
 
 /**
- * UserForm component for creating and editing users
- * Enhanced with better accessibility and visual design
+ * @typedef {object} Role
+ * @property {string|number} id - The unique identifier for the role.
+ * @property {string} name - The display name of the role.
+ */
+
+/**
+ * @typedef {object} UserFormData
+ * @property {string} username - The user's unique username.
+ * @property {string} [firstName] - The user's first name.
+ * @property {string} [lastName] - The user's last name.
+ * @property {string} email - The user's email address.
+ * @property {string} [password] - The user's password (only required/used on create or change).
+ * @property {boolean} [active] - Whether the user account is active. Defaults to false if undefined.
+ * @property {boolean} [locked] - Whether the user account is locked. Defaults to false if undefined.
+ * @property {Array<string|number>} [roles] - Array of role IDs assigned to the user. Defaults to empty array if undefined.
+ */
+
+/**
+ * A form component for creating or editing user details.
+ * Provides fields for username, name, email, password, status, lock status, and roles.
+ * Includes validation hints and accessibility features.
+ *
+ * @param {object} props - The component props.
+ * @param {UserFormData} props.formData - The current state of the form data.
+ * @param {function(UserFormData): void} props.onChange - Callback function triggered when any form field changes.
+ * @param {function(React.FormEvent<HTMLFormElement>): void} props.onSubmit - Callback function triggered when the form is submitted.
+ * @param {Array<Role>} [props.roles=[]] - An array of available roles to select from.
+ * @param {boolean} [props.editMode=false] - If true, the form is in edit mode (e.g., disables username, changes labels).
+ * @param {string} [props.error=''] - An error message to display at the top of the form.
+ * @param {boolean} [props.loading=false] - If true, indicates the form is submitting and disables the submit button.
+ * @param {function(): void} props.onCancel - Callback function triggered when the cancel button is clicked.
+ * @returns {JSX.Element} The rendered UserForm component.
  */
 const UserForm = ({
   formData,
@@ -31,10 +61,9 @@ const UserForm = ({
   loading = false,
   onCancel,
 }) => {
-  const [showPassword, setShowPassword] = React.useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const theme = useTheme();
 
-  // Memoize handlers
   const handleInputChange = useCallback(
     e => {
       const { name, value } = e.target;
@@ -103,7 +132,7 @@ const UserForm = ({
             <TextField
               name="username"
               type="text"
-              value={formData.username}
+              value={formData.username || ''}
               onChange={handleInputChange}
               disabled={editMode}
               autoFocus={!editMode}
@@ -120,7 +149,7 @@ const UserForm = ({
                 <TextField
                   name="firstName"
                   type="text"
-                  value={formData.firstName}
+                  value={formData.firstName || ''}
                   onChange={handleInputChange}
                   fullWidth
                 />
@@ -132,7 +161,7 @@ const UserForm = ({
                 <TextField
                   name="lastName"
                   type="text"
-                  value={formData.lastName}
+                  value={formData.lastName || ''}
                   onChange={handleInputChange}
                   fullWidth
                 />
@@ -144,7 +173,7 @@ const UserForm = ({
             <TextField
               name="email"
               type="email"
-              value={formData.email}
+              value={formData.email || ''}
               onChange={handleInputChange}
               fullWidth
               inputProps={{
@@ -165,11 +194,12 @@ const UserForm = ({
             <TextField
               name="password"
               type={showPassword ? 'text' : 'password'}
-              value={formData.password}
+              value={formData.password || ''}
               onChange={handleInputChange}
               fullWidth
               inputProps={{
                 'aria-required': !editMode ? 'true' : 'false',
+                autoComplete: editMode ? 'new-password' : 'current-password',
               }}
               InputProps={{
                 endAdornment: (
@@ -198,7 +228,7 @@ const UserForm = ({
                   control={
                     <Switch
                       name="active"
-                      checked={formData.active}
+                      checked={!!formData.active}
                       onChange={handleSwitchChange}
                       color="success"
                     />
@@ -217,7 +247,7 @@ const UserForm = ({
                   control={
                     <Switch
                       name="locked"
-                      checked={formData.locked}
+                      checked={!!formData.locked}
                       onChange={handleSwitchChange}
                       color="error"
                     />
@@ -232,14 +262,14 @@ const UserForm = ({
             label="Roles"
             helperText={
               editMode
-                ? 'Bestehende Rollen bleiben erhalten, wenn keine Änderungen vorgenommen werden'
+                ? 'Existing roles are preserved if no changes are made'
                 : 'Assign one or more roles to the user'
             }
           >
             <Select
               name="roles"
               multiple
-              value={formData.roles}
+              value={formData.roles || []}
               onChange={handleRoleChange}
               options={roles.map(role => ({
                 value: role.id,
@@ -293,17 +323,22 @@ UserForm.propTypes = {
     firstName: PropTypes.string,
     lastName: PropTypes.string,
     email: PropTypes.string.isRequired,
-    password: PropTypes.string,
+    password: PropTypes.string, // Not required in edit mode unless changing
     active: PropTypes.bool,
     locked: PropTypes.bool,
-    roles: PropTypes.array,
+    roles: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])), // Allow string or number IDs
   }).isRequired,
   /** Function called when form data changes */
   onChange: PropTypes.func.isRequired,
   /** Function called when form is submitted */
   onSubmit: PropTypes.func.isRequired,
   /** Available roles for selection */
-  roles: PropTypes.array,
+  roles: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ),
   /** Whether the form is in edit mode */
   editMode: PropTypes.bool,
   /** Error message to display */

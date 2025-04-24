@@ -1,23 +1,29 @@
 import axios from 'axios';
 
+/**
+ * Axios instance configured for API communication.
+ * Includes base URL, default headers, timeout, and credential handling.
+ * @type {import('axios').AxiosInstance}
+ */
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://api.vendura.me',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 20000, // Add 20 second timeout
-  // Enable withCredentials for authentication requests
+  timeout: 20000,
   withCredentials: true,
 });
 
-// Request interceptor for adding auth token
+/**
+ * Request interceptor to automatically add the Authorization header
+ * with the JWT token from localStorage if it exists.
+ */
 apiClient.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   error => {
@@ -25,22 +31,21 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for handling errors
+/**
+ * Response interceptor to handle global errors.
+ * Specifically handles 401 Unauthorized errors by clearing credentials
+ * and redirecting to the login page. Also logs network errors.
+ */
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-
-      // Use history API for consistent navigation behavior with the router
       window.history.pushState({}, '', '/login');
       window.location.reload();
     }
 
-    // Check for network errors
     if (error.message === 'Network Error') {
       console.error('Network error detected. Server might be down or unreachable.');
     }

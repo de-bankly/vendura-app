@@ -1,5 +1,5 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Typography, Container, Button, Paper } from '@mui/material';
+import { Typography, Container, Button, Paper } from '@mui/material';
 import { Component } from 'react';
 import { useNavigate, useRouteError } from 'react-router-dom';
 
@@ -10,7 +10,10 @@ import {
 } from '../../utils/errorUtils';
 
 /**
- * Error details component that displays the error message and stack trace
+ * Error details component that displays the error message and stack trace.
+ * @param {object} props - Component props.
+ * @param {Error} props.error - The error object to display.
+ * @returns {JSX.Element} The rendered component.
  */
 const ErrorDetails = ({ error }) => {
   const formattedError = formatErrorForDisplay(error, true);
@@ -50,7 +53,8 @@ const ErrorDetails = ({ error }) => {
 };
 
 /**
- * Button to navigate back to the home page
+ * Button to navigate back to the home page.
+ * @returns {JSX.Element} The rendered component.
  */
 const HomeButton = () => {
   const navigate = useNavigate();
@@ -69,7 +73,12 @@ const HomeButton = () => {
 };
 
 /**
- * Error UI component that displays a user-friendly error message
+ * Error UI component that displays a user-friendly error message.
+ * @param {object} props - Component props.
+ * @param {Error | null} props.error - The error object.
+ * @param {Function} [props.resetErrorBoundary] - Function to reset the error state.
+ * @param {boolean} [props.showDetails=false] - Whether to show detailed error information.
+ * @returns {JSX.Element} The rendered component.
  */
 const ErrorUI = ({ error, resetErrorBoundary, showDetails = false }) => {
   const friendlyMessage = getUserFriendlyErrorMessage(error);
@@ -100,35 +109,59 @@ const ErrorUI = ({ error, resetErrorBoundary, showDetails = false }) => {
 };
 
 /**
- * Router error boundary component that catches errors thrown during routing
+ * Router error boundary component that catches errors thrown during routing.
+ * Uses `useRouteError` hook from react-router-dom.
+ * @returns {JSX.Element} The rendered error UI.
  */
 export const RouterErrorBoundary = () => {
   const error = useRouteError();
 
-  // Log the routing error
   logError(error, {}, 'RouterErrorBoundary');
 
   return <ErrorUI error={error} showDetails={import.meta.env.DEV} />;
 };
 
 /**
- * Class component that catches errors in its child component tree
+ * Class component that catches errors in its child component tree.
+ * Implements the React Error Boundary interface.
+ * @extends Component
  */
 class ErrorBoundary extends Component {
+  /**
+   * Creates an instance of ErrorBoundary.
+   * @param {object} props - Component props.
+   * @param {React.ReactNode} props.children - The child components to render.
+   * @param {Function} [props.fallback] - A fallback component/function to render on error.
+   * @param {Function} [props.onReset] - Callback function when the boundary is reset.
+   */
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
+  /**
+   * Lifecycle method to update state when an error is thrown by a descendant component.
+   * @param {Error} error - The error that was thrown.
+   * @returns {{ hasError: boolean, error: Error }} - An object to update the state.
+   */
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
 
+  /**
+   * Lifecycle method called after an error has been thrown by a descendant component.
+   * Used for side effects like logging.
+   * @param {Error} error - The error that was thrown.
+   * @param {React.ErrorInfo} errorInfo - An object with component stack information.
+   */
   componentDidCatch(error, errorInfo) {
-    // Log the error using our utility
     logError(error, errorInfo, 'ErrorBoundary');
   }
 
+  /**
+   * Resets the error state of the boundary.
+   * Calls the optional `onReset` prop if provided in development mode.
+   */
   resetErrorBoundary = () => {
     this.setState({ hasError: false, error: null });
     if (import.meta.env.DEV && this.props.onReset) {
@@ -136,6 +169,12 @@ class ErrorBoundary extends Component {
     }
   };
 
+  /**
+   * Renders the component.
+   * If an error occurred, it renders the fallback UI or a default ErrorUI.
+   * Otherwise, it renders the children.
+   * @returns {React.ReactNode} The rendered component tree or fallback UI.
+   */
   render() {
     const { children, fallback } = this.props;
     const { hasError, error } = this.state;

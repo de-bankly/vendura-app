@@ -12,14 +12,12 @@ import {
   Card,
   CardContent,
   Avatar,
-  Divider,
   TextField,
   InputAdornment,
   useTheme,
   alpha,
   CircularProgress,
   Alert,
-  Chip,
 } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -33,7 +31,6 @@ import { PromotionList, PromotionForm } from '../components/promotions';
 import { ProductService, PromotionService } from '../services';
 import { useToast } from '../components/ui/feedback';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -48,10 +45,16 @@ const itemVariants = {
 };
 
 /**
- * PromotionManagementScreen handles the creation, editing and deletion of promotions
+ * @component PromotionManagementScreen
+ * @description Handles the display, creation, editing, and deletion of promotions.
+ * It fetches promotion and product data, provides filtering capabilities,
+ * and manages dialogs for creating/editing and confirming deletion.
+ * @returns {React.ReactElement} The Promotion Management Screen component.
  */
 const PromotionManagementScreen = () => {
   const theme = useTheme();
+  const { showToast } = useToast();
+
   const [promotions, setPromotions] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -59,20 +62,22 @@ const PromotionManagementScreen = () => {
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null });
+  const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({
+    open: false,
+    id: null,
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPromotions, setFilteredPromotions] = useState([]);
 
-  const { showToast } = useToast();
-
-  // Fetch all promotions
   const fetchPromotions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await PromotionService.getPromotions({ page: 0, size: 100 });
+      const response = await PromotionService.getPromotions({
+        page: 0,
+        size: 100,
+      });
 
-      // Get product details for each promotion
       const enrichedPromotions = await Promise.all(
         response.content.map(async promo => {
           try {
@@ -101,7 +106,6 @@ const PromotionManagementScreen = () => {
     }
   }, []);
 
-  // Fetch all products for the product selector
   const fetchProducts = useCallback(async () => {
     try {
       const response = await ProductService.getProducts({ page: 0, size: 100 });
@@ -115,13 +119,11 @@ const PromotionManagementScreen = () => {
     }
   }, [showToast]);
 
-  // Initial data loading
   useEffect(() => {
     fetchPromotions();
     fetchProducts();
   }, [fetchPromotions, fetchProducts]);
 
-  // Filter promotions based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredPromotions(promotions);
@@ -136,31 +138,26 @@ const PromotionManagementScreen = () => {
     setFilteredPromotions(filtered);
   }, [searchQuery, promotions]);
 
-  // Handle search query change
   const handleSearchChange = event => {
     setSearchQuery(event.target.value);
   };
 
-  // Open dialog for creating a new promotion
   const handleAddClick = useCallback(() => {
     setSelectedPromotion(null);
     setIsEditMode(false);
     setDialogOpen(true);
   }, []);
 
-  // Open dialog for editing an existing promotion
   const handleEditClick = useCallback(promotion => {
     setSelectedPromotion(promotion);
     setIsEditMode(true);
     setDialogOpen(true);
   }, []);
 
-  // Close the promotion form dialog
   const handleDialogClose = useCallback(() => {
     setDialogOpen(false);
   }, []);
 
-  // Handle form submission (create or update)
   const handleSubmit = useCallback(
     async (formData, promotionId) => {
       try {
@@ -177,7 +174,6 @@ const PromotionManagementScreen = () => {
             severity: 'success',
           });
         }
-        // Close dialog and refresh promotions
         setDialogOpen(false);
         fetchPromotions();
       } catch (error) {
@@ -191,7 +187,6 @@ const PromotionManagementScreen = () => {
     [isEditMode, showToast, fetchPromotions]
   );
 
-  // Open confirmation dialog before deleting
   const handleDeleteClick = useCallback(id => {
     setConfirmDeleteDialog({
       open: true,
@@ -199,7 +194,6 @@ const PromotionManagementScreen = () => {
     });
   }, []);
 
-  // Cancel delete operation
   const handleCancelDelete = useCallback(() => {
     setConfirmDeleteDialog({
       open: false,
@@ -207,7 +201,6 @@ const PromotionManagementScreen = () => {
     });
   }, []);
 
-  // Confirm and perform delete operation
   const handleConfirmDelete = useCallback(async () => {
     try {
       await PromotionService.deletePromotion(confirmDeleteDialog.id);
@@ -215,7 +208,6 @@ const PromotionManagementScreen = () => {
         message: 'Aktion erfolgreich gelöscht',
         severity: 'success',
       });
-      // Close dialog and refresh promotions
       setConfirmDeleteDialog({ open: false, id: null });
       fetchPromotions();
     } catch (error) {
@@ -227,7 +219,6 @@ const PromotionManagementScreen = () => {
     }
   }, [confirmDeleteDialog.id, showToast, fetchPromotions]);
 
-  // Calculate promotion statistics
   const promotionStats = {
     total: promotions.length,
     active: promotions.filter(p => p.active).length,
@@ -237,7 +228,6 @@ const PromotionManagementScreen = () => {
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -258,14 +248,18 @@ const PromotionManagementScreen = () => {
 
       <Container maxWidth="xl">
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Statistics Cards */}
           <motion.div variants={itemVariants}>
             <Grid container spacing={3} sx={{ mb: 3 }}>
               <Grid item xs={12} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), mr: 2 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          mr: 2,
+                        }}
+                      >
                         <LocalOfferIcon color="primary" />
                       </Avatar>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -283,7 +277,12 @@ const PromotionManagementScreen = () => {
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), mr: 2 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette.success.main, 0.1),
+                          mr: 2,
+                        }}
+                      >
                         <LocalOfferIcon color="success" />
                       </Avatar>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -301,7 +300,12 @@ const PromotionManagementScreen = () => {
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), mr: 2 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette.warning.main, 0.1),
+                          mr: 2,
+                        }}
+                      >
                         <LocalOfferIcon color="warning" />
                       </Avatar>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -319,7 +323,12 @@ const PromotionManagementScreen = () => {
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), mr: 2 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette.error.main, 0.1),
+                          mr: 2,
+                        }}
+                      >
                         <LocalOfferIcon color="error" />
                       </Avatar>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -335,7 +344,6 @@ const PromotionManagementScreen = () => {
             </Grid>
           </motion.div>
 
-          {/* Search bar and actions */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -378,7 +386,6 @@ const PromotionManagementScreen = () => {
             </Paper>
           </motion.div>
 
-          {/* Promotions List */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -407,7 +414,6 @@ const PromotionManagementScreen = () => {
         </motion.div>
       </Container>
 
-      {/* Promotion Form Dialog */}
       <PromotionForm
         open={dialogOpen}
         onClose={handleDialogClose}
@@ -417,7 +423,6 @@ const PromotionManagementScreen = () => {
         isEditMode={isEditMode}
       />
 
-      {/* Confirm Delete Dialog */}
       <Dialog open={confirmDeleteDialog.open} onClose={handleCancelDelete}>
         <DialogTitle>Aktion löschen</DialogTitle>
         <DialogContent>

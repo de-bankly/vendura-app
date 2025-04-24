@@ -11,7 +11,6 @@ import {
 } from '../components/inventory';
 import { useInventoryProducts } from '../hooks';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -28,16 +27,13 @@ const itemVariants = {
 /**
  * InventoryPage displays a comprehensive view of all products in inventory
  * with filtering, sorting, and search capabilities.
+ * @returns {React.ReactElement} The InventoryPage component.
  */
 const InventoryPage = () => {
   const theme = useTheme();
-  // State for view mode
   const [viewMode, setViewMode] = useState('list');
-
-  // State for filter drawer
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Use custom hook for product data and filtering
   const {
     products,
     loading,
@@ -52,19 +48,16 @@ const InventoryPage = () => {
     handleRefresh,
   } = useInventoryProducts();
 
-  // Handle filter drawer toggle
   const handleFilterToggle = () => {
     setFilterOpen(!filterOpen);
   };
 
-  // Handle view mode change
   const handleViewModeChange = newMode => {
     setViewMode(newMode);
   };
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -76,11 +69,9 @@ const InventoryPage = () => {
       </motion.div>
 
       <Container maxWidth="xl">
-        {/* Error Message */}
         <ErrorDisplay message={error} />
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Search and Filter Section */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -104,7 +95,6 @@ const InventoryPage = () => {
             </Paper>
           </motion.div>
 
-          {/* Product Content Section */}
           <motion.div variants={itemVariants}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
@@ -140,7 +130,6 @@ const InventoryPage = () => {
         </motion.div>
       </Container>
 
-      {/* Filter Drawer */}
       <InventoryFilterDrawer
         open={filterOpen}
         onClose={handleFilterToggle}

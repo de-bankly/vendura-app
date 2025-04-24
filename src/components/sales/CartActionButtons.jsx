@@ -8,6 +8,20 @@ import React from 'react';
 import { Button } from '../ui/buttons';
 import { motion } from 'framer-motion';
 
+/**
+ * Renders action buttons for the shopping cart based on its state.
+ * Displays payment button or receipt/new transaction buttons.
+ * Also shows messages if the cart is empty or locked.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.receiptReady - Indicates if the receipt is ready for printing.
+ * @param {boolean} props.cartIsEmpty - Indicates if the cart currently has no items.
+ * @param {boolean} [props.cartLocked] - Indicates if the cart is locked.
+ * @param {function} props.onPayment - Callback function triggered when the payment button is clicked.
+ * @param {function} props.onPrintReceipt - Callback function triggered when the print receipt button is clicked.
+ * @param {function} props.onNewTransaction - Callback function triggered when the new transaction button is clicked.
+ * @returns {React.ReactElement} The rendered action buttons component.
+ */
 const CartActionButtons = ({
   receiptReady,
   cartIsEmpty,
@@ -109,7 +123,13 @@ const CartActionButtons = ({
             },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <PaymentIcon sx={{ mr: 1.5, fontSize: 22 }} />
             <Typography variant="button" sx={{ fontSize: 16, fontWeight: 600, letterSpacing: 0.5 }}>
               Zahlung abschließen
@@ -143,7 +163,13 @@ const CartActionButtons = ({
             fontWeight: 500,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <LockOpenIcon fontSize="small" sx={{ mr: 0.5, fontSize: '0.9rem' }} />
             Warenkorb ist gesperrt. Starten Sie eine neue Transaktion.
           </Box>

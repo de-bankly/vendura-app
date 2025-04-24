@@ -20,10 +20,17 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import GiftCardService from '../../services/GiftCardService';
-import GiftCardPaymentService from '../../services/GiftCardPaymentService';
 
 /**
- * Komponente zur Verarbeitung von Geschenkkarten-Zahlungen im Kassensystem
+ * Komponente zur Verarbeitung von Geschenkkarten-Zahlungen im Kassensystem.
+ * Ermöglicht das Eingeben, Validieren und Anwenden von Geschenkkarten auf eine Bestellung.
+ *
+ * @param {object} props - Die Eigenschaften der Komponente.
+ * @param {function(object): void} props.onGiftCardApplied - Callback, der aufgerufen wird, wenn eine Geschenkkarte erfolgreich angewendet wurde. Erhält ein Objekt mit den Kartendetails ({ id, type, amount, remainingBalance }).
+ * @param {Array<{id: string, type: string, amount: number, remainingBalance: number}>} [props.appliedGiftCards=[]] - Eine Liste der bereits auf die Bestellung angewendeten Geschenkkarten.
+ * @param {function(string): void} props.onGiftCardRemoved - Callback, der aufgerufen wird, wenn eine angewendete Geschenkkarte entfernt werden soll. Erhält die ID der zu entfernenden Karte.
+ * @param {number} [props.orderTotal=0] - Der Gesamtbetrag der aktuellen Bestellung.
+ * @param {boolean} [props.disabled=false] - Wenn true, sind alle Interaktionen in dieser Sektion deaktiviert.
  */
 const GiftCardPaymentSection = ({
   onGiftCardApplied,
@@ -42,6 +49,7 @@ const GiftCardPaymentSection = ({
   const handleGiftCardCodeChange = e => {
     setGiftCardCode(e.target.value);
     setError(null);
+    setGiftCardInfo(null);
   };
 
   const validateGiftCard = async () => {
@@ -50,13 +58,11 @@ const GiftCardPaymentSection = ({
       return;
     }
 
-    // Prüfen, ob das Format korrekt ist
     if (!GiftCardService.validateGiftCardFormat(giftCardCode)) {
       setError('Ungültiges Gutscheinformat. Gutscheincodes bestehen aus 16 Ziffern');
       return;
     }
 
-    // Prüfen, ob die Geschenkkarte bereits verwendet wurde
     if (appliedGiftCards.some(card => card.id === giftCardCode)) {
       setError('Diese Geschenkkarte wurde bereits hinzugefügt');
       return;
@@ -67,32 +73,35 @@ const GiftCardPaymentSection = ({
     setGiftCardInfo(null);
 
     try {
-      // Geschenkkarten-Informationen abrufen
       const cardInfo = await GiftCardService.getTransactionalInformation(giftCardCode);
 
-      // Nur Geschenkkarten akzeptieren (keine Rabattkarten)
       if (cardInfo.type !== 'GIFT_CARD') {
         setError('Nur Geschenkkarten können für Zahlungen verwendet werden');
+        setLoading(false);
         return;
       }
 
-      // Prüfen, ob die Karte ein Guthaben hat
       if (!cardInfo.remainingBalance || cardInfo.remainingBalance <= 0) {
         setError('Diese Geschenkkarte hat kein Guthaben mehr');
+        setLoading(false);
         return;
       }
 
-      // Ablaufdatum prüfen
       if (cardInfo.expirationDate && new Date(cardInfo.expirationDate) < new Date()) {
         setError('Diese Geschenkkarte ist abgelaufen');
+        setLoading(false);
         return;
       }
 
       setGiftCardInfo(cardInfo);
-
-      // Standardmäßig den vollen verfügbaren Betrag verwenden (oder den Bestellwert, falls kleiner)
-      const maxAmount = Math.min(cardInfo.remainingBalance, orderTotal);
+      const currentAppliedAmount = appliedGiftCards.reduce(
+        (sum, card) => sum + (card.amount || 0),
+        0
+      );
+      const remainingOrderTotal = Math.max(0, orderTotal - currentAppliedAmount);
+      const maxAmount = Math.min(cardInfo.remainingBalance, remainingOrderTotal);
       setAmountToUse(maxAmount);
+      setUseFullAmount(true);
     } catch (error) {
       console.error('Error validating gift card:', error);
       setError(
@@ -108,8 +117,17 @@ const GiftCardPaymentSection = ({
   const applyGiftCard = () => {
     if (!giftCardInfo) return;
 
-    // Sicherstellen, dass der zu verwendende Betrag nicht höher ist als das Guthaben oder der Bestellwert
-    const safeAmount = Math.min(amountToUse, giftCardInfo.remainingBalance, orderTotal);
+    const currentAppliedAmount = appliedGiftCards.reduce(
+      (sum, card) => sum + (card.amount || 0),
+      0
+    );
+    const remainingOrderTotal = Math.max(0, orderTotal - currentAppliedAmount);
+    const safeAmount = Math.min(amountToUse, giftCardInfo.remainingBalance, remainingOrderTotal);
+
+    if (safeAmount <= 0) {
+      setError('Betrag muss größer als 0 sein oder Bestellbetrag ist bereits gedeckt.');
+      return;
+    }
 
     onGiftCardApplied({
       id: giftCardInfo.id,
@@ -118,23 +136,30 @@ const GiftCardPaymentSection = ({
       remainingBalance: giftCardInfo.remainingBalance,
     });
 
-    // Formular zurücksetzen
     setGiftCardCode('');
     setGiftCardInfo(null);
+    setAmountToUse(0);
+    setError(null);
   };
 
   const handleAmountChange = e => {
     const value = parseFloat(e.target.value);
-    if (!isNaN(value)) {
-      // Sicherstellen, dass der Wert nicht höher ist als das Guthaben oder der Bestellwert
-      setAmountToUse(Math.min(value, giftCardInfo?.remainingBalance || 0, orderTotal));
+    const currentAppliedAmount = appliedGiftCards.reduce(
+      (sum, card) => sum + (card.amount || 0),
+      0
+    );
+    const remainingOrderTotal = Math.max(0, orderTotal - currentAppliedAmount);
+
+    if (!isNaN(value) && value >= 0) {
+      setAmountToUse(Math.min(value, giftCardInfo?.remainingBalance || 0, remainingOrderTotal));
+      setUseFullAmount(false);
+    } else if (e.target.value === '') {
+      setAmountToUse(0);
+      setUseFullAmount(false);
     }
   };
 
-  // Berechnung des Gesamtbetrags der angewendeten Geschenkkarten
   const totalGiftCardAmount = appliedGiftCards.reduce((sum, card) => sum + (card.amount || 0), 0);
-
-  // Berechnung des noch zu zahlenden Betrags
   const remainingToPay = Math.max(0, orderTotal - totalGiftCardAmount);
 
   return (
@@ -167,7 +192,7 @@ const GiftCardPaymentSection = ({
             >
               <Box>
                 <Typography variant="body2" fontWeight="medium">
-                  {card.id}
+                  {`**** **** **** ${card.id.slice(-4)}`}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Restguthaben nach Zahlung: {(card.remainingBalance - card.amount).toFixed(2)} €
@@ -186,6 +211,7 @@ const GiftCardPaymentSection = ({
                   color="error"
                   onClick={() => onGiftCardRemoved(card.id)}
                   disabled={disabled}
+                  aria-label={`Geschenkkarte ${card.id.slice(-4)} entfernen`}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -242,7 +268,7 @@ const GiftCardPaymentSection = ({
           <Divider sx={{ my: 2 }} />
 
           <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
               <TextField
                 label="Geschenkkarten-Code"
                 variant="outlined"
@@ -255,19 +281,21 @@ const GiftCardPaymentSection = ({
                   startAdornment: <CardGiftcardIcon color="action" sx={{ mr: 1, opacity: 0.6 }} />,
                 }}
                 sx={{ mr: 1 }}
+                error={!!error && !giftCardInfo}
+                helperText={error && !giftCardInfo ? error : ''}
               />
               <Button
                 variant="contained"
                 color="primary"
                 onClick={validateGiftCard}
-                disabled={loading || !giftCardCode.trim() || disabled}
-                sx={{ minWidth: 100 }}
+                disabled={loading || !giftCardCode.trim() || disabled || !!giftCardInfo}
+                sx={{ minWidth: 100, height: 56 }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Prüfen'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Prüfen'}
               </Button>
             </Box>
 
-            {error && (
+            {error && !giftCardInfo && (
               <Alert severity="error" sx={{ mt: 1 }}>
                 {error}
               </Alert>
@@ -277,10 +305,12 @@ const GiftCardPaymentSection = ({
               <Paper
                 variant="outlined"
                 sx={{
-                  mt: 2,
+                  mt: 1,
                   p: 2,
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
+                  border: '1px solid',
+                  borderColor: 'primary.dark',
                 }}
               >
                 <Box
@@ -295,10 +325,9 @@ const GiftCardPaymentSection = ({
                     Geschenkkarte gültig
                   </Typography>
                   <Chip
-                    icon={<CheckCircleIcon />}
+                    icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
                     label="Verfügbar"
-                    color="success"
-                    variant="filled"
+                    sx={{ bgcolor: 'success.main', color: 'white' }}
                     size="small"
                   />
                 </Box>
@@ -307,6 +336,10 @@ const GiftCardPaymentSection = ({
                   <Typography variant="body2">
                     <strong>Verfügbares Guthaben:</strong>{' '}
                     {giftCardInfo?.remainingBalance.toFixed(2)} €
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Maximal anwendbar:</strong>{' '}
+                    {Math.min(giftCardInfo?.remainingBalance || 0, remainingToPay).toFixed(2)} €
                   </Typography>
                 </Box>
 
@@ -321,6 +354,7 @@ const GiftCardPaymentSection = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      gap: 1,
                     }}
                   >
                     <TextField
@@ -331,33 +365,62 @@ const GiftCardPaymentSection = ({
                       onChange={handleAmountChange}
                       InputProps={{
                         endAdornment: '€',
+                        inputProps: {
+                          min: 0,
+                          max: Math.min(giftCardInfo?.remainingBalance || 0, remainingToPay),
+                          step: '0.01',
+                        },
                       }}
                       sx={{
-                        width: '130px',
+                        flexGrow: 1,
                         '& .MuiOutlinedInput-root': {
-                          bgcolor: 'rgba(255, 255, 255, 0.2)',
+                          bgcolor: 'rgba(255, 255, 255, 0.15)',
                           '& fieldset': {
+                            borderColor: 'primary.light',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.light',
+                          },
+                          '&.Mui-focused fieldset': {
                             borderColor: 'primary.light',
                           },
                         },
                         '& .MuiInputBase-input': {
                           color: 'primary.contrastText',
                         },
+                        '& .MuiInputBase-input::-webkit-outer-spin-button, & .MuiInputBase-input::-webkit-inner-spin-button':
+                          {
+                            '-webkit-appearance': 'none',
+                            margin: 0,
+                          },
+                        '& .MuiInputBase-input[type=number]': {
+                          '-moz-appearance': 'textfield',
+                        },
                       }}
                     />
                     <Button
                       variant="contained"
                       color="secondary"
-                      onClick={() =>
-                        setAmountToUse(
-                          Math.min(giftCardInfo.remainingBalance, orderTotal - totalGiftCardAmount)
-                        )
-                      }
+                      onClick={() => {
+                        setAmountToUse(Math.min(giftCardInfo.remainingBalance, remainingToPay));
+                        setUseFullAmount(true);
+                      }}
                       size="small"
+                      disabled={!giftCardInfo}
+                      sx={{ flexShrink: 0 }}
                     >
                       Max
                     </Button>
                   </Box>
+                  {error && giftCardInfo && (
+                    <Typography
+                      color="error.light"
+                      variant="caption"
+                      sx={{ display: 'block', mt: 1 }}
+                    >
+                      {error}
+                    </Typography>
+                  )}
                 </Box>
 
                 <Button
@@ -367,9 +430,9 @@ const GiftCardPaymentSection = ({
                   onClick={applyGiftCard}
                   sx={{ mt: 2 }}
                   startIcon={<ArrowForwardIcon />}
-                  disabled={!giftCardInfo || amountToUse <= 0}
+                  disabled={!giftCardInfo || amountToUse <= 0 || loading}
                 >
-                  {`${amountToUse.toFixed(2)} € anwenden`}
+                  {`Betrag von ${amountToUse.toFixed(2)} € anwenden`}
                 </Button>
               </Paper>
             </Collapse>
@@ -377,18 +440,23 @@ const GiftCardPaymentSection = ({
         </>
       )}
 
-      {remainingToPay <= 0 && (
+      {remainingToPay <= 0 && appliedGiftCards.length > 0 && (
         <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mt: 2 }}>
           Der gesamte Bestellbetrag wurde durch Geschenkkarten abgedeckt.
         </Alert>
       )}
 
-      {appliedGiftCards.length === 0 && !giftCardInfo && !error && !loading && (
-        <Alert severity="info" icon={<InfoIcon />} sx={{ mt: 1 }}>
-          Geben Sie einen Geschenkkarten-Code ein, um einen Teil oder den gesamten Betrag zu
-          bezahlen.
-        </Alert>
-      )}
+      {appliedGiftCards.length === 0 &&
+        !giftCardInfo &&
+        !error &&
+        !loading &&
+        remainingToPay > 0 &&
+        !disabled && (
+          <Alert severity="info" icon={<InfoIcon />} sx={{ mt: 1 }}>
+            Geben Sie einen Geschenkkarten-Code ein, um einen Teil oder den gesamten Betrag zu
+            bezahlen.
+          </Alert>
+        )}
     </Paper>
   );
 };

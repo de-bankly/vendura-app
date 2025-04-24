@@ -2,17 +2,10 @@ import { TextField as MuiTextField, InputAdornment, alpha, styled } from '@mui/m
 import PropTypes from 'prop-types';
 import React from 'react';
 
-// Define styled component
-const StyledMuiTextField = styled(MuiTextField, {
-  // Prevent custom props from reaching the DOM if needed
-  // shouldForwardProp: (prop) => prop !== 'customProp',
-})(({ theme, size, ownerState }) => {
-  // ownerState contains props like disabled, error, etc.
-  // Base styles (can also be theme overrides)
+const StyledMuiTextField = styled(MuiTextField)(({ theme, size, ownerState }) => {
   const baseStyles = {
-    // Style the root
     '& .MuiOutlinedInput-root': {
-      borderRadius: theme.shape.borderRadius, // Use theme token
+      borderRadius: theme.shape.borderRadius,
       transition: 'all 0.2s ease-in-out',
       backgroundColor: ownerState?.disabled
         ? alpha(theme.palette.action.disabled, 0.05)
@@ -23,42 +16,30 @@ const StyledMuiTextField = styled(MuiTextField, {
       '&.Mui-focused': {
         backgroundColor: theme.palette.background.paper,
         boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-        // Potentially remove outline if using boxShadow for focus
-        // '& .MuiOutlinedInput-notchedOutline': {
-        //   borderColor: 'transparent',
-        // },
       },
     },
-    // Style the label
     '& .MuiInputLabel-root': {
       fontWeight: 500,
       transition: 'all 0.2s ease-in-out',
-      // Adjust label position/style for sizes if needed
       ...(size === 'small' && {
         fontSize: '0.875rem',
-        // Adjust transform for small size if needed
-        // '&.MuiInputLabel-shrink': { transform: 'translate(14px, -6px) scale(0.75)' }
       }),
     },
-    // Style the input element itself
     '& .MuiInputBase-input': {
       fontWeight: 400,
-      // Size-specific padding and font-size
       ...(size === 'small'
         ? {
-            padding: theme.spacing(1, 1.5), // 8px 12px
-            fontSize: theme.typography.pxToRem(14), // 0.875rem
+            padding: theme.spacing(1, 1.5),
+            fontSize: theme.typography.pxToRem(14),
           }
         : {
-            // Medium (default)
-            padding: theme.spacing(1.5, 1.75), // 12px 14px
-            fontSize: theme.typography.pxToRem(16), // 1rem
+            padding: theme.spacing(1.5, 1.75),
+            fontSize: theme.typography.pxToRem(16),
           }),
     },
-    // Style the helper text
     '& .MuiFormHelperText-root': {
-      marginLeft: theme.spacing(0.25), // 2px
-      fontSize: theme.typography.pxToRem(12), // 0.75rem
+      marginLeft: theme.spacing(0.25),
+      fontSize: theme.typography.pxToRem(12),
     },
   };
 
@@ -67,6 +48,9 @@ const StyledMuiTextField = styled(MuiTextField, {
 
 /**
  * Enhanced TextField component using styled API.
+ * @param {object} props - The component props.
+ * @param {React.Ref} ref - The ref forwarded to the underlying MuiTextField component.
+ * @returns {React.ReactElement} The rendered TextField component.
  */
 const TextField = React.forwardRef(
   (
@@ -97,7 +81,6 @@ const TextField = React.forwardRef(
     },
     ref
   ) => {
-    // Prepare input props with adornments if provided
     const inputProps = {};
 
     if (startAdornment) {
@@ -180,7 +163,7 @@ TextField.propTypes = {
   maxRows: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   /** Name attribute of the input element */
   name: PropTypes.string,
-  /** The id of the input element */
+  /** The id of the input element. Defaults to the `name` prop. */
   id: PropTypes.string,
   /** If true, the input element is focused during the first mount */
   autoFocus: PropTypes.bool,

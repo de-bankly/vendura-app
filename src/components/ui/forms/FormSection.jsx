@@ -5,6 +5,15 @@ import React from 'react';
 /**
  * FormSection component that provides a way to group related form fields
  * with an optional title, description, and icon.
+ * @param {object} props - The component props.
+ * @param {React.ReactNode} props.children - The form fields.
+ * @param {React.ReactNode} [props.title] - The title of the section.
+ * @param {React.ReactNode} [props.description] - The description of the section.
+ * @param {React.ReactNode} [props.icon=null] - Optional icon to display next to the title.
+ * @param {boolean} [props.divider=true] - Whether to show a divider below the title and description.
+ * @param {number} [props.spacing=2] - The spacing between form fields in theme spacing units.
+ * @param {object} [props.sx={}] - The system prop that allows defining system overrides as well as additional CSS styles.
+ * @returns {React.ReactElement} The rendered FormSection component.
  */
 const FormSection = ({
   children,
@@ -28,7 +37,13 @@ const FormSection = ({
       {...props}
     >
       {title && (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: theme.spacing(description ? 1 : 2) }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: theme.spacing(description ? 1 : 2),
+          }}
+        >
           {icon && (
             <Box
               sx={{

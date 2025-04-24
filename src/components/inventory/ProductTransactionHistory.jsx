@@ -23,7 +23,14 @@ import React, { useState, useEffect } from 'react';
 import { TransactionService } from '../../services';
 
 /**
- * ProductTransactionHistory component to display transaction history for a product
+ * ProductTransactionHistory component to display transaction history for a product.
+ * @param {object} props - The component props.
+ * @param {boolean} props.open - Whether the dialog is open.
+ * @param {Function} props.onClose - Function to call when the dialog should close.
+ * @param {object} props.product - The product object.
+ * @param {string} props.product.id - The ID of the product.
+ * @param {string} props.product.name - The name of the product.
+ * @returns {JSX.Element} The rendered component.
  */
 const ProductTransactionHistory = ({ open, onClose, product }) => {
   const [loading, setLoading] = useState(false);
@@ -33,12 +40,10 @@ const ProductTransactionHistory = ({ open, onClose, product }) => {
   const [totalElements, setTotalElements] = useState(0);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (open && product) {
-      fetchTransactions();
-    }
-  }, [open, product, page, rowsPerPage]);
-
+  /**
+   * Fetches transactions for the current product based on pagination state.
+   * Sets loading, error, transactions, and totalElements state.
+   */
   const fetchTransactions = async () => {
     if (!product?.id) return;
 
@@ -61,16 +66,35 @@ const ProductTransactionHistory = ({ open, onClose, product }) => {
     }
   };
 
+  useEffect(() => {
+    if (open && product) {
+      fetchTransactions();
+    }
+  }, [open, product, page, rowsPerPage]);
+
+  /**
+   * Handles the change of the current page in pagination.
+   * @param {React.MouseEvent<HTMLButtonElement> | null} event - The event source of the callback.
+   * @param {number} newPage - The new page number.
+   */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+  /**
+   * Handles the change of rows per page in pagination.
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>} event - The event source of the callback.
+   */
   const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  // Format timestamp
+  /**
+   * Formats a timestamp into a German date and time string.
+   * @param {string | number | Date} timestamp - The timestamp to format.
+   * @returns {string} The formatted date string or '—' if the timestamp is falsy.
+   */
   const formatDate = timestamp => {
     if (!timestamp) return '—';
 

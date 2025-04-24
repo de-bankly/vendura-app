@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Box, Container, useTheme, Button, Alert, Typography } from '@mui/material';
+import { Box, Container, useTheme } from '@mui/material';
 
-// Import components and utilities
 import {
   SalesMainContent,
   DialogManager,
@@ -11,8 +10,6 @@ import {
   processPayment,
   handleDepositRedemption,
 } from '../components/sales';
-
-// Import services
 import { ProductService, CartService, DepositService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
@@ -26,7 +23,13 @@ const containerVariants = {
   },
 };
 
+/**
+ * @component SalesScreen
+ * @description Manages the point of sale interface, including product display,
+ * cart management, payment processing, voucher/deposit redemption, and receipt printing.
+ */
 const SalesScreen = () => {
+  // Hooks
   const theme = useTheme();
   const { showToast } = useToast();
   const { scannedValue, error: scanError, resetScan, enableScanner } = useBarcodeScan();
@@ -39,23 +42,30 @@ const SalesScreen = () => {
     statusChecked: printerStatusChecked,
   } = usePrinter({ checkStatusOnMount: false });
 
+  // Product State
   const [products, setProducts] = useState([]);
+  const [productsByCategory, setProductsByCategory] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [productsByCategory, setProductsByCategory] = useState({});
-  const [cartItems, setCartItems] = useState([]);
-  const [appliedVouchers, setAppliedVouchers] = useState([]);
-  const [appliedDeposits, setAppliedDeposits] = useState([]);
-  const [voucherDiscount, setVoucherDiscount] = useState(0);
-  const [depositCredit, setDepositCredit] = useState(0);
-  const [giftCardPayment, setGiftCardPayment] = useState(0);
-  const [cartLocked, setCartLocked] = useState(false);
-  const [lastTransactionId, setLastTransactionId] = useState(null);
 
+  // Cart State
+  const [cartItems, setCartItems] = useState([]);
+  const [cartLocked, setCartLocked] = useState(false);
   const [cartUndoEnabled, setCartUndoEnabled] = useState(CartStateManager.canUndoCartState());
   const [cartRedoEnabled, setCartRedoEnabled] = useState(CartStateManager.canRedoCartState());
-  const [receiptReady, setReceiptReady] = useState(false);
 
+  // Voucher State
+  const [appliedVouchers, setAppliedVouchers] = useState([]);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+
+  // Deposit State
+  const [appliedDeposits, setAppliedDeposits] = useState([]);
+  const [depositCredit, setDepositCredit] = useState(0);
+
+  // Gift Card State (derived from vouchers)
+  const [giftCardPayment, setGiftCardPayment] = useState(0);
+
+  // Payment State
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
@@ -67,41 +77,16 @@ const SalesScreen = () => {
   });
   const [paymentLoading, setPaymentLoading] = useState(false);
 
+  // Dialog State
   const [redeemVoucherDialogOpen, setRedeemVoucherDialogOpen] = useState(false);
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
+  // Transaction State
+  const [lastTransactionId, setLastTransactionId] = useState(null);
+  const [receiptReady, setReceiptReady] = useState(false);
 
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const productData = await ProductService.getProducts({ page: 0, size: 100 });
-        if (isMounted) {
-          const allProducts = productData.content || [];
-          setProducts(allProducts);
-          setProductsByCategory(ProductService.groupByCategory(allProducts));
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.message || 'Fehler beim Laden der Produkte.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+  // Memoized Calculations
   const cartService = useMemo(() => CartService, []);
 
   const subtotal = useMemo(() => {
@@ -111,17 +96,6 @@ const SalesScreen = () => {
   const productDiscount = useMemo(() => {
     return cartService.calculateTotalDiscount(cartItems);
   }, [cartItems, cartService]);
-
-  useEffect(() => {
-    const afterProductDiscountTotal = subtotal - productDiscount;
-
-    const calculatedDiscount = calculateVoucherDiscount(afterProductDiscountTotal, appliedVouchers);
-    setVoucherDiscount(calculatedDiscount);
-
-    const afterDiscountTotal = afterProductDiscountTotal - calculatedDiscount;
-    const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
-    setGiftCardPayment(calculatedGiftCardPayment);
-  }, [subtotal, productDiscount, appliedVouchers]);
 
   const total = useMemo(() => {
     const calculatedTotal = subtotal - depositCredit - giftCardPayment - voucherDiscount;
@@ -135,11 +109,56 @@ const SalesScreen = () => {
     return cashValue > roundedTotal ? Math.round((cashValue - roundedTotal) * 100) / 100 : 0;
   }, [paymentMethod, cashReceived, total]);
 
-  useEffect(() => {
-    setCartUndoEnabled(CartStateManager.canUndoCartState());
-    setCartRedoEnabled(CartStateManager.canRedoCartState());
-  }, [cartItems, appliedVouchers]);
+  // Callbacks - Utility
+  /**
+   * @function resetScreenState
+   * @description Resets state specific to a single transaction lifecycle.
+   */
+  const resetScreenState = useCallback(() => {
+    setCartLocked(false);
+    setReceiptReady(false);
+    setLastTransactionId(null);
+    setPaymentMethod('cash');
+    setCashReceived('');
+    setError(null);
+  }, []);
 
+  /**
+   * @function refetchProductsAfterSale
+   * @description Fetches updated product data (e.g., stock levels) after a sale.
+   */
+  const refetchProductsAfterSale = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const productData = await ProductService.getProducts({
+        page: 0,
+        size: 100,
+      });
+      const allProducts = productData.content || [];
+      setProducts(allProducts);
+      setProductsByCategory(ProductService.groupByCategory(allProducts));
+      setLoading(false);
+      showToast({
+        severity: 'info',
+        message: 'Produktbestände wurden aktualisiert.',
+      });
+    } catch (fetchErr) {
+      setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
+      setLoading(false);
+      showToast({
+        severity: 'error',
+        message: 'Fehler beim Aktualisieren der Produktbestände.',
+      });
+    }
+  }, [showToast]);
+
+  // Callbacks - Cart Management
+  /**
+   * @function handleAddToCart
+   * @description Adds a product to the cart or increments its quantity.
+   * @param {object} product - The product object to add.
+   */
   const handleAddToCart = useCallback(
     product => {
       if (cartLocked) {
@@ -155,6 +174,11 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  /**
+   * @function handleRemoveFromCart
+   * @description Decrements the quantity of a product in the cart.
+   * @param {string|number} productId - The ID of the product to remove.
+   */
   const handleRemoveFromCart = useCallback(
     productId => {
       if (cartLocked) {
@@ -170,6 +194,11 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  /**
+   * @function handleDeleteFromCart
+   * @description Completely removes a product from the cart, regardless of quantity.
+   * @param {string|number} productId - The ID of the product to delete.
+   */
   const handleDeleteFromCart = useCallback(
     productId => {
       if (cartLocked) {
@@ -185,17 +214,10 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
-  // Define the reset logic for screen-specific state
-  const resetScreenState = useCallback(() => {
-    setCartLocked(false);
-    setReceiptReady(false);
-    setLastTransactionId(null);
-    // Reset payment method and cash for new transactions
-    setPaymentMethod('cash');
-    setCashReceived('');
-    setError(null);
-  }, []); // No dependencies needed as it only calls setters
-
+  /**
+   * @function handleClearCart
+   * @description Clears the entire cart, applied vouchers/deposits, and resets transaction state.
+   */
   const handleClearCart = useCallback(() => {
     CartStateManager.clearCart(
       setCartItems,
@@ -204,11 +226,14 @@ const SalesScreen = () => {
       setVoucherDiscount,
       setDepositCredit,
       setCardDetails,
-      resetScreenState // Pass the reset function here
+      resetScreenState // Resets screen-specific state
     );
-    // No need to set states here anymore, handled by resetScreenState
-  }, [resetScreenState]); // Add resetScreenState to dependencies
+  }, [resetScreenState]);
 
+  /**
+   * @function handleUndoCartState
+   * @description Reverts the cart and applied vouchers to the previous state.
+   */
   const handleUndoCartState = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -221,6 +246,10 @@ const SalesScreen = () => {
     CartStateManager.undoCartState(setCartItems, setAppliedVouchers);
   }, [cartLocked, showToast]);
 
+  /**
+   * @function handleRedoCartState
+   * @description Re-applies the previously undone cart state change.
+   */
   const handleRedoCartState = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -233,6 +262,12 @@ const SalesScreen = () => {
     CartStateManager.redoCartState(setCartItems, setAppliedVouchers);
   }, [cartLocked, showToast]);
 
+  // Callbacks - Voucher Management
+  /**
+   * @function handleApplyVoucher
+   * @description Applies a voucher to the current cart state.
+   * @param {object} voucher - The voucher object to apply.
+   */
   const handleApplyVoucher = useCallback(
     voucher => {
       if (cartLocked) {
@@ -244,11 +279,19 @@ const SalesScreen = () => {
         return;
       }
       CartStateManager.applyVoucher(cartItems, appliedVouchers, voucher, setAppliedVouchers);
-      showToast({ severity: 'success', message: 'Gutschein erfolgreich angewendet!' });
+      showToast({
+        severity: 'success',
+        message: 'Gutschein erfolgreich angewendet!',
+      });
     },
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  /**
+   * @function handleRemoveVoucher
+   * @description Removes an applied voucher from the cart state.
+   * @param {string|number} voucherId - The ID of the voucher to remove.
+   */
   const handleRemoveVoucher = useCallback(
     voucherId => {
       if (cartLocked) {
@@ -264,6 +307,47 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  // Callbacks - Deposit Management
+  /**
+   * @function handleDepositRedeemed
+   * @description Processes a redeemed deposit receipt, updating applied deposits and credit.
+   * @param {object} depositReceipt - The deposit receipt object.
+   */
+  const handleDepositRedeemed = useCallback(
+    depositReceipt => {
+      if (cartLocked) {
+        showToast({
+          severity: 'warning',
+          message:
+            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Pfand einzulösen.',
+        });
+        return;
+      }
+      if (appliedDeposits.some(d => d.id === depositReceipt.id)) {
+        showToast({
+          severity: 'info',
+          message: 'Dieser Pfandbon wurde bereits eingelöst.',
+        });
+        return;
+      }
+
+      handleDepositRedemption({
+        depositReceipt,
+        appliedDeposits,
+        setAppliedDeposits,
+        setDepositCredit,
+        setRedeemDepositDialogOpen,
+        showToast,
+      });
+    },
+    [appliedDeposits, cartLocked, showToast] // handleDepositRedemption is imported, assumed stable
+  );
+
+  // Callbacks - Payment
+  /**
+   * @function handlePaymentModalOpen
+   * @description Opens the payment modal and pre-fills cash received with the total amount.
+   */
   const handlePaymentModalOpen = useCallback(() => {
     setPaymentModalOpen(true);
     setCashReceived((Math.round(total * 100) / 100).toFixed(2));
@@ -285,6 +369,11 @@ const SalesScreen = () => {
     setCardDetails(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  /**
+   * @function printTransactionReceipt
+   * @description Prints the receipt for the current or a specified transaction.
+   * @param {string|null} [transactionIdOverride=null] - Optional transaction ID to print. Defaults to lastTransactionId.
+   */
   const printTransactionReceipt = useCallback(
     async (transactionIdOverride = null) => {
       const transactionIdToPrint =
@@ -352,29 +441,10 @@ const SalesScreen = () => {
     ]
   );
 
-  const refetchProductsAfterSale = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const productData = await ProductService.getProducts({ page: 0, size: 100 });
-      const allProducts = productData.content || [];
-      setProducts(allProducts);
-      setProductsByCategory(ProductService.groupByCategory(allProducts));
-      setLoading(false);
-      showToast({
-        severity: 'info',
-        message: 'Produktbestände wurden aktualisiert.',
-      });
-    } catch (fetchErr) {
-      setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
-      setLoading(false);
-      showToast({
-        severity: 'error',
-        message: 'Fehler beim Aktualisieren der Produktbestände.',
-      });
-    }
-  }, [showToast]);
-
+  /**
+   * @function handlePaymentSubmit
+   * @description Processes the payment, locks the cart, prints the receipt, and updates product stock.
+   */
   const handlePaymentSubmit = useCallback(async () => {
     setPaymentLoading(true);
     let paymentResult = null;
@@ -394,7 +464,7 @@ const SalesScreen = () => {
         showToast,
         setReceiptReady,
         setPaymentModalOpen,
-        setPaymentLoading: () => {},
+        setPaymentLoading: () => {}, // Internal state handled by paymentLoading state
       });
 
       if (paymentResult && paymentResult.success) {
@@ -409,7 +479,7 @@ const SalesScreen = () => {
         await printTransactionReceipt(transactionId);
         setPaymentModalOpen(false);
 
-        setTimeout(refetchProductsAfterSale, 500);
+        setTimeout(refetchProductsAfterSale, 500); // Refetch products after a short delay
       } else {
         showToast({
           severity: 'warning',
@@ -433,30 +503,36 @@ const SalesScreen = () => {
     cardDetails,
     appliedVouchers,
     voucherDiscount,
-    giftCardPayment,
     appliedDeposits,
     depositCredit,
     productDiscount,
     showToast,
     printTransactionReceipt,
     refetchProductsAfterSale,
+    // Setters:
     setReceiptReady,
     setPaymentModalOpen,
-    setPaymentLoading,
     setCartLocked,
     setLastTransactionId,
   ]);
 
+  /**
+   * @function handlePrintReceipt
+   * @description Manually triggers printing the receipt for the last completed transaction.
+   */
   const handlePrintReceipt = useCallback(async () => {
     await printTransactionReceipt();
   }, [printTransactionReceipt]);
 
+  /**
+   * @function handleNewTransaction
+   * @description Clears the cart and resets the screen state to start a new transaction.
+   */
   const handleNewTransaction = useCallback(() => {
-    // Simply call handleClearCart, which now includes resetting screen state
-    handleClearCart();
-    // No need for additional resets here
+    handleClearCart(); // Clears cart and resets screen state via resetScreenState
   }, [handleClearCart]);
 
+  // Callbacks - Dialog Openers
   const handleRedeemVoucherDialog = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -468,10 +544,6 @@ const SalesScreen = () => {
     }
     setRedeemVoucherDialogOpen(true);
   }, [cartLocked, showToast]);
-
-  const handleRedeemVoucherDialogClose = useCallback(() => {
-    setRedeemVoucherDialogOpen(false);
-  }, []);
 
   const handleVoucherManagementDialog = useCallback(() => {
     if (cartLocked) {
@@ -485,10 +557,6 @@ const SalesScreen = () => {
     setVoucherManagementDialogOpen(true);
   }, [cartLocked, showToast]);
 
-  const handleVoucherManagementDialogClose = useCallback(() => {
-    setVoucherManagementDialogOpen(false);
-  }, []);
-
   const handleRedeemDepositDialogOpen = useCallback(() => {
     if (cartLocked) {
       showToast({
@@ -501,52 +569,35 @@ const SalesScreen = () => {
     setRedeemDepositDialogOpen(true);
   }, [cartLocked, showToast]);
 
+  // Callbacks - Dialog Closers
+  const handleRedeemVoucherDialogClose = useCallback(() => {
+    setRedeemVoucherDialogOpen(false);
+  }, []);
+
+  const handleVoucherManagementDialogClose = useCallback(() => {
+    setVoucherManagementDialogOpen(false);
+  }, []);
+
   const handleRedeemDepositDialogClose = useCallback(() => {
     setRedeemDepositDialogOpen(false);
   }, []);
 
-  const handleDepositRedeemed = useCallback(
-    depositReceipt => {
-      if (cartLocked) {
-        showToast({
-          severity: 'warning',
-          message:
-            'Der Warenkorb ist gesperrt. Starten Sie eine neue Transaktion, um Pfand einzulösen.',
-        });
-        return;
-      }
-      if (appliedDeposits.some(d => d.id === depositReceipt.id)) {
-        showToast({
-          severity: 'info',
-          message: 'Dieser Pfandbon wurde bereits eingelöst.',
-        });
-        return;
-      }
-
-      handleDepositRedemption({
-        depositReceipt,
-        appliedDeposits,
-        setAppliedDeposits,
-        setDepositCredit,
-        setRedeemDepositDialogOpen,
-        showToast,
-      });
-    },
-    [appliedDeposits, cartLocked, showToast, handleDepositRedemption]
-  );
-
-  useEffect(() => {
-    enableScanner();
-  }, [enableScanner]);
-
+  // Callbacks - Scanner / Lookup
+  /**
+   * @function handleProductLookup
+   * @description Looks up a product by its code (ID/barcode) and adds it to the cart if found.
+   * @param {string} code - The product code to look up.
+   * @returns {Promise<boolean>} True if the product was found and added, false otherwise.
+   */
   const handleProductLookup = useCallback(
     async code => {
       try {
-        const product = await ProductService.getProductById(code, true);
+        const product = await ProductService.getProductById(code, true); // Assume true means lookup by barcode/ID
         if (product && product.id) {
           handleAddToCart(product);
           return true;
         } else {
+          // ProductService might return null/undefined if not found without throwing
           showToast({
             severity: 'warning',
             message: `Produkt mit Code ${code} nicht gefunden.`,
@@ -562,67 +613,139 @@ const SalesScreen = () => {
         return false;
       }
     },
-    [ProductService, handleAddToCart, showToast]
+    [handleAddToCart, showToast] // ProductService is assumed stable
   );
 
+  // Effects
+  /**
+   * Effect for initial product loading.
+   */
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const productData = await ProductService.getProducts({
+          page: 0,
+          size: 100,
+        });
+        if (isMounted) {
+          const allProducts = productData.content || [];
+          setProducts(allProducts);
+          setProductsByCategory(ProductService.groupByCategory(allProducts));
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || 'Fehler beim Laden der Produkte.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  /**
+   * Effect to calculate voucher and gift card impacts when cart or vouchers change.
+   */
+  useEffect(() => {
+    const afterProductDiscountTotal = subtotal - productDiscount;
+
+    const calculatedDiscount = calculateVoucherDiscount(afterProductDiscountTotal, appliedVouchers);
+    setVoucherDiscount(calculatedDiscount);
+
+    const afterDiscountTotal = afterProductDiscountTotal - calculatedDiscount;
+    const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
+    setGiftCardPayment(calculatedGiftCardPayment);
+  }, [subtotal, productDiscount, appliedVouchers]);
+
+  /**
+   * Effect to update undo/redo button states based on CartStateManager.
+   */
+  useEffect(() => {
+    setCartUndoEnabled(CartStateManager.canUndoCartState());
+    setCartRedoEnabled(CartStateManager.canRedoCartState());
+  }, [cartItems, appliedVouchers]); // Re-check whenever cart or vouchers change
+
+  /**
+   * Effect to enable the barcode scanner on component mount.
+   */
+  useEffect(() => {
+    enableScanner();
+  }, [enableScanner]);
+
+  /**
+   * Effect to handle scanned barcode values.
+   * Attempts to redeem as deposit first, then looks up as product.
+   */
   useEffect(() => {
     if (scannedValue) {
       (async () => {
-        let processed = false;
+        let handled = false;
         try {
+          // 1. Try to get deposit receipt
           const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
-          if (depositReceipt && depositReceipt.id) {
-            handleDepositRedeemed(depositReceipt);
-            showToast({
-              severity: 'success',
-              message: `Pfandbon ${depositReceipt.id} erfolgreich gescannt und eingelöst.`,
-            });
-            processed = true;
+
+          if (depositReceipt && depositReceipt.data?.id) {
+            handleDepositRedeemed(depositReceipt.data);
+            handled = true;
           } else {
-            await handleProductLookup(scannedValue);
-            processed = true;
+            // API returned success but no valid receipt data
+            console.warn(
+              `SalesScreen: Deposit check for ${scannedValue} returned no receipt data. Assuming not a deposit.`
+            );
           }
         } catch (err) {
-          if (
+          const isNotFound =
             err.response?.status === 404 ||
             err.message?.toLowerCase().includes('not found') ||
-            err.message?.toLowerCase().includes('nicht gefunden')
-          ) {
-            try {
-              await handleProductLookup(scannedValue);
-              processed = true;
-            } catch (productErr) {
-              console.error(`SalesScreen: Product lookup failed:`, productErr);
-              processed = true;
-            }
-          } else {
+            err.message?.toLowerCase().includes('nicht gefunden');
+
+          if (!isNotFound) {
+            // Unexpected error during deposit check
             console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
             showToast({
               severity: 'error',
-              message: `Fehler beim Überprüfen des Pfandbons: ${err.message}`,
+              message: `Fehler beim Überprüfen des Codes ${scannedValue}: ${err.message}`,
             });
-            try {
-              await handleProductLookup(scannedValue);
-              processed = true;
-            } catch (productErr) {
-              console.error(`SalesScreen: Product lookup also failed:`, productErr);
-              processed = true;
-            }
+            handled = true; // Mark as handled to prevent product lookup after error
           }
-        } finally {
-          resetScan();
+          // If it IS a 404 Not Found, we proceed to product lookup below
         }
+
+        // 2. If not handled as deposit (or deposit check resulted in 404), try product lookup
+        if (!handled) {
+          console.log(
+            `SalesScreen: Code ${scannedValue} not redeemed as deposit, trying product lookup.`
+          );
+          await handleProductLookup(scannedValue);
+          // handleProductLookup shows its own toasts for success/failure
+        }
+
+        resetScan(); // Reset scanner state regardless of outcome
       })();
     }
   }, [
     scannedValue,
     handleDepositRedeemed,
-    resetScan,
-    showToast,
-    DepositService,
     handleProductLookup,
+    showToast,
+    resetScan,
+    // DepositService is assumed stable
   ]);
 
+  /**
+   * Effect to display scanner errors.
+   */
   useEffect(() => {
     if (scanError) {
       showToast({
@@ -633,6 +756,7 @@ const SalesScreen = () => {
     }
   }, [scanError, showToast, resetScan]);
 
+  // Render JSX
   return (
     <Box
       sx={{

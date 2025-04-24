@@ -15,18 +15,55 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 /**
- * InventoryProductCard displays product information in a card format
+ * Formats a price number into a German currency string.
+ * @param {number} price - The price to format.
+ * @returns {string} The formatted price string (e.g., "19,99 €").
+ */
+const formatPrice = price => {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(price);
+};
+
+/**
+ * InventoryProductCard displays product information in a card format.
+ * @param {object} props - The component props.
+ * @param {object} props.product - The product data object.
+ * @param {string} props.product.id - The product's unique identifier.
+ * @param {string} props.product.name - The product's name.
+ * @param {string} [props.product.description] - The product's description.
+ * @param {number} props.product.price - The product's price.
+ * @param {string} [props.product.imageUrl] - The URL of the product's image.
+ * @param {number} [props.product.stockQuantity] - The general stock quantity (fallback).
+ * @param {number} [props.product.currentStock] - The most current stock quantity (preferred).
+ * @param {number} [props.product.lowStockThreshold] - The threshold for low stock warning.
+ * @param {string} [props.product.sku] - The product's Stock Keeping Unit.
+ * @param {object} [props.product.category] - The product's category.
+ * @param {string} [props.product.category.id] - The category's ID.
+ * @param {string} [props.product.category.name] - The category's name.
+ * @param {object} [props.product.brand] - The product's brand.
+ * @param {string} [props.product.brand.id] - The brand's ID.
+ * @param {string} [props.product.brand.name] - The brand's name.
+ * @param {boolean} [props.product.standalone] - Whether the product can be sold individually.
+ * @param {Array<object>} [props.product.connectedProducts] - Products connected in a bundle.
+ * @param {string} props.product.connectedProducts[].id - Connected product's ID.
+ * @param {string} props.product.connectedProducts[].name - Connected product's name.
+ * @param {number} props.product.connectedProducts[].price - Connected product's price.
+ * @returns {React.ReactElement} The rendered product card component.
  */
 const InventoryProductCard = ({ product }) => {
   const theme = useTheme();
 
-  // Get the most accurate stock count, prioritizing currentStock (from API) if available
   const availableStock =
     product.currentStock !== undefined && product.currentStock !== null
       ? product.currentStock
       : product.stockQuantity;
 
-  // Determine stock status
+  /**
+   * Determines the stock status based on available stock and threshold.
+   * @returns {{color: string, label: string}} An object containing the color and label for the stock status chip.
+   */
   const getStockStatus = () => {
     if (availableStock === undefined || availableStock === null) {
       return { color: 'default', label: 'Unbekannt' };
@@ -46,16 +83,6 @@ const InventoryProductCard = ({ product }) => {
   };
 
   const stockStatus = getStockStatus();
-
-  // Format price
-  const formatPrice = price => {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
-  };
-
-  // Check if the product has connected products
   const hasConnectedProducts = product.connectedProducts && product.connectedProducts.length > 0;
 
   return (
@@ -81,7 +108,6 @@ const InventoryProductCard = ({ product }) => {
           height: '100%',
         }}
       >
-        {/* Product Image */}
         <Box
           sx={{
             height: 160,
@@ -108,14 +134,12 @@ const InventoryProductCard = ({ product }) => {
         </Box>
 
         <CardContent sx={{ flexGrow: 1, p: 2 }}>
-          {/* Category */}
           {product.category && (
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
               {product.category.name}
             </Typography>
           )}
 
-          {/* Product Name */}
           <Typography
             variant="subtitle1"
             component="h3"
@@ -134,7 +158,6 @@ const InventoryProductCard = ({ product }) => {
             {product.name}
           </Typography>
 
-          {/* Brand */}
           {product.brand && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
               {product.brand.name}
@@ -143,12 +166,10 @@ const InventoryProductCard = ({ product }) => {
 
           <Divider sx={{ mb: 1.5 }} />
 
-          {/* Price */}
           <Typography variant="h6" color="primary" sx={{ mb: 1.5, fontWeight: 'bold' }}>
             {formatPrice(product.price)}
           </Typography>
 
-          {/* Stock Status */}
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
             <StoreIcon fontSize="small" color="action" />
             <Box sx={{ flexGrow: 1 }}>
@@ -166,7 +187,6 @@ const InventoryProductCard = ({ product }) => {
             )}
           </Stack>
 
-          {/* Connected Products */}
           {hasConnectedProducts && (
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
               <LinkIcon fontSize="small" color="primary" />
@@ -205,7 +225,6 @@ const InventoryProductCard = ({ product }) => {
             </Stack>
           )}
 
-          {/* SKU if available */}
           {product.sku && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
               SKU: {product.sku}
@@ -225,6 +244,7 @@ InventoryProductCard.propTypes = {
     price: PropTypes.number.isRequired,
     imageUrl: PropTypes.string,
     stockQuantity: PropTypes.number,
+    currentStock: PropTypes.number,
     lowStockThreshold: PropTypes.number,
     sku: PropTypes.string,
     category: PropTypes.shape({

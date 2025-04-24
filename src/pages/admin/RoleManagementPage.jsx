@@ -41,7 +41,6 @@ import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/buttons';
 import { RoleService } from '../../services';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -56,7 +55,9 @@ const itemVariants = {
 };
 
 /**
- * Role management page for administrators
+ * Role management page for administrators.
+ * Allows viewing, creating, editing, and deactivating roles.
+ * @returns {JSX.Element} The RoleManagementPage component.
  */
 const RoleManagementPage = () => {
   const theme = useTheme();
@@ -71,14 +72,12 @@ const RoleManagementPage = () => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
 
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     active: true,
   });
 
-  // Fetch roles with pagination
   const fetchRoles = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -94,17 +93,14 @@ const RoleManagementPage = () => {
     }
   }, [page]);
 
-  // Load roles
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
 
-  // Handle page change
   const handlePageChange = useCallback((event, value) => {
     setPage(value - 1);
   }, []);
 
-  // Open dialog for new role
   const handleOpenAddDialog = useCallback(() => {
     setEditMode(false);
     setCurrentRole(null);
@@ -116,7 +112,6 @@ const RoleManagementPage = () => {
     setOpen(true);
   }, []);
 
-  // Open dialog for editing role
   const handleOpenEditDialog = useCallback(role => {
     setEditMode(true);
     setCurrentRole(role);
@@ -128,13 +123,11 @@ const RoleManagementPage = () => {
     setOpen(true);
   }, []);
 
-  // Open delete confirmation dialog
   const handleOpenDeleteDialog = useCallback(role => {
     setRoleToDelete(role);
     setConfirmDelete(true);
   }, []);
 
-  // Close dialogs
   const handleClose = useCallback(() => {
     setOpen(false);
   }, []);
@@ -144,7 +137,6 @@ const RoleManagementPage = () => {
     setRoleToDelete(null);
   }, []);
 
-  // Handle form input changes
   const handleInputChange = useCallback(e => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -153,7 +145,6 @@ const RoleManagementPage = () => {
     }));
   }, []);
 
-  // Handle active toggle
   const handleActiveToggle = useCallback(e => {
     setFormData(prev => ({
       ...prev,
@@ -161,9 +152,7 @@ const RoleManagementPage = () => {
     }));
   }, []);
 
-  // Submit form
   const handleSubmit = useCallback(async () => {
-    // Basic validation
     if (!formData.name) {
       setError('Role name is required');
       return;
@@ -179,7 +168,6 @@ const RoleManagementPage = () => {
         await RoleService.createRole(formData);
       }
 
-      // Refresh roles list
       fetchRoles();
       handleClose();
     } catch (err) {
@@ -189,7 +177,6 @@ const RoleManagementPage = () => {
     }
   }, [formData, editMode, currentRole, fetchRoles, handleClose]);
 
-  // Handle role deactivation
   const handleDeleteRole = useCallback(async () => {
     if (!roleToDelete) return;
 
@@ -205,13 +192,11 @@ const RoleManagementPage = () => {
     }
   }, [roleToDelete, fetchRoles, handleCloseDeleteDialog]);
 
-  // Stats calculation
   const activeRolesCount = roles.filter(role => role.active !== false).length;
   const inactiveRolesCount = roles.length - activeRolesCount;
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -254,7 +239,6 @@ const RoleManagementPage = () => {
       </motion.div>
 
       <Container maxWidth="xl">
-        {/* Error Message */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -268,7 +252,6 @@ const RoleManagementPage = () => {
         )}
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Statistics Cards */}
           <Grid container spacing={3} mb={3}>
             <Grid item xs={12} sm={6} md={3}>
               <motion.div variants={itemVariants}>
@@ -375,7 +358,6 @@ const RoleManagementPage = () => {
             </Grid>
           </Grid>
 
-          {/* Roles Table Section */}
           <motion.div variants={itemVariants}>
             <Paper
               elevation={2}
@@ -469,7 +451,13 @@ const RoleManagementPage = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                gap: 1,
+                                justifyContent: 'flex-end',
+                              }}
+                            >
                               <Tooltip title="Rolle bearbeiten">
                                 <IconButton
                                   size="small"
@@ -597,7 +585,6 @@ const RoleManagementPage = () => {
         </motion.div>
       </Container>
 
-      {/* Role Form Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -674,7 +661,6 @@ const RoleManagementPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={confirmDelete}
         onClose={handleCloseDeleteDialog}

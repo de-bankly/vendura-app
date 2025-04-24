@@ -15,21 +15,40 @@ import {
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 
-const DepositReceipt = ({ receipt }) => {
-  // Format date string
-  const formatDate = dateString => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('de-DE', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  };
+/**
+ * Formats a date string or Date object into a German locale string (DD.MM.YYYY, HH:mm).
+ * @param {string | Date} dateInput - The date string or Date object to format.
+ * @returns {string} The formatted date string.
+ */
+const formatDate = dateInput => {
+  const date = new Date(dateInput);
+  return new Intl.DateTimeFormat('de-DE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
 
-  // Current date if no receipt date
-  const receiptDate = new Date();
+/**
+ * Renders a deposit receipt component.
+ * Displays receipt details including items, total amount, QR code, and status.
+ *
+ * @param {object} props - The component props.
+ * @param {object} [props.receipt] - The receipt data object.
+ * @param {string} [props.receipt.id] - The unique identifier of the receipt.
+ * @param {Array<object>} [props.receipt.positions] - List of items returned.
+ * @param {number} props.receipt.positions[].quantity - Quantity of the item.
+ * @param {object} props.receipt.positions[].product - Product details.
+ * @param {string} props.receipt.positions[].product.name - Name of the product.
+ * @param {number} props.receipt.positions[].product.price - Price (deposit value) of the product.
+ * @param {boolean} [props.receipt.redeemed] - Whether the receipt has been redeemed.
+ * @param {number} [props.receipt.total] - The total deposit amount.
+ * @returns {React.ReactElement} The rendered deposit receipt component.
+ */
+const DepositReceipt = ({ receipt }) => {
+  const receiptDate = new Date(); // Use current date for display and validity calculation
 
   return (
     <Paper
@@ -41,7 +60,6 @@ const DepositReceipt = ({ receipt }) => {
         position: 'relative',
       }}
     >
-      {/* Receipt Header */}
       <Box sx={{ textAlign: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           Pfand Rückgabebeleg
@@ -53,7 +71,6 @@ const DepositReceipt = ({ receipt }) => {
 
       <Divider sx={{ mb: 2 }} />
 
-      {/* Receipt Info */}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="body2" color="text.secondary">
@@ -72,7 +89,6 @@ const DepositReceipt = ({ receipt }) => {
         />
       </Box>
 
-      {/* Items Table */}
       <TableContainer component={Box} sx={{ mb: 2 }}>
         <Table size="small">
           <TableHead>
@@ -102,7 +118,6 @@ const DepositReceipt = ({ receipt }) => {
 
       <Divider sx={{ mb: 2 }} />
 
-      {/* Total Amount */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h6">Gesamtbetrag:</Typography>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -110,7 +125,6 @@ const DepositReceipt = ({ receipt }) => {
         </Typography>
       </Box>
 
-      {/* QR Code */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
         <QRCodeSVG
           value={receipt?.id || 'https://example.com/deposit/'}
@@ -120,7 +134,6 @@ const DepositReceipt = ({ receipt }) => {
         />
       </Box>
 
-      {/* Footer Text */}
       <Box sx={{ textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary">
           Dieser Beleg kann an der Kasse eingelöst werden.
@@ -139,7 +152,10 @@ DepositReceipt.propTypes = {
     positions: PropTypes.arrayOf(
       PropTypes.shape({
         quantity: PropTypes.number.isRequired,
-        product: PropTypes.object.isRequired,
+        product: PropTypes.shape({
+          name: PropTypes.string.isRequired,
+          price: PropTypes.number.isRequired,
+        }).isRequired,
       })
     ),
     redeemed: PropTypes.bool,

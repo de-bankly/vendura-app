@@ -1,10 +1,4 @@
-import {
-  Person as PersonIcon,
-  Edit as EditIcon,
-  VpnKey as VpnKeyIcon,
-  Email as EmailIcon,
-  Work as WorkIcon,
-} from '@mui/icons-material';
+import { Person as PersonIcon, Email as EmailIcon, Work as WorkIcon } from '@mui/icons-material';
 import {
   Container,
   Box,
@@ -16,7 +10,6 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  Button,
   alpha,
 } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -26,7 +19,6 @@ import Chip from '../components/ui/feedback/Chip';
 import { useAuth } from '../contexts/AuthContext';
 import { RoleService } from '../services';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -41,7 +33,10 @@ const itemVariants = {
 };
 
 /**
- * User profile page to display current user information
+ * Renders the user profile page, displaying the current user's information,
+ * roles, and some placeholder statistics. It fetches role details to map
+ * role IDs to names.
+ * @returns {React.ReactElement} The ProfilePage component.
  */
 const ProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -50,8 +45,9 @@ const ProfilePage = () => {
   const [error, setError] = useState('');
   const theme = useTheme();
 
-  // Fetch available roles for mapping role IDs to names
   const fetchRoles = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await RoleService.getAllRoles(0, 100);
       setRoles(response.content || []);
@@ -63,12 +59,10 @@ const ProfilePage = () => {
     }
   }, []);
 
-  // Load roles on mount
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
 
-  // Show loading state based on auth context loading or roles loading
   if (authLoading || loading) {
     return (
       <Box
@@ -84,7 +78,6 @@ const ProfilePage = () => {
     );
   }
 
-  // Handle case where user is not loaded (e.g., not logged in, error during context load)
   if (!user) {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -95,12 +88,10 @@ const ProfilePage = () => {
     );
   }
 
-  // Use user directly from context as profileData
   const profileData = user;
 
   return (
     <Box sx={{ py: 3 }}>
-      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,10 +115,8 @@ const ProfilePage = () => {
         )}
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Profile Info */}
           <motion.div variants={itemVariants}>
             <Grid container spacing={3}>
-              {/* Left Column - Profile Overview */}
               <Grid item xs={12} md={4}>
                 <Paper
                   elevation={2}
@@ -172,10 +161,8 @@ const ProfilePage = () => {
                 </Paper>
               </Grid>
 
-              {/* Right Column - Detailed Information */}
               <Grid item xs={12} md={8}>
                 <Grid container spacing={3}>
-                  {/* Contact Information */}
                   <Grid item xs={12}>
                     <Paper
                       elevation={2}
@@ -233,7 +220,6 @@ const ProfilePage = () => {
                     </Paper>
                   </Grid>
 
-                  {/* Role Information */}
                   <Grid item xs={12}>
                     <Paper
                       elevation={2}
@@ -253,7 +239,6 @@ const ProfilePage = () => {
 
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {profileData.roles?.map((role, index) => {
-                          // If role is a string (just the ID)
                           if (typeof role === 'string') {
                             const roleObj = roles.find(r => r.id === role);
                             const roleName = roleObj ? roleObj.name : `Role ${index + 1}`;
@@ -278,7 +263,6 @@ const ProfilePage = () => {
                     </Paper>
                   </Grid>
 
-                  {/* Account Statistics */}
                   <Grid item xs={12}>
                     <Paper
                       elevation={2}

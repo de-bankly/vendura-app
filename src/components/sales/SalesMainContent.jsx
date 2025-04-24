@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import ProductGrid from './ProductGrid';
 import ShoppingCart from './ShoppingCart';
 
-// Animation variants
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
@@ -19,8 +18,38 @@ const itemVariants = {
 };
 
 /**
- * Main content component for the SalesScreen
- * Contains the product grid and shopping cart
+ * Main content component for the SalesScreen.
+ * Contains the product grid and shopping cart.
+ * @param {object} props - The component props.
+ * @param {boolean} props.loading - Indicates if data is loading.
+ * @param {string|null} props.error - Error message, if any.
+ * @param {object} props.productsByCategory - Products grouped by category.
+ * @param {Array<object>} props.cartItems - Items currently in the cart.
+ * @param {Array<object>} props.appliedVouchers - Vouchers applied to the cart.
+ * @param {number} props.subtotal - Cart subtotal before discounts/credits.
+ * @param {number} props.voucherDiscount - Total discount from vouchers.
+ * @param {number} props.depositCredit - Amount paid using deposit credit.
+ * @param {number} props.giftCardPayment - Amount paid using gift cards.
+ * @param {number} props.total - Final total after all deductions.
+ * @param {boolean} props.receiptReady - Indicates if a receipt is ready for printing.
+ * @param {boolean} props.cartUndoEnabled - Indicates if undo action is available for the cart.
+ * @param {boolean} props.cartRedoEnabled - Indicates if redo action is available for the cart.
+ * @param {boolean} props.cartLocked - Indicates if the cart is locked (e.g., during payment).
+ * @param {Function} props.onAddToCart - Callback function to add a product to the cart.
+ * @param {Function} props.onRemoveFromCart - Callback function to decrease quantity or remove an item.
+ * @param {Function} props.onDeleteFromCart - Callback function to completely remove an item line.
+ * @param {Function} props.onClearCart - Callback function to clear the entire cart.
+ * @param {Function} props.onPayment - Callback function to initiate the payment process.
+ * @param {Function} props.onPrintReceipt - Callback function to print the receipt.
+ * @param {Function} props.onNewTransaction - Callback function to start a new transaction.
+ * @param {Function} props.onRemoveVoucher - Callback function to remove an applied voucher.
+ * @param {Function} props.onRedeemVoucher - Callback function to redeem a voucher.
+ * @param {Function} props.onManageVouchers - Callback function to open voucher management.
+ * @param {Function} props.onRedeemDeposit - Callback function to redeem deposit credit.
+ * @param {Function} props.onUndoCartState - Callback function to undo the last cart action.
+ * @param {Function} props.onRedoCartState - Callback function to redo the last undone cart action.
+ * @param {number} props.productDiscount - Total discount from product-specific promotions.
+ * @returns {React.ReactElement} The rendered SalesMainContent component.
  */
 const SalesMainContent = ({
   loading,
@@ -79,7 +108,6 @@ const SalesMainContent = ({
 
   return (
     <Grid container spacing={3} sx={{ height: '100%' }}>
-      {/* Product Grid Section */}
       <Grid item xs={12} md={7} lg={8} sx={{ height: '100%' }}>
         <motion.div variants={itemVariants} style={{ height: '100%' }}>
           <Box
@@ -99,8 +127,13 @@ const SalesMainContent = ({
         </motion.div>
       </Grid>
 
-      {/* Shopping Cart Section */}
-      <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Grid
+        item
+        xs={12}
+        md={5} // Adjusted from md={4} to fill space better if lg={8} is used for product grid
+        lg={4} // Keep lg={4}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+      >
         <Paper
           elevation={3}
           sx={{
