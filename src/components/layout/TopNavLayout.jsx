@@ -137,17 +137,14 @@ const TopNavLayout = () => {
   // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280, p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Avatar
-          sx={{
-            bgcolor: 'primary.main',
-            width: 40,
-            height: 40,
-            mr: 2,
-          }}
-        >
-          V
-        </Avatar>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', mb: 3, cursor: 'pointer' }}
+        onClick={() => {
+          navigate('/');
+          handleMobileDrawerToggle();
+        }}
+      >
+        <PointOfSaleIcon sx={{ mr: 1.5, fontSize: 30, color: 'primary.main' }} />
         <Typography variant="h6" color="primary" fontWeight="bold">
           Vendura
         </Typography>
@@ -285,16 +282,7 @@ const TopNavLayout = () => {
             }}
             onClick={() => navigate('/')}
           >
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 32,
-                height: 32,
-                mr: 1,
-              }}
-            >
-              V
-            </Avatar>
+            <PointOfSaleIcon sx={{ mr: 1, fontSize: 28, color: 'primary.main' }} />
             <Typography
               variant="h6"
               component="div"

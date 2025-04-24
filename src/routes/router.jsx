@@ -90,7 +90,9 @@ const reactBrowserRouter = createBrowserRouter([
         path: 'deposit',
         element: (
           <ProtectedRoute>
-            <PfandautomatPage />
+            <BarcodeProvider>
+              <PfandautomatPage />
+            </BarcodeProvider>
           </ProtectedRoute>
         ),
       },

@@ -17,6 +17,7 @@ import SupplierService from './SupplierService';
 import TransactionService from './TransactionService';
 import UserService from './UserService';
 import CartMementoService from './cart';
+import PrinterService, { default as printerService } from './PrinterService';
 
 export {
   AuthService,
@@ -38,4 +39,6 @@ export {
   SupplierService,
   TransactionService,
   UserService,
+  PrinterService,
+  printerService,
 };

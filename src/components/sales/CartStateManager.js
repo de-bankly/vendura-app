@@ -1,231 +1,204 @@
 import { CartService } from '../../services';
 
-/**
- * Handles adding a product to cart with background state saving
- */
-export const addToCart = (cartItems, appliedVouchers, product, setCartItems, showToast) => {
-  // Get the most accurate stock count, prioritizing currentStock (from API) if available
-  const availableStock =
-    product.currentStock !== undefined && product.currentStock !== null
-      ? product.currentStock
-      : product.stockQuantity;
-
-  // Check stock availability for the product
-  if (availableStock <= 0) {
-    if (showToast) {
-      showToast({
-        severity: 'error',
-        message: `${product.name} ist nicht mehr auf Lager.`,
-      });
-    }
-    return cartItems; // Return unchanged cart items
-  }
-
-  // Check if this product is already in the cart
-  const existingItem = cartItems.find(item => item.id === product.id);
-  const currentQuantity = existingItem ? existingItem.quantity : 0;
-
-  // Check if adding one more would exceed available stock
-  if (currentQuantity >= availableStock) {
-    if (showToast) {
-      showToast({
-        severity: 'warning',
-        message: `Kann ${product.name} nicht hinzufügen. Nur noch ${availableStock} auf Lager.`,
-      });
-    }
-    return cartItems; // Return unchanged cart items
-  }
-
-  // Check if the product has out-of-stock connected products (for bundles)
-  const hasOutOfStockConnectedProducts =
-    product.connectedProducts &&
-    product.connectedProducts.some(p => {
-      // For each connected product, check both currentStock and stockQuantity
-      const connectedAvailableStock =
-        p.currentStock !== undefined && p.currentStock !== null ? p.currentStock : p.stockQuantity;
-      return p?.category?.name !== 'Pfand' && connectedAvailableStock <= 0;
-    });
-
-  // If the product is part of a bundle but some connected products are out of stock,
-  // treat the entire bundle as out of stock and prevent purchase
-  if (hasOutOfStockConnectedProducts) {
-    if (showToast) {
-      showToast({
-        severity: 'error',
-        message: `${product.name} ist als Bundle nicht verfügbar, da Teile des Bundles nicht auf Lager sind.`,
-      });
-    }
-    return cartItems; // Return unchanged cart items
-  }
-
-  // If all stock checks pass, proceed with adding to cart normally (including all connected products)
-  const updatedItems = CartService.addToCart([...cartItems], product);
-  setCartItems(updatedItems);
-
-  // Show success toast notification
-  if (showToast) {
-    showToast({
-      severity: 'success',
-      message: `${product.name} wurde dem Warenkorb hinzugefügt`,
-    });
-  }
-
-  // Save state in background with explicit label
-  CartService.saveCartState(updatedItems, appliedVouchers, 'Added product').catch(err => {
-    console.error('Failed to save cart state after adding item:', err);
-  });
-
-  return updatedItems;
+// Centralized error logger (can be replaced with a proper logging service)
+const logError = (context, error) => {
+  console.error(`[CartStateManager:${context}]`, error);
+  // TODO: Integrate with a proper logging service if available
 };
 
 /**
- * Handles removing a product from cart with background state saving
+ * Adds a product to the cart, checking stock and saving state.
+ */
+export const addToCart = (cartItems, appliedVouchers, product, setCartItems, showToast) => {
+  const availableStock = product.currentStock ?? product.stockQuantity;
+
+  if (availableStock <= 0) {
+    showToast?.({ severity: 'error', message: `${product.name} ist nicht mehr auf Lager.` });
+    return; // Exit without changing state
+  }
+
+  const existingItem = cartItems.find(item => item.id === product.id);
+  const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+  if (currentQuantity >= availableStock) {
+    showToast?.({
+      severity: 'warning',
+      message: `Kann ${product.name} nicht hinzufügen. Nur noch ${availableStock} auf Lager.`,
+    });
+    return; // Exit without changing state
+  }
+
+  // Check connected product stock (excluding 'Pfand')
+  const hasOutOfStockConnected = product.connectedProducts?.some(p => {
+    const connectedStock = p.currentStock ?? p.stockQuantity;
+    return p.category?.name !== 'Pfand' && connectedStock <= 0;
+  });
+
+  if (hasOutOfStockConnected) {
+    showToast?.({
+      severity: 'error',
+      message: `${product.name} ist als Bundle nicht verfügbar, da Teile nicht lagernd sind.`,
+    });
+    return; // Exit without changing state
+  }
+
+  // All checks passed, update cart
+  const updatedItems = CartService.addToCart([...cartItems], product);
+  setCartItems(updatedItems);
+
+  showToast?.({ severity: 'success', message: `${product.name} hinzugefügt` });
+
+  CartService.saveCartState(updatedItems, appliedVouchers, 'Added product').catch(err =>
+    logError('addToCart.saveState', err)
+  );
+};
+
+/**
+ * Removes one unit of a product from the cart and saves state.
  */
 export const removeFromCart = (cartItems, appliedVouchers, productId, setCartItems) => {
   const updatedItems = CartService.removeFromCart([...cartItems], productId);
   setCartItems(updatedItems);
 
-  // Save state in background with explicit label
-  CartService.saveCartState(updatedItems, appliedVouchers, 'Removed product').catch(err => {
-    console.error('Failed to save cart state after removing item:', err);
-  });
-
-  return updatedItems;
+  CartService.saveCartState(updatedItems, appliedVouchers, 'Removed unit').catch(err =>
+    logError('removeFromCart.saveState', err)
+  );
 };
 
 /**
- * Handles deleting a product from cart with background state saving
+ * Deletes all units of a product from the cart and saves state.
  */
 export const deleteFromCart = (cartItems, appliedVouchers, productId, setCartItems) => {
   const updatedItems = CartService.deleteFromCart([...cartItems], productId);
   setCartItems(updatedItems);
 
-  // Save state in background with explicit label
-  CartService.saveCartState(updatedItems, appliedVouchers, 'Deleted product').catch(err => {
-    console.error('Failed to save cart state after deleting item:', err);
-  });
-
-  return updatedItems;
+  CartService.saveCartState(updatedItems, appliedVouchers, 'Deleted product').catch(err =>
+    logError('deleteFromCart.saveState', err)
+  );
 };
 
 /**
- * Handles applying a voucher to the cart with background state saving
+ * Applies a voucher and saves cart state.
  */
 export const applyVoucher = (cartItems, appliedVouchers, voucher, setAppliedVouchers) => {
+  // Prevent adding duplicate vouchers
+  if (appliedVouchers.some(v => v.id === voucher.id)) {
+    // Optional: show a toast message here if needed
+    console.warn(`Voucher ${voucher.id} is already applied.`);
+    return;
+  }
   const updatedVouchers = [...appliedVouchers, voucher];
   setAppliedVouchers(updatedVouchers);
 
-  // Save state in background
-  CartService.saveCartState(cartItems, updatedVouchers, 'Applied voucher').catch(err => {
-    console.error('Failed to save cart state after applying voucher:', err);
-  });
-
-  return updatedVouchers;
+  CartService.saveCartState(cartItems, updatedVouchers, 'Applied voucher').catch(err =>
+    logError('applyVoucher.saveState', err)
+  );
 };
 
 /**
- * Handles removing a voucher from the cart with background state saving
+ * Removes a voucher and saves cart state.
  */
 export const removeVoucher = (cartItems, appliedVouchers, voucherId, setAppliedVouchers) => {
   const updatedVouchers = appliedVouchers.filter(v => v.id !== voucherId);
-  setAppliedVouchers(updatedVouchers);
-
-  // Save state in background
-  CartService.saveCartState(cartItems, updatedVouchers, 'Removed voucher').catch(err => {
-    console.error('Failed to save cart state after removing voucher:', err);
-  });
-
-  return updatedVouchers;
+  // Only update state and save if a voucher was actually removed
+  if (updatedVouchers.length < appliedVouchers.length) {
+    setAppliedVouchers(updatedVouchers);
+    CartService.saveCartState(cartItems, updatedVouchers, 'Removed voucher').catch(err =>
+      logError('removeVoucher.saveState', err)
+    );
+  }
 };
 
 /**
- * Handles undo cart state operation
+ * Undoes the last cart state change.
  */
 export const undoCartState = async (setCartItems, setAppliedVouchers) => {
   try {
     const result = await CartService.undoCartState();
     if (result) {
       setCartItems(result.cartItems);
-      setAppliedVouchers(result.appliedVouchers || []);
+      setAppliedVouchers(result.appliedVouchers || []); // Ensure array
     }
-    return result;
+    // Optionally return result or boolean indicating success
   } catch (err) {
-    console.error('Failed to undo cart state:', err);
-    return null;
+    logError('undoCartState', err);
+    // Optionally show a toast to the user
   }
 };
 
 /**
- * Handles redo cart state operation
+ * Redoes the last undone cart state change.
  */
 export const redoCartState = async (setCartItems, setAppliedVouchers) => {
   try {
     const result = await CartService.redoCartState();
     if (result) {
       setCartItems(result.cartItems);
-      setAppliedVouchers(result.appliedVouchers || []);
+      setAppliedVouchers(result.appliedVouchers || []); // Ensure array
     }
-    return result;
+    // Optionally return result or boolean indicating success
   } catch (err) {
-    console.error('Failed to redo cart state:', err);
-    return null;
+    logError('redoCartState', err);
+    // Optionally show a toast to the user
   }
 };
 
 /**
- * Check if undo is available for cart state
- * @returns {boolean} True if undo is available
+ * Checks if an undo operation is available.
  */
 export const canUndoCartState = () => {
   try {
     return CartService.canUndoCartState();
   } catch (err) {
-    console.error('Error checking if undo is available:', err);
+    logError('canUndoCartState', err);
     return false;
   }
 };
 
 /**
- * Check if redo is available for cart state
- * @returns {boolean} True if redo is available
+ * Checks if a redo operation is available.
  */
 export const canRedoCartState = () => {
   try {
     return CartService.canRedoCartState();
   } catch (err) {
-    console.error('Error checking if redo is available:', err);
+    logError('canRedoCartState', err);
     return false;
   }
 };
 
+const initialCardDetails = {
+  cardNumber: '',
+  cardHolderName: '',
+  expirationDate: '',
+  cvv: '',
+};
+
 /**
- * Clears the cart and resets all related state
+ * Clears the cart, resets related state, and clears history.
  */
 export const clearCart = (
   setCartItems,
   setAppliedVouchers,
-  setAppliedDeposits,
+  setAppliedDeposits, // Keep if deposits are managed outside vouchers/items
   setVoucherDiscount,
   setDepositCredit,
-  setCardDetails
+  setCardDetails, // Make optional if card details aren't always cleared
+  resetOtherStates // Optional callback for other screen-specific resets
 ) => {
   setCartItems([]);
   setAppliedVouchers([]);
-  setAppliedDeposits([]);
-  setVoucherDiscount(0);
+  setAppliedDeposits([]); // Reset deposits
+  setVoucherDiscount(0); // Reset calculated discounts/credits
   setDepositCredit(0);
 
-  if (setCardDetails) {
-    setCardDetails({
-      cardNumber: '',
-      cardHolderName: '',
-      expirationDate: '',
-      cvv: '',
-    });
-  }
+  // Only reset card details if the setter is provided
+  setCardDetails?.(initialCardDetails);
 
-  // Clear cart history in background
+  // Allow parent component to reset other specific states
+  resetOtherStates?.();
+
   CartService.clearCartHistory().catch(err => {
-    console.error('Failed to clear cart history:', err);
+    logError('clearCart.clearHistory', err);
   });
 };

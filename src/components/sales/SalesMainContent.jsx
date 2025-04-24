@@ -79,20 +79,19 @@ const SalesMainContent = ({
 
   return (
     <Grid container spacing={3} sx={{ height: '100%' }}>
-      {/* Product Grid */}
+      {/* Product Grid Section */}
       <Grid item xs={12} md={7} lg={8} sx={{ height: '100%' }}>
         <motion.div variants={itemVariants} style={{ height: '100%' }}>
           <Box
+            component={Paper}
+            elevation={1}
             sx={{
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
               opacity: cartLocked ? 0.6 : 1,
               pointerEvents: cartLocked ? 'none' : 'auto',
-              borderRadius: 2,
               overflow: 'hidden',
-              boxShadow: theme.shadows[1],
-              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             <ProductGrid productsByCategory={productsByCategory} onProductSelect={onAddToCart} />
@@ -100,7 +99,7 @@ const SalesMainContent = ({
         </motion.div>
       </Grid>
 
-      {/* Shopping Cart with undo/redo pattern */}
+      {/* Shopping Cart Section */}
       <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Paper
           elevation={3}
@@ -108,7 +107,6 @@ const SalesMainContent = ({
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            bgcolor: 'background.default',
             borderRadius: 2,
             overflow: 'hidden',
             border: `1px solid ${theme.palette.divider}`,
@@ -122,7 +120,11 @@ const SalesMainContent = ({
             depositCredit={depositCredit}
             giftCardPayment={giftCardPayment}
             total={total}
+            productDiscount={productDiscount}
             receiptReady={receiptReady}
+            cartUndoEnabled={cartUndoEnabled}
+            cartRedoEnabled={cartRedoEnabled}
+            cartLocked={cartLocked}
             onAddItem={onAddToCart}
             onRemoveItem={onRemoveFromCart}
             onDeleteItem={onDeleteFromCart}
@@ -134,12 +136,8 @@ const SalesMainContent = ({
             onRedeemVoucher={onRedeemVoucher}
             onManageVouchers={onManageVouchers}
             onRedeemDeposit={onRedeemDeposit}
-            cartUndoEnabled={cartUndoEnabled}
-            cartRedoEnabled={cartRedoEnabled}
-            cartLocked={cartLocked}
             onUndoCartState={onUndoCartState}
             onRedoCartState={onRedoCartState}
-            productDiscount={productDiscount}
           />
         </Paper>
       </Grid>

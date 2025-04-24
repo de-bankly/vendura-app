@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { useBarcode } from '../hooks/useBarcode';
-import { ProductService } from '../services';
 import { useToast } from '../components/ui/feedback/ToastProvider';
 
 const BarcodeContext = createContext();
@@ -9,11 +8,12 @@ const BarcodeContext = createContext();
  * Provider component for barcode scanning functionality
  */
 export const BarcodeProvider = ({ children }) => {
-  const [scannedProduct, setScannedProduct] = useState(null);
+  const [scannedValue, setScannedValue] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [isEnabled, setIsEnabled] = useState(true);
   const [activeField, setActiveField] = useState(null);
+  const [pendingDepositItems, setPendingDepositItems] = useState([]);
   const inputRef = useRef(null);
   const { showToast } = useToast();
 
@@ -24,6 +24,7 @@ export const BarcodeProvider = ({ children }) => {
       try {
         setIsProcessing(true);
         setError(null);
+        setScannedValue(null);
 
         // If there's an active field, directly fill it with barcode value
         if (activeField && typeof activeField === 'function') {
@@ -32,19 +33,8 @@ export const BarcodeProvider = ({ children }) => {
           return;
         }
 
-        // Otherwise look up product by barcode
-        try {
-          const product = await ProductService.getProductById(barcode, true);
-          setScannedProduct(product);
-        } catch (lookupError) {
-          // Always use a specific product not found message for 404 errors
-          const errorMsg = `Produkt nicht gefunden.`;
-          setError(errorMsg);
-          showToast({
-            severity: 'error',
-            message: errorMsg,
-          });
-        }
+        // Set the raw scanned value for consumers to handle
+        setScannedValue(barcode);
       } catch (err) {
         const errorMsg = `Fehler beim Scannen: ${err.message}`;
         setError(errorMsg);
@@ -67,7 +57,7 @@ export const BarcodeProvider = ({ children }) => {
   });
 
   const resetScan = useCallback(() => {
-    setScannedProduct(null);
+    setScannedValue(null);
     setError(null);
     resetBarcode();
     // Force a small delay to ensure state is updated before next scan
@@ -98,8 +88,15 @@ export const BarcodeProvider = ({ children }) => {
     setActiveField(null);
   }, []);
 
+  /**
+   * Clear pending deposit items from the automaten
+   */
+  const clearPendingDepositItems = useCallback(() => {
+    setPendingDepositItems([]);
+  }, []);
+
   const value = {
-    scannedProduct,
+    scannedValue,
     isProcessing,
     error,
     resetScan,
@@ -112,6 +109,8 @@ export const BarcodeProvider = ({ children }) => {
     registerScanField,
     unregisterScanField,
     inputRef,
+    pendingDepositItems,
+    clearPendingDepositItems,
   };
 
   return <BarcodeContext.Provider value={value}>{children}</BarcodeContext.Provider>;

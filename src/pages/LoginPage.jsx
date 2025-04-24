@@ -34,7 +34,7 @@ const LoginPage = () => {
   const handleLoginSuccess = useCallback(() => {
     const from = location.state?.from?.pathname || '/';
     navigate(from, { replace: true });
-  }, [navigate, location.state]);
+  }, [navigate, location]);
 
   /**
    * Handle login form submission

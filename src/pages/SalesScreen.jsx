@@ -1,18 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  useTheme,
-  Slide,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Alert,
-  Typography,
-} from '@mui/material';
-import { motion } from 'framer-motion';
+import { Box, Container, useTheme, Button, Alert, Typography } from '@mui/material';
 
 // Import components and utilities
 import {
@@ -26,9 +13,10 @@ import {
 } from '../components/sales';
 
 // Import services
-import { ProductService, CartService } from '../services';
+import { ProductService, CartService, DepositService } from '../services';
 import { useToast } from '../components/ui/feedback';
 import { useBarcodeScan } from '../contexts/BarcodeContext';
+import usePrinter from '../hooks/usePrinter';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,13 +29,15 @@ const containerVariants = {
 const SalesScreen = () => {
   const theme = useTheme();
   const { showToast } = useToast();
+  const { scannedValue, error: scanError, resetScan, enableScanner } = useBarcodeScan();
   const {
-    scannedProduct,
-    error: scanError,
-    resetScan,
-    enableScanner,
-    isEnabled: isScannerEnabled,
-  } = useBarcodeScan();
+    printReceipt,
+    isLoading: isPrinterLoading,
+    error: printerError,
+    checkStatus: checkPrinterStatus,
+    isConnected: isPrinterConnected,
+    statusChecked: printerStatusChecked,
+  } = usePrinter({ checkStatusOnMount: false });
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,9 +50,10 @@ const SalesScreen = () => {
   const [depositCredit, setDepositCredit] = useState(0);
   const [giftCardPayment, setGiftCardPayment] = useState(0);
   const [cartLocked, setCartLocked] = useState(false);
+  const [lastTransactionId, setLastTransactionId] = useState(null);
 
-  const [cartUndoEnabled, setCartUndoEnabled] = useState(false);
-  const [cartRedoEnabled, setCartRedoEnabled] = useState(false);
+  const [cartUndoEnabled, setCartUndoEnabled] = useState(CartStateManager.canUndoCartState());
+  const [cartRedoEnabled, setCartRedoEnabled] = useState(CartStateManager.canRedoCartState());
   const [receiptReady, setReceiptReady] = useState(false);
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -80,22 +71,6 @@ const SalesScreen = () => {
   const [voucherManagementDialogOpen, setVoucherManagementDialogOpen] = useState(false);
   const [redeemDepositDialogOpen, setRedeemDepositDialogOpen] = useState(false);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const productData = await ProductService.getProducts({ page: 0, size: 100 });
-      const allProducts = productData.content || [];
-      setProducts(allProducts);
-      setProductsByCategory(ProductService.groupByCategory(allProducts));
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError(err.message || 'Fehler beim Laden der Produkte.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     let isMounted = true;
 
@@ -111,7 +86,6 @@ const SalesScreen = () => {
         }
       } catch (err) {
         if (isMounted) {
-          console.error('Error fetching products:', err);
           setError(err.message || 'Fehler beim Laden der Produkte.');
         }
       } finally {
@@ -122,6 +96,7 @@ const SalesScreen = () => {
     };
 
     loadProducts();
+
     return () => {
       isMounted = false;
     };
@@ -138,18 +113,20 @@ const SalesScreen = () => {
   }, [cartItems, cartService]);
 
   useEffect(() => {
-    const calculatedDiscount = calculateVoucherDiscount(subtotal, appliedVouchers);
+    const afterProductDiscountTotal = subtotal - productDiscount;
+
+    const calculatedDiscount = calculateVoucherDiscount(afterProductDiscountTotal, appliedVouchers);
     setVoucherDiscount(calculatedDiscount);
 
-    const afterDiscountTotal = subtotal - calculatedDiscount;
+    const afterDiscountTotal = afterProductDiscountTotal - calculatedDiscount;
     const calculatedGiftCardPayment = calculateGiftCardPayment(afterDiscountTotal, appliedVouchers);
     setGiftCardPayment(calculatedGiftCardPayment);
-  }, [subtotal, appliedVouchers]);
+  }, [subtotal, productDiscount, appliedVouchers]);
 
   const total = useMemo(() => {
-    const calculatedTotal = subtotal - voucherDiscount - depositCredit - giftCardPayment;
+    const calculatedTotal = subtotal - depositCredit - giftCardPayment - voucherDiscount;
     return calculatedTotal > 0 ? calculatedTotal : 0;
-  }, [subtotal, voucherDiscount, depositCredit, giftCardPayment]);
+  }, [subtotal, depositCredit, giftCardPayment, voucherDiscount]);
 
   const change = useMemo(() => {
     if (paymentMethod !== 'cash' || !cashReceived) return 0;
@@ -159,14 +136,8 @@ const SalesScreen = () => {
   }, [paymentMethod, cashReceived, total]);
 
   useEffect(() => {
-    const checkUndoRedoState = () => {
-      setCartUndoEnabled(CartStateManager.canUndoCartState() || false);
-      setCartRedoEnabled(CartStateManager.canRedoCartState() || false);
-    };
-
-    checkUndoRedoState();
-    const interval = setInterval(checkUndoRedoState, 500);
-    return () => clearInterval(interval);
+    setCartUndoEnabled(CartStateManager.canUndoCartState());
+    setCartRedoEnabled(CartStateManager.canRedoCartState());
   }, [cartItems, appliedVouchers]);
 
   const handleAddToCart = useCallback(
@@ -214,6 +185,17 @@ const SalesScreen = () => {
     [cartItems, appliedVouchers, cartLocked, showToast]
   );
 
+  // Define the reset logic for screen-specific state
+  const resetScreenState = useCallback(() => {
+    setCartLocked(false);
+    setReceiptReady(false);
+    setLastTransactionId(null);
+    // Reset payment method and cash for new transactions
+    setPaymentMethod('cash');
+    setCashReceived('');
+    setError(null);
+  }, []); // No dependencies needed as it only calls setters
+
   const handleClearCart = useCallback(() => {
     CartStateManager.clearCart(
       setCartItems,
@@ -221,9 +203,11 @@ const SalesScreen = () => {
       setAppliedDeposits,
       setVoucherDiscount,
       setDepositCredit,
-      setCardDetails
+      setCardDetails,
+      resetScreenState // Pass the reset function here
     );
-  }, []);
+    // No need to set states here anymore, handled by resetScreenState
+  }, [resetScreenState]); // Add resetScreenState to dependencies
 
   const handleUndoCartState = useCallback(() => {
     if (cartLocked) {
@@ -301,34 +285,144 @@ const SalesScreen = () => {
     setCardDetails(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handlePaymentSubmit = useCallback(async () => {
-    const paymentResult = await processPayment({
+  const printTransactionReceipt = useCallback(
+    async (transactionIdOverride = null) => {
+      const transactionIdToPrint =
+        transactionIdOverride || lastTransactionId || `MANUAL-${Date.now().toString().slice(-6)}`;
+      try {
+        if (!printerStatusChecked || !isPrinterConnected) {
+          const isConnectedNow = await checkPrinterStatus();
+          if (!isConnectedNow) {
+            showToast({
+              severity: 'warning',
+              message: 'Drucker ist nicht verbunden. Versuche trotzdem zu drucken...',
+            });
+          }
+        }
+
+        const receiptData = {
+          cartItems,
+          total,
+          subtotal,
+          voucherDiscount,
+          giftCardPayment,
+          depositCredit,
+          paymentMethod,
+          cashReceived,
+          productDiscount,
+          transactionId: transactionIdToPrint,
+          date: new Date().toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        };
+
+        await printReceipt(receiptData);
+
+        showToast({
+          severity: 'success',
+          message: 'Beleg wird gedruckt...',
+        });
+      } catch (err) {
+        showToast({
+          severity: 'error',
+          message: `Fehler beim Drucken: ${err.message}`,
+        });
+      }
+    },
+    [
       cartItems,
       total,
       subtotal,
+      voucherDiscount,
+      giftCardPayment,
+      depositCredit,
       paymentMethod,
       cashReceived,
-      cardDetails,
-      appliedVouchers,
-      voucherDiscount,
-      appliedDeposits,
-      depositCredit,
+      productDiscount,
+      lastTransactionId,
+      printReceipt,
       showToast,
-      setReceiptReady,
-      setPaymentModalOpen,
-      setPaymentLoading,
-    });
+      checkPrinterStatus,
+      printerStatusChecked,
+      isPrinterConnected,
+    ]
+  );
 
-    setCartLocked(true);
+  const refetchProductsAfterSale = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const productData = await ProductService.getProducts({ page: 0, size: 100 });
+      const allProducts = productData.content || [];
+      setProducts(allProducts);
+      setProductsByCategory(ProductService.groupByCategory(allProducts));
+      setLoading(false);
+      showToast({
+        severity: 'info',
+        message: 'Produktbestände wurden aktualisiert.',
+      });
+    } catch (fetchErr) {
+      setError(fetchErr.message || 'Fehler beim Aktualisieren der Produkte.');
+      setLoading(false);
+      showToast({
+        severity: 'error',
+        message: 'Fehler beim Aktualisieren der Produktbestände.',
+      });
+    }
+  }, [showToast]);
 
-    if (paymentResult && paymentResult.success) {
-      setTimeout(() => {
-        fetchProducts();
+  const handlePaymentSubmit = useCallback(async () => {
+    setPaymentLoading(true);
+    let paymentResult = null;
+    try {
+      paymentResult = await processPayment({
+        cartItems,
+        total,
+        subtotal,
+        paymentMethod,
+        cashReceived,
+        cardDetails,
+        appliedVouchers,
+        voucherDiscount,
+        appliedDeposits,
+        depositCredit,
+        productDiscount,
+        showToast,
+        setReceiptReady,
+        setPaymentModalOpen,
+        setPaymentLoading: () => {},
+      });
+
+      if (paymentResult && paymentResult.success) {
+        const transactionId =
+          paymentResult.transactionId ||
+          paymentResult.id ||
+          `TR-${Date.now().toString().slice(-6)}`;
+        setLastTransactionId(transactionId);
+        setCartLocked(true);
+        setReceiptReady(true);
+
+        await printTransactionReceipt(transactionId);
+        setPaymentModalOpen(false);
+
+        setTimeout(refetchProductsAfterSale, 500);
+      } else {
         showToast({
-          severity: 'info',
-          message: 'Produktbestände wurden aktualisiert.',
+          severity: 'warning',
+          message: `Zahlung fehlgeschlagen: ${paymentResult?.error || 'Unbekannter Fehler'}`,
         });
-      }, 500);
+      }
+    } catch (error) {
+      showToast({
+        severity: 'error',
+        message: `Zahlungsfehler: ${error.message || 'Unbekannter Fehler'}`,
+      });
+    } finally {
+      setPaymentLoading(false);
     }
   }, [
     cartItems,
@@ -339,25 +433,29 @@ const SalesScreen = () => {
     cardDetails,
     appliedVouchers,
     voucherDiscount,
+    giftCardPayment,
     appliedDeposits,
     depositCredit,
+    productDiscount,
     showToast,
-    fetchProducts,
+    printTransactionReceipt,
+    refetchProductsAfterSale,
+    setReceiptReady,
+    setPaymentModalOpen,
+    setPaymentLoading,
+    setCartLocked,
+    setLastTransactionId,
   ]);
 
-  const handlePrintReceipt = useCallback(() => {
-    alert('Rechnung wird gedruckt...');
-  }, []);
+  const handlePrintReceipt = useCallback(async () => {
+    await printTransactionReceipt();
+  }, [printTransactionReceipt]);
 
   const handleNewTransaction = useCallback(() => {
+    // Simply call handleClearCart, which now includes resetting screen state
     handleClearCart();
-    setReceiptReady(false);
-    setPaymentMethod('cash');
-    setCashReceived('');
-    setError(null);
-    setCartLocked(false);
-    fetchProducts();
-  }, [handleClearCart, fetchProducts]);
+    // No need for additional resets here
+  }, [handleClearCart]);
 
   const handleRedeemVoucherDialog = useCallback(() => {
     if (cartLocked) {
@@ -417,6 +515,14 @@ const SalesScreen = () => {
         });
         return;
       }
+      if (appliedDeposits.some(d => d.id === depositReceipt.id)) {
+        showToast({
+          severity: 'info',
+          message: 'Dieser Pfandbon wurde bereits eingelöst.',
+        });
+        return;
+      }
+
       handleDepositRedemption({
         depositReceipt,
         appliedDeposits,
@@ -426,19 +532,96 @@ const SalesScreen = () => {
         showToast,
       });
     },
-    [appliedDeposits, cartLocked, showToast]
+    [appliedDeposits, cartLocked, showToast, handleDepositRedemption]
   );
 
   useEffect(() => {
     enableScanner();
   }, [enableScanner]);
 
+  const handleProductLookup = useCallback(
+    async code => {
+      try {
+        const product = await ProductService.getProductById(code, true);
+        if (product && product.id) {
+          handleAddToCart(product);
+          return true;
+        } else {
+          showToast({
+            severity: 'warning',
+            message: `Produkt mit Code ${code} nicht gefunden.`,
+          });
+          return false;
+        }
+      } catch (err) {
+        const errorMsg =
+          err.response?.status === 404
+            ? `Produkt mit Code ${code} nicht gefunden.`
+            : `Fehler beim Abrufen des Produkts: ${err.message}`;
+        showToast({ severity: 'error', message: errorMsg });
+        return false;
+      }
+    },
+    [ProductService, handleAddToCart, showToast]
+  );
+
   useEffect(() => {
-    if (scannedProduct) {
-      handleAddToCart(scannedProduct);
-      resetScan();
+    if (scannedValue) {
+      (async () => {
+        let processed = false;
+        try {
+          const depositReceipt = await DepositService.getDepositReceiptById(scannedValue);
+          if (depositReceipt && depositReceipt.id) {
+            handleDepositRedeemed(depositReceipt);
+            showToast({
+              severity: 'success',
+              message: `Pfandbon ${depositReceipt.id} erfolgreich gescannt und eingelöst.`,
+            });
+            processed = true;
+          } else {
+            await handleProductLookup(scannedValue);
+            processed = true;
+          }
+        } catch (err) {
+          if (
+            err.response?.status === 404 ||
+            err.message?.toLowerCase().includes('not found') ||
+            err.message?.toLowerCase().includes('nicht gefunden')
+          ) {
+            try {
+              await handleProductLookup(scannedValue);
+              processed = true;
+            } catch (productErr) {
+              console.error(`SalesScreen: Product lookup failed:`, productErr);
+              processed = true;
+            }
+          } else {
+            console.error(`SalesScreen: Error checking deposit receipt ${scannedValue}:`, err);
+            showToast({
+              severity: 'error',
+              message: `Fehler beim Überprüfen des Pfandbons: ${err.message}`,
+            });
+            try {
+              await handleProductLookup(scannedValue);
+              processed = true;
+            } catch (productErr) {
+              console.error(`SalesScreen: Product lookup also failed:`, productErr);
+              processed = true;
+            }
+          }
+        } finally {
+          resetScan();
+        }
+      })();
     }
-  }, [scannedProduct, handleAddToCart, resetScan]);
+  }, [
+    scannedValue,
+    handleDepositRedeemed,
+    resetScan,
+    showToast,
+    DepositService,
+    handleProductLookup,
+  ]);
 
   useEffect(() => {
     if (scanError) {

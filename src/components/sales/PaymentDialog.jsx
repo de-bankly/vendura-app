@@ -6,6 +6,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import {
   Dialog,
   DialogTitle,
@@ -200,10 +201,21 @@ const PaymentDialog = ({
     cvv: '',
   });
 
-  // Calculate the amount still to be paid after applying gift cards
-  const remainingTotal = total - giftCardPayment;
+  // Calculate the amount to be paid in the correct order:
+  // Start with total price
+  // 1. Subtract deposit credits
+  // 2. Subtract gift card payment
+  // 3. Subtract voucher discounts
+  // The result is what needs to be paid in cash or by card
+  const totalBeforeDeductions = total + depositCredit + giftCardPayment + voucherDiscount;
+  const remainingTotal = Math.max(0, total);
+
   const hasGiftCardPayment = giftCardPayment > 0;
+  const hasDepositCredit = depositCredit > 0;
+  const hasVoucherDiscount = voucherDiscount > 0;
+
   const giftCardVouchers = appliedVouchers.filter(v => v.type === 'GIFT_CARD');
+  const discountVouchers = appliedVouchers.filter(v => v.type === 'DISCOUNT_CARD');
 
   // Validate card details when payment method is card
   useEffect(() => {
@@ -217,6 +229,33 @@ const PaymentDialog = ({
       return;
     }
   }, [paymentMethod]);
+
+  // Check if deposit fully covers the payment
+  const isFullyCoveredByDeposit = depositCredit >= totalBeforeDeductions;
+
+  // Check if gift cards fully cover the remaining payment after deposit
+  const remainingAfterDeposit = Math.max(0, totalBeforeDeductions - depositCredit);
+  const isFullyCoveredByGiftCards = giftCardPayment >= remainingAfterDeposit;
+
+  // Handle when the customer has no actual remaining payment to make
+  useEffect(() => {
+    if (open && remainingTotal <= 0.01) {
+      // Auto-select the most relevant payment method when payment is fully covered
+      if (isFullyCoveredByDeposit) {
+        // If deposit covers everything, select deposit payment
+        onPaymentMethodChange({ target: { value: 'deposit' } });
+      } else if (isFullyCoveredByGiftCards) {
+        // If gift cards cover everything after deposit, select gift card payment
+        onPaymentMethodChange({ target: { value: 'giftcard' } });
+      }
+    }
+  }, [
+    open,
+    remainingTotal,
+    isFullyCoveredByDeposit,
+    isFullyCoveredByGiftCards,
+    onPaymentMethodChange,
+  ]);
 
   // Handle formatted card number input
   const handleCardNumberChange = e => {
@@ -309,7 +348,7 @@ const PaymentDialog = ({
     // Für Kartenzahlung prüfen, ob alle erforderlichen Felder ausgefüllt sind
     if (paymentMethod === 'card') {
       return (
-        cardDetails.cardNumber.replace(/\s/g, '').length >= 16 &&
+        cardDetails.cardNumber.replace(/\s/g, '').length >= 13 &&
         cardDetails.cardHolderName.trim().length > 3 &&
         cardDetails.expirationDate.length === 5 &&
         cardDetails.cvv.length >= 3
@@ -336,6 +375,194 @@ const PaymentDialog = ({
   // Handle changing payment method
   const handlePaymentMethodChange = method => {
     onPaymentMethodChange({ target: { value: method } });
+  };
+
+  // Main content of the dialog based on payment method
+  const renderPaymentMethodContent = () => {
+    // If there's no remaining total, we don't need additional payment details
+    if (remainingTotal <= 0.01) {
+      return (
+        <Box
+          sx={{ my: 2, p: 2, bgcolor: alpha(theme.palette.success.light, 0.1), borderRadius: 2 }}
+        >
+          <Typography variant="subtitle1" color="success.main" fontWeight={600}>
+            {isFullyCoveredByDeposit
+              ? 'Der gesamte Betrag wird durch Pfandguthaben abgedeckt.'
+              : 'Der gesamte Betrag wird durch Gutscheine abgedeckt.'}
+          </Typography>
+          <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+            Keine zusätzliche Zahlung erforderlich.
+          </Typography>
+        </Box>
+      );
+    }
+
+    if (paymentMethod === 'cash') {
+      return (
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            label="Erhaltener Betrag"
+            variant="outlined"
+            fullWidth
+            value={cashReceived}
+            onChange={onCashReceivedChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <EuroIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 3 }}
+          />
+
+          {parseFloat(cashReceived) >= remainingTotal && (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                bgcolor: alpha(theme.palette.success.light, 0.1),
+                borderColor: theme.palette.success.light,
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Rückgeld:
+                </Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>
+                  {(Math.round(change * 100) / 100).toFixed(2)} €
+                </Typography>
+              </Box>
+            </Paper>
+          )}
+        </Box>
+      );
+    }
+
+    if (paymentMethod === 'card') {
+      return (
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            label="Kartennummer"
+            variant="outlined"
+            fullWidth
+            value={cardDetails.cardNumber}
+            onChange={handleCardNumberChange}
+            error={!!cardErrors.cardNumber}
+            helperText={cardErrors.cardNumber}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <CreditCardIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            label="Karteninhaber"
+            variant="outlined"
+            fullWidth
+            value={cardDetails.cardHolderName}
+            onChange={e => onCardDetailsChange('cardHolderName', e.target.value)}
+            error={!!cardErrors.cardHolderName}
+            helperText={cardErrors.cardHolderName}
+            sx={{ mb: 2 }}
+          />
+
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <TextField
+              label="Gültig bis (MM/JJ)"
+              variant="outlined"
+              fullWidth
+              value={cardDetails.expirationDate}
+              onChange={handleExpirationDateChange}
+              error={!!cardErrors.expirationDate}
+              helperText={cardErrors.expirationDate}
+              placeholder="MM/JJ"
+              inputProps={{ maxLength: 5 }}
+            />
+            <TextField
+              label="CVV"
+              variant="outlined"
+              fullWidth
+              value={cardDetails.cvv}
+              onChange={e => onCardDetailsChange('cvv', e.target.value)}
+              error={!!cardErrors.cvv}
+              helperText={cardErrors.cvv}
+              inputProps={{ maxLength: 4 }}
+            />
+          </Box>
+        </Box>
+      );
+    }
+
+    if (paymentMethod === 'deposit') {
+      return (
+        <Box sx={{ mt: 2 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              bgcolor: alpha(theme.palette.info.light, 0.1),
+              borderColor: theme.palette.info.light,
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Verfügbares Pfandguthaben:
+              </Typography>
+              <Typography variant="h5" color="info.main" fontWeight={700}>
+                {(Math.round(depositCredit * 100) / 100).toFixed(2)} €
+              </Typography>
+            </Box>
+          </Paper>
+        </Box>
+      );
+    }
+
+    if (paymentMethod === 'giftcard') {
+      // Display gift card information
+      return (
+        <Box sx={{ mt: 2 }}>
+          {giftCardVouchers.length > 0 ? (
+            <List>
+              {giftCardVouchers.map((voucher, index) => (
+                <ListItem
+                  key={index}
+                  sx={{
+                    bgcolor: alpha(theme.palette.primary.light, 0.05),
+                    mb: 1,
+                    borderRadius: 1,
+                  }}
+                >
+                  <ListItemIcon>
+                    <CardGiftcardIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`Gutschein: ${voucher.code || '—'}`}
+                    secondary={`Wert: ${(Math.round(voucher.amount * 100) / 100).toFixed(2)} €`}
+                  />
+                  <Chip
+                    label={`${(Math.round(voucher.amount * 100) / 100).toFixed(2)} €`}
+                    color="primary"
+                    variant="outlined"
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+              Keine Gutscheine angewendet
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+
+    // Default empty state
+    return null;
   };
 
   return (
@@ -436,155 +663,7 @@ const PaymentDialog = ({
           />
         </Box>
 
-        {/* Rest of the payment form - cash received, card details, etc. */}
-        {paymentMethod === 'cash' && (
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            sx={{ mb: 3 }}
-          >
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Erhaltener Bargeldbetrag
-            </Typography>
-            <TextField
-              label="Erhaltener Betrag"
-              value={cashReceived}
-              onChange={e => onCashReceivedChange(e)}
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EuroIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
-
-            {parseFloat(cashReceived) > 0 && (
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 2,
-                  borderRadius: 2,
-                  bgcolor:
-                    parseFloat(cashReceived) >= total - 0.005
-                      ? alpha(theme.palette.success.main, 0.1)
-                      : alpha(theme.palette.error.main, 0.1),
-                  border: `1px solid ${
-                    parseFloat(cashReceived) >= total - 0.005
-                      ? alpha(theme.palette.success.main, 0.3)
-                      : alpha(theme.palette.error.main, 0.3)
-                  }`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography variant="subtitle2" fontWeight={500}>
-                  {parseFloat(cashReceived) >= total - 0.005 ? 'Rückgeld:' : 'Fehlender Betrag:'}
-                </Typography>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight="bold"
-                  color={parseFloat(cashReceived) >= total - 0.005 ? 'success.main' : 'error.main'}
-                >
-                  {(Math.round(Math.abs(parseFloat(cashReceived) - total) * 100) / 100).toFixed(2)}{' '}
-                  €
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {paymentMethod === 'card' && (
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            sx={{ mb: 3 }}
-          >
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Kartendetails
-            </Typography>
-            <Box sx={{ mb: 2 }}>
-              <TextField
-                label="Kartennummer"
-                value={cardDetails.cardNumber}
-                onChange={handleCardNumberChange}
-                fullWidth
-                error={!!cardErrors.cardNumber}
-                helperText={cardErrors.cardNumber}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <CreditCardIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-                variant="outlined"
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-              <TextField
-                label="Karteninhaber"
-                value={cardDetails.cardHolderName}
-                onChange={e => onCardDetailsChange('cardHolderName', e.target.value)}
-                fullWidth
-                error={!!cardErrors.cardHolderName}
-                helperText={cardErrors.cardHolderName}
-                variant="outlined"
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Ablaufdatum (MM/YY)"
-                  value={cardDetails.expirationDate}
-                  onChange={handleExpirationDateChange}
-                  error={!!cardErrors.expirationDate}
-                  helperText={cardErrors.expirationDate}
-                  variant="outlined"
-                  sx={{
-                    flexGrow: 1,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-                <TextField
-                  label="CVV"
-                  value={cardDetails.cvv}
-                  onChange={e => onCardDetailsChange('cvv', e.target.value)}
-                  inputProps={{ maxLength: 4 }}
-                  error={!!cardErrors.cvv}
-                  helperText={cardErrors.cvv}
-                  variant="outlined"
-                  sx={{
-                    width: '30%',
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
-          </Box>
-        )}
+        {renderPaymentMethodContent()}
 
         {/* Applied gift cards/vouchers */}
         {hasGiftCardPayment && (
@@ -615,6 +694,19 @@ const PaymentDialog = ({
                     <ListItemText
                       primary={`Gutschein: ${voucher.code}`}
                       secondary={`Angewendet: ${voucher.value.toFixed(2)} €`}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItem>
+                ))}
+
+                {discountVouchers.map(voucher => (
+                  <ListItem key={voucher.id} disablePadding sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <LocalOfferIcon color="secondary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`Rabattgutschein: ${voucher.code}`}
+                      secondary={`Angewendet: ${voucher.discountAmount?.toFixed(2) || voucherDiscount.toFixed(2)} € (${voucher.discountPercentage}%)`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
                   </ListItem>

@@ -185,102 +185,95 @@ class TransactionService {
         discountValue: item.discount || 0,
       }));
 
-      // Prepare payments data
-      const payments = [];
+      // Prioritize using payments provided by PaymentProcessor
+      let payments = [];
 
-      // Add gift card payments if applicable
-      let giftCardTotal = 0;
+      if (
+        transactionData.payments &&
+        Array.isArray(transactionData.payments) &&
+        transactionData.payments.length > 0
+      ) {
+        payments = transactionData.payments;
+      } else {
+        // Fallback: Construct payments from individual components
+        let giftCardTotal = 0;
 
-      if (transactionData.appliedVouchers && transactionData.appliedVouchers.length > 0) {
-        // Filter for gift card type vouchers only
-        const giftCardVouchers = transactionData.appliedVouchers.filter(
-          voucher => voucher.type === 'GIFT_CARD'
-        );
-
-        // Add each gift card as a payment
-        for (const voucher of giftCardVouchers) {
-          const voucherAmount = parseFloat(voucher.amount) || 0;
-          giftCardTotal += voucherAmount;
-          payments.push({
-            type: 'GIFTCARD',
-            amount: voucherAmount,
-            giftcardId: voucher.id,
-          });
-        }
-
-        // Apply discount cards if any
-        const discountVouchers = transactionData.appliedVouchers.filter(
-          voucher => voucher.type === 'DISCOUNT_CARD'
-        );
-
-        if (discountVouchers.length > 0) {
-          // For simplicity, just use the first discount card
-          const discountVoucher = discountVouchers[0];
-          const discountAmount = parseFloat(transactionData.voucherDiscount) || 0;
-          giftCardTotal += discountAmount;
-          payments.push({
-            type: 'GIFTCARD',
-            amount: discountAmount,
-            giftcardId: discountVoucher.id,
-          });
-        }
-      }
-
-      // Prepare deposit receipts data
-      const depositReceipts = [];
-      let depositTotal = 0;
-
-      // Add deposit receipts if applicable
-      if (transactionData.depositReceipts && transactionData.depositReceipts.length > 0) {
-        for (const receipt of transactionData.depositReceipts) {
-          // Jeder Pfandbeleg kann entweder ein 'value' oder ein 'total' Feld haben
-          // Wir müssen beide Fälle behandeln, um sicherzustellen, dass wir den korrekten Wert erhalten
-          const receiptValue = parseFloat(receipt.value || receipt.total || 0);
-
-          depositTotal += receiptValue;
-          depositReceipts.push({
-            id: receipt.id,
-          });
-        }
-      }
-
-      // Only add cash/card payment if the gift card and deposit receipts don't cover the full amount
-      const isFullyCoveredByGiftCards = Math.abs(giftCardTotal - transactionData.total) < 0.01;
-
-      // If the payment is intended to be fully covered by deposit receipts, don't add additional payment methods
-      if (transactionData.useDepositAsPayment) {
-        // Ensure that the total equals the depositCredit amount for deposit-only payments
-        if (Math.abs(transactionData.depositCredit - transactionData.total) > 0.01) {
-          throw new Error(
-            'Pfandguthaben entspricht nicht dem Gesamtbetrag. Bitte verwenden Sie eine andere Zahlungsmethode.'
+        // Add gift card payments
+        if (transactionData.appliedVouchers && transactionData.appliedVouchers.length > 0) {
+          // Gift card vouchers
+          const giftCardVouchers = transactionData.appliedVouchers.filter(
+            voucher => voucher.type === 'GIFT_CARD'
           );
-        }
-      } else if (!isFullyCoveredByGiftCards) {
-        // Der verbleibende Betrag ist einfach der Gesamtbetrag minus Gutscheinbeträge
-        // Das Pfandguthaben ist bereits in total berücksichtigt
-        const remainingAmount = Math.max(0, transactionData.total - giftCardTotal);
 
-        // Add cash payment if applicable
+          for (const voucher of giftCardVouchers) {
+            const voucherAmount = parseFloat(voucher.amount) || 0;
+            if (voucherAmount > 0) {
+              giftCardTotal += voucherAmount;
+              payments.push({
+                type: 'GIFTCARD',
+                amount: voucherAmount,
+                giftcardId: voucher.id,
+              });
+            }
+          }
+
+          // Discount card vouchers
+          const discountVouchers = transactionData.appliedVouchers.filter(
+            voucher => voucher.type === 'DISCOUNT_CARD'
+          );
+
+          if (discountVouchers.length > 0 && transactionData.voucherDiscount > 0) {
+            const discountVoucher = discountVouchers[0];
+            const discountAmount = parseFloat(transactionData.voucherDiscount) || 0;
+            giftCardTotal += discountAmount;
+            payments.push({
+              type: 'GIFTCARD',
+              amount: discountAmount,
+              giftcardId: discountVoucher.id,
+            });
+          }
+        }
+
+        // Calculate remaining amount after gift cards and deposit credit
+        // Hinweis: Pfandguthaben wird direkt vom total abgezogen,
+        // da es nicht als Zahlungsmethode im payments-Array erscheint
+        const depositCredit = parseFloat(transactionData.depositCredit) || 0;
+        const remainingAmount = Math.max(0, transactionData.total - giftCardTotal - depositCredit);
+
         if (transactionData.paymentMethod === 'cash') {
+          // Für Barzahlungen wird immer ein handed-Wert benötigt
+          const parsedCashReceived = parseFloat(transactionData.cashReceived) || 0;
+          const handedAmount =
+            parsedCashReceived > 0 ? parsedCashReceived : Math.max(remainingAmount, 0.01);
+
           payments.push({
             type: 'CASH',
-            amount: parseFloat(remainingAmount.toFixed(2)),
-            handed: transactionData.cashReceived,
-            change: transactionData.change,
+            amount: remainingAmount,
+            handed: handedAmount,
+            change: Math.max(0, Math.round((handedAmount - remainingAmount) * 100) / 100),
           });
-        }
-
-        // Add card payment if applicable
-        if (transactionData.paymentMethod === 'card') {
+        } else if (transactionData.paymentMethod === 'card' && remainingAmount > 0) {
           payments.push({
             type: 'CARD',
-            amount: parseFloat(remainingAmount.toFixed(2)),
+            amount: remainingAmount,
             cardDetails: {
               cardNumber: transactionData.cardDetails?.cardNumber,
               cardHolderName: transactionData.cardDetails?.cardHolderName,
               expirationDate: transactionData.cardDetails?.expirationDate,
               cvv: transactionData.cardDetails?.cvv,
             },
+          });
+        }
+      }
+
+      // Prepare deposit receipts data
+      const depositReceipts = [];
+
+      // Add deposit receipts if applicable
+      if (transactionData.depositReceipts && transactionData.depositReceipts.length > 0) {
+        for (const receipt of transactionData.depositReceipts) {
+          depositReceipts.push({
+            id: receipt.id,
           });
         }
       }
@@ -296,7 +289,7 @@ class TransactionService {
       // Send to backend
       const response = await apiClient.post('/v1/sale', saleDTO);
 
-      // Bei erfolgreicher Transaktion Cache invalidieren
+      // Invalidate cache after successful transaction
       this.invalidateCache();
 
       return response.data;
